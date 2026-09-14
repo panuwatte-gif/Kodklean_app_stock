@@ -1,0 +1,8 @@
+/* KodKlean Group webfonts.
+   NO original font binaries were supplied with the brand assets, so every family
+   below is a Google Fonts SUBSTITUTE chosen to match the lettering in the logos.
+   See readme.md → "Font substitutions"; swap these @imports if real files arrive. */
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&display=swap");

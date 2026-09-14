@@ -1,0 +1,112 @@
+/* KodKlean Group — colour system.
+   Base ramps sampled from the brand identity sheet (assets/brand/identity-sheet.png),
+   the KodKlean Group lockup and the four sub-brand logos. */
+:root{
+  /* ── Corporate green (the KodKlean wordmark + กะเพราโคตรคลีน) ───────── */
+  --kk-green-950:#08301F;
+  --kk-green-900:#0E4A34;
+  --kk-green-800:#125B2A;
+  --kk-green-700:#1B6B3E;
+  --kk-green-600:#2E7D52;
+  --kk-green-400:#6BA97F;
+  --kk-green-200:#B7D7C2;
+  --kk-green-100:#DCEBE1;
+  --kk-green-50:#EFF7F1;
+
+  /* ── Herb lime (the leaf sprigs) ───────────────────────────────────── */
+  --kk-lime-700:#7A9130;
+  --kk-lime-500:#A6BE40;
+  --kk-lime-300:#C8DA84;
+  --kk-lime-100:#EAF2CF;
+
+  /* ── Gold (the emblem, the 5% mark, all premium framing) ───────────── */
+  --kk-gold-800:#9C6F22;
+  --kk-gold-700:#C79A45;
+  --kk-gold-500:#F7C346;
+  --kk-gold-300:#F9D98A;
+  --kk-gold-100:#FDF0D2;
+
+  /* ── Rainbow pastels (the RE:DRINK molecule + Kook Kai's tail) ─────── */
+  --kk-coral-600:#E2615C;
+  --kk-coral-400:#FE9B96;
+  --kk-coral-200:#FFD0CE;
+  --kk-blue-900:#14539E;
+  --kk-blue-500:#347CD5;
+  --kk-blue-300:#9BBFE8;
+  --kk-sky-400:#6FD2EF;
+  --kk-sky-300:#A3E4F6;
+  --kk-sky-100:#E1F6FC;
+  --kk-lavender-500:#8A62C4;
+  --kk-lavender-400:#A27ED7;
+  --kk-lavender-200:#DCCBF0;
+  --kk-cream-300:#FDD99A;
+  --kk-cream-200:#FEE7BA;
+  --kk-cream-100:#FFF4DF;
+
+  /* ── Warm neutrals (paper, ink, hairlines) ─────────────────────────── */
+  --kk-ink-900:#241C12;
+  --kk-ink-700:#4A3E30;
+  --kk-ink-500:#7A6C5B;
+  --kk-ink-300:#B6A895;
+  --kk-paper-300:#EDE2D0;
+  --kk-paper-200:#F6EEE0;
+  --kk-paper-100:#FDF8F0;
+  --kk-paper-0:#FFFFFF;
+
+  /* ── Semantic aliases ─────────────────────────────────────────────── */
+  --text-strong:var(--kk-green-900);
+  --text-body:var(--kk-ink-700);
+  --text-muted:var(--kk-ink-500);
+  --text-faint:var(--kk-ink-300);
+  --text-on-dark:var(--kk-paper-100);
+  --text-on-brand:#FFFFFF;
+  --text-link:var(--kk-green-700);
+  --text-link-hover:var(--kk-lime-700);
+
+  --surface-page:var(--kk-paper-100);
+  --surface-card:var(--kk-paper-0);
+  --surface-sunken:var(--kk-paper-200);
+  --surface-brand:var(--kk-green-800);
+  --surface-brand-soft:var(--kk-green-50);
+  --surface-accent-soft:var(--kk-cream-100);
+  --surface-overlay:rgba(36,28,18,.44);
+
+  --border-hairline:var(--kk-paper-300);
+  --border-strong:var(--kk-green-200);
+  --border-gold:var(--kk-gold-700);
+
+  --action-primary:var(--kk-green-800);
+  --action-primary-hover:var(--kk-green-700);
+  --action-primary-press:var(--kk-green-950);
+  --action-secondary:var(--kk-gold-500);
+  --action-secondary-hover:var(--kk-gold-300);
+  --action-secondary-press:var(--kk-gold-700);
+  --action-disabled:var(--kk-paper-300);
+  --focus-ring:var(--kk-lime-500);
+
+  --status-success:var(--kk-green-700);
+  --status-success-soft:var(--kk-green-100);
+  --status-warning:var(--kk-gold-700);
+  --status-warning-soft:var(--kk-gold-100);
+  --status-danger:var(--kk-coral-600);
+  --status-danger-soft:var(--kk-coral-200);
+  --status-info:var(--kk-blue-500);
+  --status-info-soft:var(--kk-sky-100);
+
+  /* ── Sub-brand keys ───────────────────────────────────────────────── */
+  --brand-kaprao:#125B2A;         /* กะเพราโคตรคลีน */
+  --brand-kaprao-soft:#EFF7F1;
+  --brand-fivepercent:#C79A45;    /* 5% ข้าวมันไก่ */
+  --brand-fivepercent-soft:#FDF0D2;
+  --brand-luksao:#F09C9C;         /* ลูกสาวทำเอง */
+  --brand-luksao-soft:#FFF0EC;
+  --brand-luksao-ink:#5A3A22;
+  --brand-redrink:#14539E;        /* RE:DRINK */
+  --brand-redrink-soft:#E7F1FB;
+
+  /* ── Brand gradients ─────────────────────────────────────────────── */
+  --gradient-gold:linear-gradient(135deg,#F9D98A 0%,#F7C346 42%,#C79A45 100%); /* @kind color */
+  --gradient-green:linear-gradient(160deg,#1B6B3E 0%,#125B2A 60%,#08301F 100%); /* @kind color */
+  --gradient-rainbow:linear-gradient(90deg,#FE9B96 0%,#F7C346 18%,#A6BE40 36%,#4FBF7A 52%,#347CD5 70%,#6FD2EF 84%,#A27ED7 100%); /* @kind color */
+  --gradient-cream:linear-gradient(180deg,#FFF4DF 0%,#FDF8F0 100%); /* @kind color */
+}

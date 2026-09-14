@@ -1,0 +1,139 @@
+/* เมนูล่าง 7 ปุ่ม (ไอคอนสติ๊กเกอร์มีชื่อหน้าอยู่ในภาพแล้ว) + แผงรายการย่อยที่เด้งขึ้นมา */
+.nav-host { flex: none; position: relative; }
+
+.nav {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  align-items: center;
+  height: 78px;
+  padding: 0 2px;
+  background: #fff;
+  border-top: 1px solid #EDE2D0;
+}
+
+.nav__btn {
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #9A8E7E;
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1), filter 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.nav__btn:active { transform: scale(.96); }
+
+.nav__icon {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.nav__icon img { width: 100%; height: 100%; object-fit: contain; }
+
+/* ปุ่มที่ไม่ได้อยู่หน้านั้น จะจางลงเล็กน้อย ปุ่มหน้าปัจจุบันจะยกลอยขึ้น */
+.nav__btn:not(.is-active) { opacity: .74; filter: saturate(.86); }
+.nav__btn.is-active .nav__icon { transform: translateY(-3px) scale(1.08); filter: drop-shadow(0 4px 7px rgba(74, 62, 48, .3)); }
+.nav__btn:hover .nav__icon { transform: translateY(-2px) scale(1.04); }
+
+/* ปุ่มพิเศษ: สติ๊กเกอร์ใหญ่กว่าปุ่มอื่นเล็กน้อย */
+.nav__btn--special .nav__icon { width: 60px; height: 60px; margin-top: -6px; }
+.nav__btn--special:hover .nav__icon { transform: rotate(-2deg) scale(1.05); }
+
+/* ชั้นวางแผงรายการย่อย */
+.nav__layer { position: absolute; inset: auto 0 0 0; height: 0; }
+
+.sheet__scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 78px;
+  height: 1200px;
+  background: rgba(74, 62, 48, .44);
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.nav__layer.is-open .sheet__scrim { opacity: 1; }
+
+.sheet {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 88px;
+  background: #FDF8F0;
+  border-radius: 28px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 14px 34px rgba(74, 62, 48, .28);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 320ms cubic-bezier(.2, .8, .3, 1), transform 320ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.nav__layer.is-open .sheet { opacity: 1; transform: translateY(0); }
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 10px;
+}
+
+.sheet__title {
+  flex: 1;
+  font-family: Mitr, sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.sheet__close {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: #F2EADC;
+  color: #7A6E5C;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.sheet__rows { display: flex; flex-direction: column; gap: 8px; }
+
+.sheet__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(74, 62, 48, .09);
+  font-family: Sarabun, sans-serif;
+  font-size: 14px;
+  color: #3A3226;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1), box-shadow 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.sheet__row:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(74, 62, 48, .14); }
+.sheet__row:active { transform: scale(.98); box-shadow: inset 0 2px 6px rgba(74, 62, 48, .16); }
+
+.sheet__dot { width: 10px; height: 10px; flex: none; border-radius: 50%; }
+
+/* เมนูล่างของหน้าหลัก (ขนาดมือถือ) */
+.app[data-page="home"] .nav { height: 62px; padding: 0 1px calc(env(safe-area-inset-bottom, 0px) / 2); border-top-color: #DCEAE5; }
+.app[data-page="home"] .nav__icon { width: 48px; height: 48px; }
+.app[data-page="home"] .nav__btn--special .nav__icon { width: 52px; height: 52px; margin-top: -4px; }
+.app[data-page="home"] .nav__btn.is-active { border-radius: 12px; background: #EAF6EC; box-shadow: inset 0 0 0 1.5px #BFE3C7; }
+.app[data-page="home"] .sheet__scrim { bottom: 62px; }
+.app[data-page="home"] .sheet { bottom: 70px; }

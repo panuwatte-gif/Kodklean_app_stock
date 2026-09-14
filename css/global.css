@@ -1,0 +1,367 @@
+@import url("https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap");
+/* หน้าตาพื้นฐานที่ใช้ร่วมทั้งแอป: สีพื้น ตัวอักษร แถบบนสุด */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #F2EADC;
+  font-family: Anuphan, Sarabun, sans-serif;
+  font-weight: 500;
+  color: #3A3226;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+a { color: #125B2A; }
+a:hover { color: #0C3F1D; }
+
+.app {
+  position: relative;
+  width: 430px;
+  height: 932px;
+  max-height: calc(100vh - 48px);
+  background: #FDF8F0;
+  border-radius: 36px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(74, 62, 48, .22);
+  display: flex;
+  flex-direction: column;
+}
+
+.app-bar {
+  flex: none;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  background: #fff;
+  border-bottom: 1px solid #EDE2D0;
+}
+
+.app-bar__logo { height: 40px; width: auto; object-fit: contain; }
+.app-bar__spacer { flex: 1; }
+
+/* หน้าหลักมีหัวของตัวเอง จึงซ่อนแถบบนสุดของแอปเฉพาะหน้านี้ — ขนาดกรอบเท่ามือถือเหมือนทุกหน้า */
+.app[data-page="home"] { width: 430px; max-width: 100%; }
+.app[data-page="home"] .app-bar { display: none; }
+
+.icon-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid #D8EBD8;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.icon-btn:hover { background: #FDF3E3; }
+.icon-btn:active { transform: scale(.96); }
+.icon-btn img { width: 26px; height: 26px; object-fit: contain; }
+
+/* ปุ่มออกจากระบบ (ไอคอนเส้น สีแดงอ่อน) */
+.icon-btn--out { border-color: #F3D3CF; color: #C0392E; }
+.icon-btn--out:hover { background: #FDECEA; }
+
+.icon-btn__dot {
+  position: absolute;
+  top: -4px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #E5433B;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(74, 62, 48, .3);
+}
+
+.app-view { flex: 1; overflow-y: auto; scrollbar-width: none; }
+.app-view::-webkit-scrollbar { display: none; }
+
+/* ---------- แถบหัวเรื่องของหน้า (ปุ่มกลับ ชื่อหน้า วันที่ ตั้งค่า) ใช้ร่วมทุกหน้า ---------- */
+.bar { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px; }
+
+.bar__round {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 14px;
+  border: 1.5px solid #EDE2D0;
+  background: #fff;
+  color: #2F4A36;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(74, 62, 48, .08);
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.bar__round:active { transform: scale(.96); }
+.bar__round--gear { color: #1E7A3C; }
+.bar__title { flex: 1; margin: 0; display: flex; align-items: center; min-width: 0; }
+
+.bar__title span {
+  font-family: Mitr, sans-serif;
+  font-weight: 500;
+  font-size: 23px;
+  line-height: 1.5;
+  color: #125B2A;
+  background: #E7F4E9;
+  border-radius: 10px;
+  padding: 1px 12px 3px;
+  white-space: nowrap;
+}
+
+.bar__date {
+  height: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 11px;
+  border-radius: 14px;
+  border: 1.5px solid #EDE2D0;
+  background: #fff;
+  font-family: Mitr, sans-serif;
+  font-size: 13px;
+  color: #3A3226;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(74, 62, 48, .08);
+}
+
+.bar__date-ic { color: #2F7A46; display: flex; }
+
+/* ---------- ข้อความแจ้งผล และแผงถาม/ให้เลือก (ใช้ร่วมทุกหน้า) ---------- */
+.toast {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 96px;
+  z-index: 40;
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: rgba(35, 48, 31, .94);
+  color: #FFF8E9;
+  font-size: 12.5px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 220ms cubic-bezier(.2, .8, .3, 1), transform 220ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.toast.is-on { opacity: 1; transform: translateY(0); }
+
+.ask { position: absolute; inset: 0; z-index: 50; }
+
+.ask__scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(74, 62, 48, .44);
+  opacity: 0;
+  transition: opacity 320ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.ask.is-on .ask__scrim { opacity: 1; }
+
+.ask__box {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 16px 14px 14px;
+  border-radius: 28px;
+  background: #FDF8F0;
+  box-shadow: 0 14px 34px rgba(74, 62, 48, .28);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 320ms cubic-bezier(.2, .8, .3, 1), transform 320ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.ask.is-on .ask__box { opacity: 1; transform: translateY(0); }
+.ask__title { font-family: Mitr, sans-serif; font-size: 15px; color: #125B2A; padding: 0 4px 4px; }
+.ask__text { font-size: 13px; color: #6B6153; padding: 0 4px 8px; }
+.ask__rows { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; padding: 4px 2px; }
+
+.ask__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 12px;
+  border: 1.5px solid #EFE7D8;
+  border-radius: 16px;
+  background: #fff;
+  font-family: Anuphan, Sarabun, sans-serif;
+  font-weight: 500;
+  font-size: 13.5px;
+  color: #3A3226;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ask__row img { width: 36px; height: 36px; flex: none; object-fit: contain; }
+.ask__row:hover { border-color: #A6BE40; }
+.ask__row:active { transform: scale(.98); }
+.ask__go { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; }
+
+.ask__btn {
+  height: 44px;
+  min-width: 100px;
+  border: 0;
+  border-radius: 14px;
+  background: #1E7A3C;
+  color: #fff;
+  font-family: Mitr, sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ask__btn--off { background: #F2EADC; color: #6B6153; }
+.ask__btn--danger { background: #D4322A; }
+.ask__btn:active { transform: scale(.96); }
+
+/* ช่องกรอกในแผงถาม (ใช้ตอนเพิ่มหมวดใหม่) */
+.ask__box { max-height: calc(100% - 24px); overflow-y: auto; scrollbar-width: none; }
+.ask__box::-webkit-scrollbar { display: none; }
+.ask__form { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 2px; }
+.ask__field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ask__field > span { font-size: 11px; color: #8C8172; padding-left: 3px; }
+
+.ask__field input, .ask__field select {
+  width: 100%;
+  height: 44px;
+  padding: 0 10px;
+  border-radius: 13px;
+  border: 1.5px solid #E3D9C4;
+  background: #fff;
+  font-family: Anuphan, Sarabun, sans-serif;
+  font-weight: 500;
+  font-size: 13.5px;
+  color: #33301F;
+  outline: none;
+}
+
+.ask__field input:focus, .ask__field select:focus { border-color: #A6BE40; box-shadow: 0 0 0 3px rgba(166, 190, 64, .22); }
+.ask__swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.ask__swatch {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1.5px #E3D9C4;
+  cursor: pointer;
+}
+
+.ask__swatch.is-on { box-shadow: 0 0 0 2.5px #33301F; }
+.ask__icons { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+
+.ask__icon {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1.5px solid #EFE7D8;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ask__icon img { width: 100%; height: 100%; object-fit: contain; }
+.ask__icon.is-on { border-color: #1E7A3C; background: #EAF6EC; }
+
+/* ---------- dropdown มีป้ายกำกับ (ui.js dropdownHtml) ใช้ร่วมทุกหน้า ---------- */
+.dd {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 0 28px 0 12px;
+  border-radius: 999px;
+  border: 1.5px solid #DDE7E3;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(18, 63, 53, .06);
+  cursor: pointer;
+}
+
+.dd--block { display: flex; width: 100%; }
+.dd__label { flex: none; font-size: 11px; color: #667B83; white-space: nowrap; }
+.dd__label.is-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+.dd__select {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  font-family: Mitr, sans-serif;
+  font-size: 13px;
+  color: #123F35;
+  padding: 0;
+  outline: none;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.dd > svg { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #667B83; }
+.dd:focus-within { border-color: #A6BE40; box-shadow: 0 0 0 3px rgba(166, 190, 64, .22); }
+
+/* ---------- กราฟแท่ง/เส้นมีแกน (ui.js axisBarChart / axisLineChart) ---------- */
+.ch { display: flex; flex-direction: column; gap: 6px; }
+.ch__legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; font-size: 11px; color: #667B83; }
+.ch__legend span { display: inline-flex; align-items: center; gap: 5px; }
+.ch__legend i { width: 10px; height: 10px; border-radius: 3px; }
+.ch__legend i.is-line { width: 16px; height: 0; border-top: 2px dashed #16A469; border-radius: 0; }
+.ch__body { display: flex; gap: 4px; padding-top: 18px; }
+.ch__y { position: relative; flex: none; width: 32px; height: var(--h); font-size: 10px; color: #667B83; }
+.ch__y > span { position: absolute; right: 4px; transform: translateY(50%); }
+.ch__y > .ch__unit { position: absolute; left: 0; right: auto; top: -17px; transform: none; }
+.ch__plot { position: relative; flex: 1; height: var(--h); border-bottom: 1px solid #D9E2DE; }
+.ch__line { position: absolute; left: 0; right: 0; border-top: 1px solid #EEF2F0; }
+.ch__mean { position: absolute; left: 0; right: 0; z-index: 1; border-top: 2px dashed #16A469; }
+.ch__cols { position: absolute; inset: 0; display: flex; }
+.ch__col { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 3px; padding: 0 3px; min-width: 0; }
+.ch__bar { position: relative; flex: 1; max-width: 26px; min-height: 2px; border-radius: 6px 6px 2px 2px; }
+.ch__bar--none { height: 8px !important; border: 1.5px dashed #C5CFD6; background: transparent !important; }
+.ch__bar b { position: absolute; left: 50%; top: -16px; transform: translateX(-50%); font-family: Mitr, sans-serif; font-weight: 500; font-size: 10.5px; color: #123F35; white-space: nowrap; }
+.ch__x { display: flex; padding-left: 36px; }
+.ch__x em { flex: 1; text-align: center; font-style: normal; font-size: 10px; color: #667B83; }
+.lc { display: block; width: 100%; height: auto; }
+
+
+/* === dashboard-mobile-shell-v2 === */
+@media (max-width: 600px) {
+  body { padding: 0; background: #F8FAF7; display: block; }
+  .app, .app[data-page="home"] {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+/* หน้าเข้าสู่ระบบ: เต็มจอ ไม่มีแถบบนและเมนูล่าง */
+.app--login .app-bar,
+.app--login .nav-host { display: none; }
+.app--login .app-view { padding: 0; }

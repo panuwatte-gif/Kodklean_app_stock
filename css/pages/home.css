@@ -1,0 +1,359 @@
+/* หน้าหลัก (Dashboard) — พื้น #F8FAF7 การ์ดขาว ข้อความหลัก #123F35 ข้อความรอง #4E6771 สีประจำส่วนตามการ์ด
+   ขนาดหลัก = ตามแบบอ้างอิง (กว้าง 794) ส่วนจอแคบใช้ชั้นย่อขนาดท้ายไฟล์ */
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 12px calc(28px + env(safe-area-inset-bottom, 0px));
+  background: #F8FAF7;
+  color: #123F35;
+}
+
+.home__grid { display: grid; grid-template-columns: minmax(0, 1.13fr) minmax(0, .87fr); gap: 14px; }
+.home__cell { min-width: 0; }
+#home-prep { grid-column: 1; }
+#home-rice { grid-column: 2; }
+.home__cell--wide { grid-column: 1 / -1; }
+
+/* ---------- ส่วนหัว ---------- */
+.hhero { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 0; }
+.hhero__row { display: flex; align-items: center; gap: 12px; }
+.hhero__logo { flex: none; width: 188px; height: 58px; object-fit: contain; }
+.hhero__name { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hhero__name b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 26px; line-height: 1.15; color: #125B2A; }
+.hhero__name small { font-size: 15px; line-height: 1.2; color: #4E6771; }
+.hhero__name em { font-style: normal; font-family: Mali, cursive; font-size: 12px; line-height: 1.3; color: #16A469; }
+.hhero .icon-btn { width: 46px; height: 46px; }
+.hhero .icon-btn img { width: 30px; height: 30px; }
+
+.hhero__date {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 12px 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid #DDE7E3;
+  background: #fff;
+  font-family: Mitr, sans-serif;
+  font-size: 16px;
+  color: #123F35;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(18, 63, 53, .06);
+}
+
+.hhero__date svg:first-child { color: #16A469; }
+.hhero__date svg:last-child { color: #4E6771; }
+.hhero__date:active { transform: scale(.97); }
+.hhero__sample { margin-left: auto; font-size: 13.5px; line-height: 1.4; color: #4E6771; text-align: right; white-space: nowrap; }
+
+/* ---------- ประกาศ 2 ใบ ---------- */
+.hnotes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+.hnote {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 104px;
+  padding: 10px 16px 10px 106px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+
+.hnote--coral { background: linear-gradient(120deg, #FFE1E8 0%, #FFF0F3 100%); border-color: #FBC9D4; }
+.hnote--amber { background: linear-gradient(120deg, #FFF0D2 0%, #FFF8E8 100%); border-color: #F7DFAE; }
+/* ตัวการ์ตูนประกาศ: อยู่ซ้ายทั้งสองใบ คร่อมเหลือส่วนล่าง ห้ามคร่อมหัว */
+.hnote__char { position: absolute; left: -2px; top: 0; bottom: auto; width: 92px; height: auto; object-fit: contain; filter: drop-shadow(0 3px 6px rgba(18, 63, 53, .15)); }
+.hnote--amber .hnote__char { order: 0; margin: 0; }
+.hnote__ic { flex: none; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.hnote--coral .hnote__ic { background: #F65C78; }
+.hnote--amber .hnote__ic { background: #ECA529; }
+.hnote__text { flex: 1; font-family: Mitr, sans-serif; font-weight: 500; font-size: 21px; line-height: 1.25; color: #9E1F3D; text-wrap: pretty; }
+.hnote--amber .hnote__text { color: #7A4E00; }
+
+/* ---------- การ์ดทั่วไป ---------- */
+.hc {
+  background: #fff;
+  border-radius: 22px;
+  border: 1px solid #E6ECE9;
+  box-shadow: 0 2px 12px rgba(18, 63, 53, .06);
+  overflow: hidden;
+}
+
+.hc--blue { --accent: #287DEB; }
+.hc--lavender { --accent: #8B6DD7; }
+.hc--teal { --accent: #10A589; }
+.hc--rose { --accent: #F5637E; }
+.hc--green { --accent: #16A469; }
+.hc--gold { --accent: #D69B26; }
+
+.hc__head { position: relative; display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px 10px; overflow: hidden; }
+.hc__head--blue { background: linear-gradient(110deg, #E3EEFD 0%, #F1F6FE 100%); }
+.hc__head--lavender { background: linear-gradient(110deg, #ECE6FB 0%, #F6F2FE 100%); }
+.hc__head--teal { background: linear-gradient(110deg, #DAF3EC 0%, #EEFAF6 100%); }
+.hc__head--rose { background: linear-gradient(110deg, #FFE3E9 0%, #FFF1F4 100%); }
+.hc__head--green { background: linear-gradient(110deg, #DCF4E7 0%, #EEFAF3 100%); }
+.hc__head--gold { background: linear-gradient(110deg, #FBEED3 0%, #FEF7E8 100%); }
+/* ตัวการ์ตูน: คร่อมเหลือสะเอาทิ้ง เหนือหัวห้ามคร่อม — หัวการ์ดจึงเตี้ยลงไม่ต้องสูงเท่าตัวการ์ตูน */
+.hc__head--left { padding-left: 104px; min-height: 78px; }
+/* dropdown บนหน้าหลักไม่โชว์คำกำกับ (ตามแบบอ้างอิง) แต่ยังอ่านด้วยโปรแกรมอ่านหน้าจอได้ */
+.home .dd__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.hc__head--right { padding-right: 104px; min-height: 78px; }
+/* กำหนดตัวการ์ตูนด้วย "ความกว้าง" ทุกตัว ช่องว่างจึงเท่ากันเสมอ ไม่ชนตัวหนังสือ — ส่วนเกินหัวการ์ดโดนครอบทิ้ง (หัวไม่โดนตัด) */
+.hc__char { position: absolute; top: 3px; width: 86px; height: auto; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(18, 63, 53, .16)); }
+.hc__char--left { left: 2px; }
+.hc__char--right { right: 2px; }
+.hc__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hc__title { font-family: Mitr, sans-serif; font-weight: 500; font-size: 18px; line-height: 1.25; color: #123F35; text-wrap: pretty; }
+.hc__big { font-family: Mitr, sans-serif; font-weight: 500; font-size: 21px; line-height: 1.2; color: var(--accent); }
+.hc__sub { font-size: 14px; line-height: 1.4; color: #4E6771; text-wrap: pretty; }
+.hc__tools { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: 46%; }
+.hc__hint { font-size: 12.5px; color: #4E6771; text-align: right; }
+.hc__body { padding: 12px 14px 14px; }
+.hc__panel { margin: 0 14px 14px; padding: 12px; border-radius: 16px; background: #F5F9F7; }
+.hc__subhead { margin-bottom: 8px; }
+.hc__subhead b { display: block; font-family: Mitr, sans-serif; font-weight: 500; font-size: 17px; color: #123F35; }
+.hc__subhead small { display: block; font-size: 13px; color: #4E6771; }
+.hc__subhead--row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
+.hc__note { margin: 10px 0 0; font-size: 13px; line-height: 1.45; color: #4E6771; text-wrap: pretty; }
+.hc__note--pad { padding: 0 14px 12px; margin: 0; }
+.hc__empty { margin: 0; padding: 18px 0; text-align: center; font-size: 16px; color: #4E6771; }
+
+/* ---------- เตรียมของพรุ่งนี้ ---------- */
+.hprep { padding: 4px 14px 12px; }
+.hprep__tools { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 8px 0 4px; }
+.hprep__tools .hc__hint { flex: 1; text-align: left; }
+.hprep__row { display: grid; grid-template-columns: 30px minmax(0, 1fr) 96px; align-items: center; gap: 8px; min-height: 54px; border-bottom: 1px solid #EEF2F0; }
+.hprep__row.has-who { grid-template-columns: 30px minmax(0, 1fr) 84px 76px; }
+.hprep__row--head { min-height: 34px; font-size: 13px; color: #4E6771; }
+.hprep__row--head span:first-child, .hprep__rank { text-align: center; }
+.hprep__row--head span:nth-child(3), .hprep__qty { text-align: right; }
+.hprep__rank { font-family: Mitr, sans-serif; font-size: 17px; color: var(--accent); }
+.hprep__name { display: flex; align-items: center; gap: 8px; font-size: 18px; color: #123F35; min-width: 0; }
+.hprep__name img { flex: none; width: 42px; height: 30px; object-fit: contain; }
+.hprep__qty { font-family: Mitr, sans-serif; white-space: nowrap; }
+.hprep__qty b { font-weight: 500; font-size: 22px; color: var(--accent); }
+.hprep__qty em { font-style: normal; font-size: 14px; color: #4E6771; margin-left: 4px; }
+.hprep__who { font-size: 14px; color: #4E6771; }
+.hprep__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; font-size: 13.5px; color: #4E6771; }
+.hprep__pager { display: flex; gap: 6px; }
+
+.hprep__pager button {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1.5px solid #DDE7E3;
+  background: #fff;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.hprep__pager button:disabled { opacity: .35; cursor: default; }
+.hprep__pager button:not(:disabled):active { transform: scale(.96); }
+
+/* ---------- หุงข้าว 3 กลุ่ม ---------- */
+.hrice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 12px 12px 6px; }
+
+.hrice__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 6px 12px;
+  border-radius: 16px;
+  background: #F6F2FE;
+  text-align: center;
+}
+
+.hrice__group { font-family: Mitr, sans-serif; font-weight: 500; font-size: 17px; color: #123F35; }
+.hrice__col img { height: 54px; width: auto; object-fit: contain; }
+.hrice__col .dd { width: 100%; min-height: 38px; padding-left: 6px; padding-right: 17px; }
+.hrice__col .dd__select { width: 100%; flex: 1 1 auto; font-size: 13px; }
+.hrice__col .dd > svg { right: 4px; width: 12px; height: 12px; }
+.hrice__val { font-size: 14px; color: #4E6771; }
+.hrice__val b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 17px; color: #123F35; }
+.hrice__pot { font-family: Mitr, sans-serif; font-weight: 500; font-size: 17px; color: var(--accent); }
+.hrice__split { font-style: normal; font-size: 13px; color: #4E6771; }
+.hrice__none { font-style: normal; font-size: 13px; color: #A35A00; }
+
+/* ---------- ใช้ไปเท่าไหร่ ---------- */
+#home-usage { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 14px; align-items: stretch; }
+.huse { position: relative; }
+.huse__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.hkpi { flex: none; text-align: right; }
+.hkpi small { display: block; font-size: 14px; color: #4E6771; }
+.hkpi b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 28px; line-height: 1.1; color: #123F35; }
+.hkpi em { font-style: normal; font-size: 15px; color: #4E6771; margin-left: 4px; }
+.hkpi__none { font-size: 15px; color: #A35A00; }
+/* legend ของกราฟอยู่ใต้กราฟ ไม่เหลือที่ว่างไว้ */
+.home .ch__legend { order: 2; }
+
+.htop { display: flex; flex-direction: column; }
+.htop__body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+.htop__row { display: grid; grid-template-columns: 24px 38px minmax(0, 74px) minmax(0, 1fr) 62px; align-items: center; gap: 6px; min-height: 46px; }
+.htop__rank { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: #FDE2E7; color: #D6284F; font-family: Mitr, sans-serif; font-size: 13.5px; }
+.htop__row img, .hleft__row img { width: 38px; height: 28px; object-fit: contain; }
+.htop__name { font-size: 16px; color: #123F35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.htop__bar { height: 12px; border-radius: 6px; background: #E3EFEA; overflow: hidden; }
+.htop__bar i { display: block; height: 100%; border-radius: 6px; background: var(--accent); }
+.htop__val { font-family: Mitr, sans-serif; font-size: 16.5px; color: #123F35; text-align: right; white-space: nowrap; }
+.htop__val em { font-style: normal; font-size: 13px; color: #4E6771; }
+
+/* ---------- ยอดคงเหลือภาพรวม ---------- */
+.hleft__tools { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.hleft__desc { margin: 8px 0; font-size: 14px; color: #4E6771; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: #F1F4F2; border: 1px solid #E6ECE9; }
+
+.seg__btn {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-family: Mitr, sans-serif;
+  font-size: 14.5px;
+  color: #4E6771;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.seg__btn.is-on { background: var(--accent); color: #fff; }
+.hleft__row { display: grid; grid-template-columns: 22px 38px minmax(0, 1fr); grid-template-areas: 'rank img name' '. stats stats'; align-items: center; gap: 4px 6px; padding: 8px 0; border-bottom: 1px solid #E9EFEC; }
+.hleft__row:last-of-type { border-bottom: 0; }
+.hleft__row .htop__rank { grid-area: rank; }
+.hleft__row img { grid-area: img; }
+.hleft__row .htop__name { grid-area: name; font-size: 16px; }
+.hleft__stats { grid-area: stats; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.hleft__stats span { display: flex; flex-direction: column; }
+.hleft__stats small { font-size: 12.5px; color: #4E6771; }
+.hleft__stats b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 17px; color: #123F35; white-space: nowrap; }
+.hleft__stats b i { font-style: normal; font-size: 13px; color: #4E6771; }
+.hleft__stats b i.is-none { color: #A35A00; }
+
+/* ---------- ลดของเหลือ = ลดต้นทุน ---------- */
+.hsave__head { display: block; font-size: 15px; color: #4E6771; }
+.hsave__amount { display: block; font-family: Mitr, sans-serif; font-weight: 500; font-size: 32px; line-height: 1.15; color: #16A469; }
+.hsave--worse .hsave__amount { color: #D6284F; }
+.hsave__cmp { display: block; font-size: 13px; color: #4E6771; }
+.hsave__tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0 10px; }
+.htile { padding: 10px 8px; border-radius: 14px; background: #F5F9F7; text-align: center; }
+.htile small { display: block; font-size: 13px; color: #4E6771; }
+.htile b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 20px; color: #123F35; }
+.htile--pct { background: #DCF4E7; }
+.htile--pct b { color: #16A469; }
+.htile--pct.is-worse { background: #FFE3E9; }
+.htile--pct.is-worse b { color: #D6284F; }
+
+/* ---------- ยอดขายเทียบเป้าหมาย ---------- */
+.hsales { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px 14px 4px; }
+.hsales__note { padding: 0 14px 12px; margin: 0; }
+
+.hstore {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid #EEF2F0;
+  background: #FFFDF8;
+}
+
+.hstore__logo { height: 48px; width: auto; max-width: 100%; object-fit: contain; align-self: flex-start; margin-bottom: 4px; }
+.hstore__name { font-size: 13.5px; color: #4E6771; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hstore__val { font-family: Mitr, sans-serif; font-weight: 500; font-size: 20px; color: #123F35; }
+.hstore__target { font-size: 13px; color: #4E6771; }
+.hstore__bar { display: block; height: 10px; margin-top: 4px; border-radius: 5px; background: #EEF2F0; overflow: hidden; }
+.hstore__bar i { display: block; height: 100%; border-radius: 5px; background: var(--brand); }
+.hstore__pct { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: var(--brand); text-align: right; }
+
+/* ---------- ส่งพระราม 9 ---------- */
+.hr9__top { display: flex; align-items: center; gap: 12px; }
+.hr9__truck { flex: none; width: 132px; height: auto; object-fit: contain; }
+.hr9__stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.hr9__stat { padding: 8px 10px; border-radius: 14px; background: #EEFAF3; min-width: 0; }
+.hr9__stat--main { grid-column: 1 / -1; }
+.hr9__stat small { display: block; font-size: 13px; color: #4E6771; }
+.hr9__stat b { display: block; font-family: Mitr, sans-serif; font-weight: 500; font-size: 23px; line-height: 1.2; color: #16A469; }
+.hr9__stat b i { font-style: normal; font-size: 14px; color: #4E6771; }
+.hr9__stat b.is-text { font-size: 16px; color: #123F35; }
+.hr9__stat em { display: block; font-style: normal; font-size: 12.5px; color: #4E6771; }
+
+.hr9__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 0 8px 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid #CFE8DA;
+  background: #fff;
+  font-family: Mitr, sans-serif;
+  font-size: 13px;
+  color: #16A469;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.hr9__btn svg { transform: rotate(-90deg); }
+.hr9__btn:active { transform: scale(.96); }
+
+/* ---------- โครง 2 คอลัมน์ของการ์ดใหญ่ (ตามแบบอ้างอิง): กราฟซ้าย — สรุปขวา ---------- */
+.huse__body { min-width: 0; }
+
+.hsave__body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+.hsave__left, .hsave__right { min-width: 0; }
+.hsave__right .hc__subhead { margin: 0 0 4px; }
+.hsave__note { grid-column: 1 / -1; margin: 0; }
+
+.hr9__body { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+.hr9__right { min-width: 0; }
+.hr9__right .hc__subhead--row { margin: 0 0 4px; }
+
+/* ตาราง 5 เมนูที่เหลือมากสุด: หัวตารางครั้งเดียว แถวข้อมูลเห็นเฉพาะตัวเลข */
+.hleft__row { grid-template-columns: 30px 44px minmax(0, 1fr) minmax(0, 2.1fr); grid-template-areas: 'rank img name stats'; gap: 8px; padding: 7px 0; }
+.hleft__row--head { min-height: 34px; font-size: 13.5px; color: #4E6771; }
+.hleft__row--head .htop__name { color: #4E6771; }
+.hleft__stats span { align-items: center; text-align: center; }
+.hleft__row:not(.hleft__row--head) .hleft__stats small { display: none; }
+.hleft .hc__tools { flex-direction: row; align-items: center; gap: 10px; max-width: 60%; }
+
+/* การ์ดร้าน: โลโก้ซ้าย ยอด/เป้าขวา แท่งและ % แถวล่าง */
+.hstore {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 66px;
+  grid-template-areas: 'logo value target' 'logo bar pct';
+  gap: 6px 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 18px;
+}
+
+.hstore__logo { grid-area: logo; width: 88px; height: 52px; margin: 0; align-self: center; }
+.hstore__name { display: none; }
+.hstore__val { grid-area: value; font-size: 24px; line-height: 1.1; }
+.hstore__target { grid-area: target; font-size: 13.5px; text-align: right; white-space: nowrap; }
+.hstore__bar { grid-area: bar; height: 12px; margin: 0; border-radius: 6px; }
+.hstore__pct { grid-area: pct; font-size: 19px; }
+
+/* ==========================================================================
+   หน้าหลักเป็นมือถือเหมือนทุกหน้า
+   วาดตามแบบอ้างอิงที่กว้าง 794 แล้ว "ย่อทั้งหน้า" ด้วย zoom ให้พอดีความกว้างจอมือถือ
+   สัดส่วนทุกอย่างจึงเหมือน reference เป๊ะๆ — ค่า --hz ตั้งจาก js/pages/home.js
+   ========================================================================== */
+
+.app[data-page="home"] .app-view { background: #F8FAF7; }
+
+.home { width: 794px; zoom: var(--hz, 1); }
+
+/* เบราว์เซอร์เก่าที่ไม่รู้จัก zoom: ให้ไหลเต็มจอแทน (ตัวหนังสือใหญ่ขึ้น แต่ไม่ล้นจอ) */
+@supports not (zoom: 1) {
+  .home { width: 100%; }
+}

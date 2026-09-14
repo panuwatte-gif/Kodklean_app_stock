@@ -1,0 +1,3 @@
+/* หน้าเกมหมู่บ้านอิ่มใจ: ให้กล่องเกมเต็มพื้นที่ระหว่างแถบบนกับเมนูล่าง */
+.village { height: 100%; min-height: 0; background: #FDF8F0; }
+.village__frame { display: block; width: 100%; height: 100%; border: 0; }

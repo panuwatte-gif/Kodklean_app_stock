@@ -1,0 +1,8 @@
+{
+  "url": "https://qxhvmrxbrrweundfspzp.supabase.co",
+  "rest": "/rest/v1/",
+  "storage": "/storage/v1/object/",
+  "bucket": "game-media",
+  "scheme": "Bearer",
+  "key": "sb_publishable_Lwu-iFC-U7VWXkEyEO9Azg_4SJmm_J1"
+}

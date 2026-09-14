@@ -1,0 +1,83 @@
+@import url("https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Sarabun:wght@400;500&family=Padauk:wght@400;700&display=swap");
+/* เกมหมู่บ้านอิ่มใจ — จอมือถือเท่านั้น กว้างสุด 430px */
+:root{
+  --green:#125B2A; --lime:#A6BE40; --gold:#F7C346; --coral:#FE9B96; --blue:#347CD5;
+  --peri:#9BBFE8; --sky:#A3E4F6; --lav:#A27ED7; --cream:#FEE7BA; --paper:#FDF8F0;
+  --ink:#3B3226; --muted:#9A8E7E; --line:#EDE2D0; --card:#fff;
+  --shadow:0 2px 10px rgba(74,62,48,.09); --pill:999px;
+  color-scheme: light;   /* กันเครื่องที่ตั้งโหมดมืด ทำให้ตัวหนังสือในปุ่ม/ช่องกรอกกลายเป็นสีขาว */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:#2b2b2b;font-family:'Mitr','Sarabun',system-ui,sans-serif;color:var(--ink)}
+/* อยู่ในกรอบของ app_stock ก็สูงเท่ากรอบ เปิดเดี่ยวๆ ก็เต็มจอ */
+#app{position:relative;display:flex;flex-direction:column;width:100%;max-width:430px;height:100%;min-height:100dvh;margin:0 auto;background:var(--paper);overflow:hidden}
+html,body{height:100%}
+#rainbow{flex:0 0 6px;background:linear-gradient(90deg,#FE9B96,#F7C346,#A6BE40,#A3E4F6,#347CD5,#9BBFE8,#A27ED7)}
+#screen{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#nav{flex:0 0 auto}
+
+/* แถบบน: ชื่อ+วัย ซ้าย / อาหาร+WP ขวา / ปุ่มสลับภาษา */
+.top{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--green);color:#fff}
+.top__name{font-size:15px;font-weight:500;line-height:1.2}
+.top__stage{font-size:11px;opacity:.85}
+.top__sp{flex:1}
+.chip{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.16);border-radius:var(--pill);padding:4px 10px;font-size:13px;font-weight:500}
+.chip img{width:18px;height:18px;object-fit:contain}
+.lang{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:var(--pill);padding:6px 12px;font:inherit;font-size:12px;min-height:44px;cursor:pointer}
+.lang--dark{background:#fff;color:var(--green);box-shadow:var(--shadow)}
+
+/* แถบล่าง 5 ปุ่ม */
+.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:#fff;border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.nav button{border:0;background:none;font:inherit;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;min-height:56px;cursor:pointer;position:relative}
+.nav button.on{color:var(--green);font-weight:600}
+.nav img{width:26px;height:26px;object-fit:contain}
+.nav .dot{position:absolute;top:2px;right:calc(50% - 20px);width:9px;height:9px;border-radius:50%;background:#E0453C}
+
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:16px;margin:12px 14px}
+.btn{display:block;width:100%;min-height:56px;border:0;border-radius:18px;background:var(--green);color:#fff;font:inherit;font-size:17px;font-weight:500;cursor:pointer;transition:transform .14s}
+.btn:active{transform:scale(.96)}
+.btn[disabled]{background:#CFC6B6;color:#fff}
+.btn--gold{background:var(--gold);color:#4A3E30}
+.bar{height:9px;border-radius:var(--pill);background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:var(--pill);background:linear-gradient(90deg,var(--lime),var(--green))}
+.h{font-size:18px;font-weight:500;margin:0 0 4px}
+.sub{font-size:12px;color:var(--muted);margin:0}
+.sprite{display:inline-block;background-repeat:no-repeat;flex:0 0 auto;vertical-align:bottom}
+
+/* ล็อกอิน */
+.login{padding:26px 22px;text-align:center}
+.login__logo{width:132px;height:132px;margin:0 auto}
+.pinrow{display:flex;justify-content:center;gap:12px;margin:16px 0}
+.pinrow i{width:16px;height:16px;border-radius:50%;background:var(--line);display:block}
+.pinrow i.on{background:var(--green)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+.pad button{min-height:58px;border:1.5px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);font:inherit;font-size:22px;cursor:pointer}
+.pad button:active{background:var(--cream)}
+.who{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.who button{border:1.5px solid var(--line);border-radius:16px;background:#fff;color:var(--ink);font:inherit;font-size:13px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}
+.who button.on{border-color:var(--green);background:#EAF3EC}
+
+/* หมู่บ้าน: ผืนกว้าง เลื่อนแนวนอน */
+.map{position:relative;height:100%;overflow-x:auto;overflow-y:hidden;background:#BFE3F2}
+.map__in{position:relative;height:100%;background-size:auto 100%;background-repeat:repeat-x}
+.spot{position:absolute;bottom:0;display:flex;flex-direction:column;align-items:center;background:none;border:0;padding:0;cursor:pointer;font:inherit}
+.plate{background:rgba(253,248,240,.94);border-radius:var(--pill);padding:3px 12px;font-size:12px;font-weight:500;color:var(--green);white-space:nowrap;box-shadow:var(--shadow)}
+.stack{display:flex;align-items:flex-end;gap:-6px}
+
+/* ป๊อปอัป */
+.scrim{position:absolute;inset:0;background:rgba(74,62,48,.44);display:flex;align-items:flex-end;z-index:20}
+.modal{width:100%;background:var(--paper);border-radius:28px 28px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:86%;overflow-y:auto}
+.toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);background:rgba(59,50,38,.94);color:#fff;padding:10px 18px;border-radius:var(--pill);font-size:14px;z-index:40}
+
+/* แอดมิน */
+.tabs{display:flex;gap:6px;padding:10px 14px 0;overflow-x:auto}
+.tabs button{border:0;background:#fff;border-radius:var(--pill);padding:8px 14px;font:inherit;font-size:13px;color:var(--muted);white-space:nowrap;min-height:40px;cursor:pointer;box-shadow:var(--shadow)}
+.tabs button.on{background:var(--green);color:#fff}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border-bottom:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px}
+.pcell{background:#fff;border-radius:14px;padding:8px;text-align:center;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:2px}
+.pcell small{display:block;font-size:9px;color:var(--muted);word-break:break-all;line-height:1.3}
+textarea,select,input{width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1.5px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);min-height:44px}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}

@@ -1,0 +1,32 @@
+<!-- หน้าเข้าสู่ระบบ: เลือกตัวละครของตัวเอง แล้วใส่ PIN -->
+<section class="login" id="login">
+  <div class="login__art">
+    <img class="login__pill login__pill--l" src="assets/login/pill-left.webp" alt="" width="44" height="92" decoding="async">
+    <img class="login__pill login__pill--r" src="assets/login/pill-right.webp" alt="" width="44" height="89" decoding="async">
+    <img class="login__script" src="assets/login/script-hphw.webp" alt="Healthy People Healthy World" width="72" height="117" decoding="async">
+    <img class="login__logo" src="assets/login/logo-lockup.webp" alt="KodKlean Group" width="168" height="137" decoding="async">
+    <p class="login__tagline">Healthy &nbsp;·&nbsp; Delicious &nbsp;·&nbsp; Trusted</p>
+    <img class="login__brands" src="assets/login/brand-row.webp" alt="5% ข้าวมันไก่ · ลูกสาวทำเอง · RE:DRINK · กะเพราโคตรคลีน" width="330" height="74" decoding="async">
+    <img class="login__family" src="assets/login/family.webp" alt="" width="410" height="290" decoding="async">
+  </div>
+
+  <div class="login__panel">
+    <p class="login__title">เข้าสู่ระบบ</p>
+    <p class="login__sub" id="login-sub">เลือกตัวละครที่คุณต้องการใช้เข้าสู่ระบบ</p>
+
+    <div class="login__cast" id="login-cast"></div>
+
+    <div class="login__pin">
+      <span class="login__lock" aria-hidden="true"></span>
+      <input class="login__input" id="login-pin" type="password" inputmode="numeric" maxlength="4"
+             autocomplete="off" placeholder="รหัสผ่าน / PIN">
+      <button class="login__eye" id="login-eye" type="button" aria-label="ดูรหัส"></button>
+    </div>
+
+    <button class="login__go" id="login-go" type="button" disabled>เข้าสู่แอป</button>
+    <p class="login__err" id="login-err" hidden></p>
+    <p class="login__forgot">ลืมรหัสผ่าน? แจ้งหัวหน้างาน</p>
+  </div>
+
+  <p class="login__foot">KODKLEAN GROUP<br><span>HEALTHY PEOPLE &nbsp;·&nbsp; HEALTHY WORLD</span></p>
+</section>

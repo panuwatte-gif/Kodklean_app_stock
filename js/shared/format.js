@@ -27,6 +27,11 @@ export function amountSmall(value, unit) {
   return unit === 'กก.' ? weight(value) : count(value);
 }
 
+// ตัวเลขผลนับสต๊อก: ช่องว่าง = ยังไม่ได้นับ แสดงขีด (ห้ามแปลงเป็น 0)
+export function qtyOrDash(value, unit) {
+  return value === null || value === undefined || value === '' ? '–' : amount(value, unit);
+}
+
 // วันที่แบบไทยย่อ พ.ศ. เช่น 2 ก.ย.
 const TH_MONTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 

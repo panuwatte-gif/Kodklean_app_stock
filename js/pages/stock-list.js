@@ -1,17 +1,21 @@
-// การวาดชิ้นส่วนของหน้าสต๊อกเท่านั้น (แถบสลับ การ์ดสรุป ปุ่มจัดการ หมวดหมู่ รายการ)
-import { STOCK_TABS, STOCK_ACTIONS, STOCK_STATUS, STOCK_ROW_TOOLS, CAT_ALL } from '../shared/config.js';
-import { editRowHtml } from './stock-edit.js';
-import { stockByPlace, stockStatus } from '../shared/calc.js';
-import { amount, amountSmall } from '../shared/format.js';
+// การวาดชิ้นส่วนบนของหน้านับสต๊อกเท่านั้น (เจ้าของงาน แถบสลับ การ์ดสรุป ความคืบหน้า ตัวกรอง หมวด)
+import { STOCK_TABS, STOCK_GROUPS, STOCK_ITEM_ACTIONS, STOCK_COUNT_UI as T, CAT_ALL } from '../shared/config.js';
+import { countProgress } from '../shared/calc.js';
+import { fillText } from '../shared/format.js';
 import { glyph } from '../shared/ui.js';
 
-// รายชื่อหมวดที่หน้านี้กำลังใช้ (ตั้งค่าจาก stock.js ทุกครั้งที่ข้อมูลหมวดเปลี่ยน)
-let cats = [], subs = [];
-export function setLists(nextCats, nextSubs) { cats = nextCats; subs = nextSubs; }
+// หาข้อมูลหมวดจากชื่อหมวดในฐาน (ไม่เจอ = ใช้ชิปกลางๆ)
+export const groupOf = id => STOCK_GROUPS.find(g => g.id === id) || { ...CAT_ALL, id, label: id };
 
-// หาข้อมูลหมวดหลัก/หมวดย่อยจาก id
-export const catOf = id => cats.find(c => c.id === id) || CAT_ALL;
-export const subOf = id => subs.find(s => s.id === id);
+// แถบบอกว่าใครกำลังนับ และรับผิดชอบงานไหน (ทุกหน้าต้องบอกคนรับผิดชอบ)
+export function whoHtml(me, jobs) {
+  return `
+    <img class="stk__who-av" src="assets/login/avatar-${me.avatar}.webp" alt="${me.name}" width="34" height="34" decoding="async">
+    <div class="stk__who-text">
+      <div class="stk__who-name">${me.name}</div>
+      <div class="stk__who-role">${jobs.length ? jobs.join(' · ') : T.noWork}</div>
+    </div>`;
+}
 
 // แถบสลับมุมมอง: สต๊อกรวม / ครัวกลาง / คอนโด
 export function tabsHtml(view) {
@@ -19,12 +23,13 @@ export function tabsHtml(view) {
     <button class="stk-tab${t.id === view.tab ? ' is-on' : ''}" type="button" data-tab="${t.id}">${t.label}</button>`).join('');
 }
 
-// การ์ดสรุปยอดของวัน 3 ช่อง
-export function sumHtml(sum) {
+// การ์ดสรุปของวัน 3 ช่อง: ต้องนับ / นับแล้ว / ยังไม่นับ
+export function sumHtml(rows) {
+  const p = countProgress(rows);
   const cells = [
-    { label: 'ทั้งหมด', value: sum.all, color: '#1E7A3C' },
-    { label: 'ใกล้หมด', value: sum.low, color: '#D9822B' },
-    { label: 'หมด', value: sum.out, color: '#D4322A' }
+    { label: T.cellAll, value: p.all, color: '#1E7A3C' },
+    { label: T.cellDone, value: p.done, color: '#2F7A46' },
+    { label: T.cellLeft, value: p.left, color: '#D9822B' }
   ];
   return cells.map(c => `
     <div class="stk-cell" style="--c:${c.color}">
@@ -34,88 +39,53 @@ export function sumHtml(sum) {
     </div>`).join('');
 }
 
-// แถวปุ่มจัดการรายการ (ปุ่มที่กำลังเปิดโหมดอยู่จะติดสี)
-export function actionsHtml(view) {
-  return STOCK_ACTIONS.map(a => `
+// เส้นความคืบหน้า: กรอกครบเท่าไหร่จากทั้งหมด
+export function progressHtml(rows) {
+  const p = countProgress(rows);
+  return `
+    <div class="stk-prog__top">
+      <span>${fillText(T.progress, p)}</span>
+      <em class="stk-prog__pct">${p.pct}%</em>
+    </div>
+    <div class="stk-prog__bar"><i style="width:${p.pct}%"></i></div>`;
+}
+
+// ปุ่มตัวกรอง: งานของฉัน / เฉพาะที่ยังไม่นับ / ยกเลิกตัวกรองทั้งหมด
+export function filtersHtml(view, jobs) {
+  const chip = (id, label, on, color, tint, ic) => `
+    <button class="stk-act${on ? ' is-on' : ''}" type="button" data-filter="${id}" style="--c:${color};--t:${tint}">
+      <span class="stk-act__ic">${glyph(ic, 18)}</span>${label}
+    </button>`;
+  const rows = [];
+  if (jobs.length) rows.push(chip('mine', T.mine, view.mine, '#2FA36B', '#E7F6EE', 'check'));
+  rows.push(chip('left', T.onlyLeft, view.left, '#E08A2E', '#FDF1DF', 'filter'));
+  if (view.mine || view.left || view.grp !== 'all' || view.q) rows.push(chip('clear', T.clear, false, '#4C8FD8', '#EAF3FC', 'eye'));
+  return rows.join('');
+}
+
+// แถบสูตร: คอนโด = สต๊อกรวม − ครัวกลาง (ให้พนักงานอ่านวิธีคิดได้จากหน้าจอ)
+export function formulaHtml() {
+  return `
+    <span class="stk-fx__c" style="--c:#8A5510;--t:#FDF0D8">${T.formulaSum}</span>
+    <b class="stk-fx__op">−</b>
+    <span class="stk-fx__c" style="--c:#2F7A46;--t:#E7F4E9">${T.formulaK}</span>
+    <b class="stk-fx__op">=</b>
+    <span class="stk-fx__c stk-fx__c--sum" style="--c:#2F63C9;--t:#EAF2FD">${T.formulaC}</span>`;
+}
+
+// ปุ่มจัดการรายการ: เพิ่ม / แก้ไข / ลบ / สลับตำแหน่ง (ปุ่มที่เปิดโหมดอยู่จะติดสี)
+export function itemActionsHtml(view) {
+  return STOCK_ITEM_ACTIONS.map(a => `
     <button class="stk-act${a.id === view.mode ? ' is-on' : ''}" type="button" data-act="${a.id}" style="--c:${a.color};--t:${a.tint}">
       <span class="stk-act__ic">${glyph(a.glyph, 18)}</span>${a.label}
     </button>`).join('');
 }
 
-// แถวหมวดหมู่หลัก และหมวดย่อยของหมวดที่เลือก
-export function catsHtml(view) {
-  return [CAT_ALL].concat(cats).map(c => `
-    <button class="stk-chip${c.id === view.cat ? ' is-on' : ''}" type="button" data-cat="${c.id}" style="--c:${c.color};--t:${c.tint}">
+// แถวชิปหมวด (เฉพาะหมวดที่มีรายการอยู่จริง)
+export function catsHtml(view, rows) {
+  const used = STOCK_GROUPS.filter(g => rows.some(r => r.grp === g.id));
+  return [CAT_ALL].concat(used).map(c => `
+    <button class="stk-chip${c.id === view.grp ? ' is-on' : ''}" type="button" data-grp="${c.id}" style="--c:${c.color};--t:${c.tint}">
       <img src="${c.icon}" alt="" width="23" height="23" loading="lazy" decoding="async">${c.label}
     </button>`).join('');
-}
-
-export function subsHtml(view) {
-  const rows = subs.filter(s => s.cat === view.cat);
-  if (!rows.length) return '';
-  const head = catOf(view.cat);
-  return `<button class="stk-chip stk-chip--sm is-on" type="button" data-sub="" style="--c:${head.color};--t:${head.tint}"><img src="${head.icon}" alt="" width="19" height="19" loading="lazy" decoding="async">${head.label}</button>`
-    + rows.map(s => `
-    <button class="stk-chip stk-chip--sm${s.id === view.sub ? ' is-pick' : ''}" type="button" data-sub="${s.id}" style="--c:${head.color};--t:${head.tint}">
-      <img src="${s.icon}" alt="" width="19" height="19" loading="lazy" decoding="async">${s.label}
-    </button>`).join('');
-}
-
-// แถวรายการ 1 รายการในสต๊อก
-function rowHtml(item, view) {
-  if (view.edit === item.id) return editRowHtml(item, cats, subs);
-  const cat = catOf(item.cat);
-  const status = STOCK_STATUS[stockStatus(item)];
-  const tag = subOf(item.sub) || cat;
-  const tools = view.mode === 'sort'
-    ? ['up', 'down'].map(dir => `
-      <button class="stk-tool" type="button" aria-label="ย้าย" data-tool="${dir}" style="--c:#4C8FD8;--t:#EAF3FC">${glyph(dir, 16)}</button>`).join('')
-    : STOCK_ROW_TOOLS.map(t => `
-      <button class="stk-tool" type="button" aria-label="${t.label}" data-tool="${t.id}" style="--c:${t.color};--t:${t.tint}">${glyph(t.glyph, 16)}</button>`).join('');
-  return `
-    <li class="stk-row" data-id="${item.id}">
-      <span class="stk-row__grip">${glyph('grip', 16)}</span>
-      <span class="stk-row__thumb"><img src="${item.photo}" alt="${item.name}" width="37" height="37" loading="lazy" decoding="async"></span>
-      <div class="stk-row__info">
-        <div class="stk-row__top">
-          <span class="stk-row__name">${item.name || 'รายการใหม่'}</span>
-          <span class="stk-row__tag" style="--c:${cat.color};--t:${cat.tint}">${tag.label}</span>
-        </div>
-        <div class="stk-row__where">
-          <span>${glyph('pin', 11)} ครัวกลาง ${amountSmall(item.kitchen, item.unit)} ${item.unit}</span>
-          <span>${glyph('pin', 11)} คอนโด ${amountSmall(item.condo, item.unit)} ${item.unit}</span>
-        </div>
-      </div>
-      <div class="stk-row__qty">
-        <span class="stk-row__num">${amount(stockByPlace(item, view.tab), item.unit)}<i>${item.unit}</i></span>
-        ${status ? `<span class="stk-row__badge" style="--c:${status.color};--t:${status.tint}">${status.label}</span>` : ''}
-      </div>
-      <div class="stk-row__tools">${tools}</div>
-    </li>`;
-}
-
-// จัดรายการเป็นกลุ่ม "หมวดหลัก > หมวดย่อย" ตามลำดับที่พบ
-export function groupsHtml(items, view) {
-  const groups = [];
-  items.forEach(item => {
-    const key = `${item.cat}|${item.sub || ''}`;
-    let g = groups.find(x => x.key === key);
-    if (!g) {
-      const cat = catOf(item.cat);
-      const sub = subOf(item.sub);
-      g = { key, cat, label: sub ? `${cat.label} > ${sub.label}` : cat.label, rows: [] };
-      groups.push(g);
-    }
-    g.rows.push(item);
-  });
-  return groups.map(g => `
-    <section class="stk-group${view.closed[g.key] ? ' is-closed' : ''}" style="--c:${g.cat.color};--t:${g.cat.tint}">
-      <button class="stk-group__head" type="button" data-group="${g.key}">
-        <img src="${g.cat.icon}" alt="" width="20" height="20" loading="lazy" decoding="async">
-        <span class="stk-group__name">${g.label}</span>
-        <span class="stk-group__count">${g.rows.length} <em>รายการ</em></span>
-        <span class="stk-group__caret">${glyph('chevron', 18)}</span>
-      </button>
-      <ul class="stk-group__rows">${g.rows.map(item => rowHtml(item, view)).join('')}</ul>
-    </section>`).join('');
 }

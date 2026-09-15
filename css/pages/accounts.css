@@ -1,0 +1,108 @@
+/* หน้าบัญชีและรหัสผ่าน — แถวบัญชีบนกระจก (ใช้โครงพื้นหลังจาก css/glass.css) */
+.acc__note {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 12px;
+  padding: 9px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .75);
+  background: rgba(255, 255, 255, .52);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9);
+  font-size: 12px;
+  color: #3E4654;
+}
+
+.acc__list { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 10px; }
+
+.acc {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, .72);
+  background: linear-gradient(152deg, rgba(255, 255, 255, .80), rgba(255, 255, 255, .46));
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow: 0 10px 22px rgba(46, 63, 92, .12), inset 0 1px 0 rgba(255, 255, 255, .92);
+}
+
+.acc__face { flex: none; width: 46px; height: 46px; border-radius: 50%; object-fit: cover; background: rgba(255, 255, 255, .7); box-shadow: 0 2px 8px rgba(46, 63, 92, .16); }
+.acc__main { flex: 1; min-width: 0; }
+.acc__name { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15.5px; color: #2A3140; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.acc__name em { font-style: normal; font-family: Anuphan, Sarabun, sans-serif; font-size: 10.5px; padding: 2px 8px 3px; border-radius: 999px; background: rgba(31, 138, 86, .16); color: #16653E; }
+.acc__role { font-size: 11.5px; color: #5D6473; margin-top: 1px; }
+.acc__keys { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 7px; }
+
+.acc__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 5px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: rgba(255, 255, 255, .55);
+  font-family: Mitr, sans-serif;
+  font-size: 12.5px;
+  color: #23405A;
+  letter-spacing: .04em;
+}
+
+.acc__key b { white-space: nowrap; font-family: Anuphan, Sarabun, sans-serif; font-weight: 600; font-size: 10.5px; letter-spacing: 0; color: #6B7280; }
+
+.acc__eye {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .6);
+  color: #2F6A5C;
+  cursor: pointer;
+}
+
+.acc__eye[aria-pressed="true"] { background: rgba(31, 138, 86, .18); color: #16653E; }
+.acc__tools { flex: none; display: flex; flex-direction: column; gap: 6px; }
+
+.acc__btn {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  background: rgba(255, 255, 255, .62);
+  font-family: Mitr, sans-serif;
+  font-size: 12px;
+  color: #1E5E7A;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9);
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.acc__btn:active { transform: scale(.96); }
+.acc__btn--del { color: #B3332A; background: rgba(255, 236, 234, .78); }
+
+.acc__add {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 50px;
+  margin-top: 14px;
+  border-radius: 18px;
+  border: 1px dashed rgba(46, 110, 143, .45);
+  background: rgba(255, 255, 255, .5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  font-family: Mitr, sans-serif;
+  font-size: 14px;
+  color: #1E5E7A;
+  cursor: pointer;
+}
+
+.acc__add:active { transform: scale(.98); }

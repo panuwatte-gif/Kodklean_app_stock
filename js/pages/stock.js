@@ -1,206 +1,192 @@
-// หน้าสต๊อก — ต่อปุ่มทุกปุ่มเข้ากับข้อมูล (การวาดอยู่ที่ stock-list.js / ฟอร์มแก้ไขที่ stock-edit.js)
-import { get, save, revise } from '../shared/data.js';
-import { STOCK_ACTIONS, FOOD_PHOTOS, CAT_COLOR_PRESETS, CAT_ICON_CHOICES } from '../shared/config.js';
-import { fillGlyphs, bindSteppers, toast, confirmSheet, pickerSheet, formSheet } from '../shared/ui.js';
-import { setLists, tabsHtml, sumHtml, actionsHtml, catsHtml, subsHtml, groupsHtml } from './stock-list.js';
-import { subOptionsHtml } from './stock-edit.js';
+// หน้านับสต๊อก — ต่อรายการและผลนับกับฐานข้อมูลจริง (ชิ้นส่วนบนอยู่ที่ stock-list.js / แถวรายการที่ stock-rows.js / แผงกรอกที่ stock-form.js)
+import { get, save, todayIso, getCountItems, getStockToday, getResponsibilities, saveStockCounts } from '../shared/data.js';
+import { STOCK_COUNT_UI as T, STOCK_ITEM_ACTIONS, FOOD_PHOTOS } from '../shared/config.js';
+import { fillGlyphs, toast, pickerSheet } from '../shared/ui.js';
+import { dayLongTh, fillText } from '../shared/format.js';
+import { countTotal, condoFromTotal, sumPlaces } from '../shared/calc.js';
+import { currentUser, staffCode } from '../shared/auth.js';
+import { whoHtml, tabsHtml, sumHtml, progressHtml, formulaHtml, filtersHtml, itemActionsHtml, catsHtml } from './stock-list.js';
+import { setPhotos, photoOf, qtyHtml, resultHtml, isBothPlaces, isBadSplit, groupsHtml } from './stock-rows.js';
+import { itemActions } from './stock-form.js';
 
 // สิ่งที่ผู้ใช้เลือกอยู่บนหน้านี้ (ไม่แชร์ข้ามหน้า)
-const view = { tab: 'all', cat: 'all', sub: null, q: '', closed: {}, edit: null, mode: null };
+const view = { tab: 'all', grp: 'all', q: '', mine: true, left: false, mode: null, closed: {} };
 
-// กรองรายการตามหมวด/หมวดย่อย/คำค้น
-function visibleItems(all) {
-  return all.filter(item => {
-    if (view.cat !== 'all' && item.cat !== view.cat) return false;
-    if (view.sub && item.sub !== view.sub) return false;
+// เอาโครงหน้าที่โหลดมาแล้ว มาเติมรายการที่ต้องนับจากฐานข้อมูล
+export async function mountStockPage(root) {
+  fillGlyphs(root);
+  const me = currentUser() || { name: '', avatar: 'ahhia' };
+  const date = todayIso();
+  const box = id => root.querySelector(id);
+  const draft = {};        // ตัวเลขที่กรอกใหม่รอบนี้ รอกดบันทึก
+  let rows = [], jobs = [], allJobs = [];
+
+  box('#stk-head').textContent = T.title;
+  box('#stk-date').textContent = dayLongTh(date);
+  box('#stk-sum-head').textContent = T.sumHead;
+  box('#stk-search').placeholder = T.search;
+  box('#stk-save').textContent = T.save;
+  box('#stk-empty').textContent = T.loading;
+  box('#stk-empty').hidden = false;
+  box('#stk-formula').innerHTML = formulaHtml();
+  setPhotos(get('stockPhotos'));
+
+  // กรองรายการตามตัวกรองที่เปิดอยู่
+  const visible = () => rows.filter(item => {
+    if (view.mine && jobs.length && !jobs.includes(item.responsibility)) return false;
+    if (view.grp !== 'all' && item.grp !== view.grp) return false;
+    if (view.left && countTotal(item) !== null) return false;
+    if (view.tab === 'kitchen' && item.location === 'คอนโด') return false;
+    if (view.tab === 'condo' && item.location === 'ครัวกลาง') return false;
     if (view.q && !item.name.toLowerCase().includes(view.q)) return false;
     return true;
   });
-}
 
-// เอาโครงหน้าที่โหลดมาแล้ว มาเติมข้อมูลสต๊อกจากประตูข้อมูล
-export function mountStockPage(root) {
-  let items = get('stock');
-  let cats = get('stockCats');
-  let subs = get('stockSubs');
-  setLists(cats, subs);
-
-  const sum = get('stockSummary');
-  fillGlyphs(root);
-  bindSteppers(root);
-  root.querySelector('#stk-date').textContent = sum.date;
-  root.querySelector('#stk-sum').innerHTML = sumHtml(sum);
-
+  // วาดทั้งหน้าใหม่
   const draw = () => {
-    root.querySelector('#stk-tabs').innerHTML = tabsHtml(view);
-    root.querySelector('#stk-actions').innerHTML = actionsHtml(view);
-    root.querySelector('#stk-cats').innerHTML = catsHtml(view);
-    root.querySelector('#stk-subs').innerHTML = subsHtml(view);
-    const rows = visibleItems(items);
-    root.querySelector('#stk-groups').innerHTML = groupsHtml(rows, view);
-    root.querySelector('#stk-empty').hidden = rows.length > 0;
+    const list = visible();
+    box('#stk-who').innerHTML = whoHtml(me, jobs);
+    box('#stk-tabs').innerHTML = tabsHtml(view);
+    box('#stk-sum').innerHTML = sumHtml(list);
+    box('#stk-prog').innerHTML = progressHtml(list);
+    box('#stk-filters').innerHTML = filtersHtml(view, jobs);
+    box('#stk-tools').innerHTML = itemActionsHtml(view);
+    box('#stk-cats').innerHTML = catsHtml(view, rows);
+    box('#stk-groups').innerHTML = groupsHtml(list, view, draft);
+    box('#stk-empty').textContent = T.empty;
+    box('#stk-empty').hidden = list.length > 0;
   };
 
-  // เก็บรายการทั้งชุดลงที่เก็บ แล้ววาดใหม่
-  const commit = list => { items = save('stock', list); draw(); };
-
-  // สลับตำแหน่งรายการขึ้น/ลง
-  const move = (id, step) => {
-    const list = items.slice();
-    const at = list.findIndex(row => row.id === id);
-    const to = at + step;
-    if (at < 0 || to < 0 || to >= list.length) return toast('อยู่สุดทางแล้ว');
-    [list[at], list[to]] = [list[to], list[at]];
-    commit(list);
+  // อัปเดตเฉพาะตัวเลขตอนกำลังกรอก (ไม่วาดใหม่ เพื่อไม่ให้แป้นพิมพ์ปิด)
+  const refresh = id => {
+    const item = rows.find(r => r.id === id);
+    const row = box(`.stk-row[data-id="${id}"]`);
+    if (row) {
+      row.querySelector('.stk-row__qty').innerHTML = qtyHtml(item, view.tab, !!draft[id]);
+      const res = row.querySelector('.stk-res');
+      if (res) res.outerHTML = resultHtml(item);
+    }
+    const list = visible();
+    box('#stk-sum').innerHTML = sumHtml(list);
+    box('#stk-prog').innerHTML = progressHtml(list);
   };
 
-  // เปลี่ยนรูปสินค้าโดยเลือกจากคลังรูป (ถ้าอยู่ในฟอร์มแก้ไข จะเปลี่ยนให้เห็นก่อนกดบันทึก)
+  // โหลดรายการที่ต้องนับ + ตัวเลขของวันนี้ + งานที่แต่ละคนรับผิดชอบ
+  const load = async () => {
+    try {
+      const [items, today, res] = await Promise.all([getCountItems(), getStockToday(), getResponsibilities()]);
+      rows = items.map(item => {
+        const found = today.find(t => t.id === item.id) || {};
+        const row = { ...item, kitchen: found.kitchen_qty, condo: found.condo_qty, by: found.counted_by };
+        row.total = sumPlaces(row);
+        return row;
+      });
+      allJobs = [...new Set(res.map(r => r.responsibility))];
+      jobs = res.filter(r => r.staff_code === staffCode()).map(r => r.responsibility);
+      if (jobs.length === 0) view.mine = false;
+      draw();
+    } catch {
+      box('#stk-empty').textContent = T.error;
+      box('#stk-empty').hidden = false;
+    }
+  };
+  await load();
+
+  // เปลี่ยนรูปสินค้าของรายการหนึ่ง (จำไว้ในเครื่อง ไม่แตะข้อมูลในฐาน)
   const changePhoto = async id => {
-    const picked = await pickerSheet({ title: 'เลือกรูปสินค้า', options: FOOD_PHOTOS });
-    if (!picked) return;
-    const form = root.querySelector(`.stk-row--edit[data-id="${id}"]`);
-    if (form) {
-      form.querySelector('.stk-edit__photo img').src = picked;
-      form.querySelector('[data-f="photo"]').value = picked;
-      return;
+    const item = rows.find(r => r.id === id);
+    const chosen = await pickerSheet({ title: T.photoPick, options: FOOD_PHOTOS });
+    if (!chosen) return;
+    const list = get('stockPhotos').filter(p => p.id !== id).concat([{ id, photo: chosen }]);
+    setPhotos(save('stockPhotos', list));
+    box(`.stk-row[data-id="${id}"] .stk-row__thumb img`).src = photoOf(item);
+    toast(T.photoDone);
+  };
+
+  // เพิ่ม/แก้/ลบ/สลับตำแหน่งรายการ (โค้ดอยู่ที่ stock-form.js)
+  const manage = itemActions({ rows: () => rows, jobs: () => allJobs, reload: load });
+
+  // บันทึกผลนับที่กรอกใหม่ทั้งหมด (แก้ตัวเลขเดิม = เพิ่มแถวใหม่ ของเก่าจะถูกปิดให้เอง)
+  const saveAll = async () => {
+    const ids = Object.keys(draft).filter(id => !isBadSplit(rows.find(r => r.id === id) || {}));
+    const bad = Object.keys(draft).length - ids.length;
+    if (bad) toast(fillText(T.badSkip, { n: bad }));
+    if (!ids.length) return bad ? null : toast(T.nothing);
+    const btn = box('#stk-save');
+    btn.disabled = true;
+    btn.textContent = T.saving;
+    try {
+      await saveStockCounts(ids.map(id => {
+        const item = rows.find(r => r.id === id);
+        return { id, kitchen: item.kitchen ?? null, condo: item.condo ?? null };
+      }), date, staffCode());
+      ids.forEach(id => {
+        const item = rows.find(r => r.id === id);
+        if (item) item.by = staffCode();
+        delete draft[id];
+      });
+      draw();
+      toast(fillText(T.saved, { n: ids.length }));
+    } catch {
+      toast(T.error);
     }
-    revise('stock', id, { photo: picked });
-    items = get('stock');
-    draw();
-    toast('เปลี่ยนรูปแล้ว');
+    btn.disabled = false;
+    btn.textContent = T.save;
   };
 
-  // ลบรายการ (ถามยืนยันก่อน)
-  const removeItem = async id => {
-    const item = items.find(row => row.id === id);
-    const ok = await confirmSheet({ title: 'ลบรายการนี้?', text: item.name, okLabel: 'ลบ', danger: true });
-    if (!ok) return;
-    view.edit = null;
-    commit(items.filter(row => row.id !== id));
-    toast('ลบแล้ว');
-  };
-
-  // เพิ่มรายการใหม่เข้าหมวดที่กำลังดูอยู่ แล้วเปิดฟอร์มให้กรอกทันที
-  const addItem = () => {
-    const id = 'new-' + Date.now();
-    const cat = view.cat === 'all' ? cats[0].id : view.cat;
-    view.edit = id;
+  // สั่งงานกับรายการเดียวตามโหมดที่เปิดอยู่ (เลิกโหมดแล้ววาดหน้าใหม่ทันที)
+  const runMode = id => {
+    const mode = view.mode;
     view.mode = null;
-    commit(items.concat([{ id, name: '', cat, sub: view.sub, unit: 'กก.', kitchen: 0, condo: 0, min: 0, photo: FOOD_PHOTOS[0].value }]));
-  };
-
-  // เพิ่มหมวดใหม่ (หมวดหลัก หรือหมวดย่อยของหมวดหลักที่เลือก)
-  const addCat = async () => {
-    const res = await formSheet({
-      title: 'เพิ่มหมวดใหม่',
-      fields: [
-        { key: 'kind', label: 'ชนิดหมวด', kind: 'select', options: [{ value: 'main', label: 'หมวดหลัก' }, { value: 'sub', label: 'หมวดย่อย' }] },
-        { key: 'name', label: 'ชื่อหมวด', kind: 'text', placeholder: 'เช่น ไข่' },
-        { key: 'parent', label: 'ถ้าเป็นหมวดย่อย ให้อยู่ใน', kind: 'select', value: view.cat, options: cats.map(c => ({ value: c.id, label: c.label })) },
-        { key: 'color', label: 'สีประจำหมวด', kind: 'swatch', options: CAT_COLOR_PRESETS.map(p => ({ value: p.color })) },
-        { key: 'icon', label: 'ไอคอน', kind: 'image', options: CAT_ICON_CHOICES }
-      ]
-    });
-    if (!res) return;
-    if (!res.name) return toast('ยังไม่ได้ใส่ชื่อหมวด');
-    const id = 'c' + Date.now();
-    if (res.kind === 'main') {
-      const preset = CAT_COLOR_PRESETS.find(p => p.color === res.color) || CAT_COLOR_PRESETS[0];
-      cats = save('stockCats', cats.concat([{ id, label: res.name, icon: res.icon, color: preset.color, tint: preset.tint }]));
-      view.cat = id;
-      view.sub = null;
-    } else {
-      subs = save('stockSubs', subs.concat([{ id, label: res.name, cat: res.parent, icon: res.icon }]));
-      view.cat = res.parent;
-      view.sub = id;
-    }
-    setLists(cats, subs);
     draw();
-    toast(`เพิ่มหมวด "${res.name}" แล้ว`);
+    if (mode === 'edit') manage.edit(id);
+    else if (mode === 'delete') manage.remove(id);
   };
-
-  // เมนู "เพิ่มเติม" ท้ายแถว
-  const rowMenu = async id => {
-    const picked = await pickerSheet({
-      title: 'จัดการรายการ',
-      options: [
-        { value: 'edit', label: 'แก้ไขชื่อ/จำนวน/หมวด' },
-        { value: 'photo', label: 'เปลี่ยนรูป' },
-        { value: 'up', label: 'ย้ายขึ้น' },
-        { value: 'down', label: 'ย้ายลง' },
-        { value: 'delete', label: 'ลบรายการ' }
-      ]
-    });
-    if (picked) runRowAction(picked, id);
-  };
-
-  // สั่งงานกับรายการเดียวตามชนิดปุ่มที่กด
-  function runRowAction(kind, id) {
-    if (kind === 'edit') { view.edit = id; view.mode = null; draw(); }
-    else if (kind === 'photo') changePhoto(id);
-    else if (kind === 'delete') removeItem(id);
-    else if (kind === 'up') move(id, -1);
-    else if (kind === 'down') move(id, 1);
-    else if (kind === 'more') rowMenu(id);
-  }
-
-  // เก็บค่าที่กรอกในฟอร์มแก้ไขลงข้อมูล
-  function saveForm(row) {
-    const changes = {};
-    row.querySelectorAll('[data-f]').forEach(input => {
-      changes[input.dataset.f] = input.type === 'number' ? Number(input.value) : String(input.value).trim();
-    });
-    changes.sub = changes.sub || null;
-    if (!changes.name) return toast('ยังไม่ได้ใส่ชื่อรายการ');
-    revise('stock', row.dataset.id, changes);
-    items = get('stock');
-    view.edit = null;
-    draw();
-    toast('บันทึกแล้ว');
-  }
-
-  // ปุ่มแถวจัดการด้านบน: ปุ่มที่ต้องเลือกรายการก่อนจะเปิดเป็น "โหมด" ค้างไว้
-  const runAction = id => {
-    if (id === 'add') return addItem();
-    if (id === 'addCat') return addCat();
-    view.mode = view.mode === id ? null : id;
-    view.edit = null;
-    draw();
-    if (view.mode) toast(`แตะรายการที่ต้องการ${STOCK_ACTIONS.find(a => a.id === id).label}`);
-  };
-
-  draw();
 
   root.addEventListener('click', event => {
-    if (event.target.closest('[data-step]')) return;
     const hit = sel => event.target.closest(sel);
     const row = hit('.stk-row[data-id]');
-    const tool = hit('[data-tool]'), act = hit('[data-act]');
-    const tab = hit('[data-tab]'), cat = hit('[data-cat]'), sub = hit('[data-sub]'), group = hit('[data-group]');
+    const tab = hit('[data-tab]'), grp = hit('[data-grp]'), group = hit('[data-group]');
+    const filter = hit('[data-filter]'), act = hit('[data-act]'), move = hit('[data-move]');
 
-    if (hit('[data-save]')) saveForm(row);
-    else if (hit('[data-photo]')) changePhoto(row.dataset.id);
-    else if (hit('[data-cancel]')) {
-      const item = items.find(r => r.id === view.edit);
-      view.edit = null;
-      if (item && !item.name) commit(items.filter(r => r.id !== item.id)); else draw();
+    if (move) manage.move(row.dataset.id, move.dataset.move === 'up' ? -1 : 1);
+    else if (hit('[data-photo]') && !view.mode) changePhoto(hit('[data-photo]').dataset.photo);
+    else if (hit('#stk-save')) saveAll();
+    else if (hit('#stk-reload')) load();
+    else if (act) {
+      const id = act.dataset.act;
+      if (id === 'add') return manage.add();
+      view.mode = view.mode === id ? null : id;
+      draw();
+      if (view.mode) toast(fillText(T.pickRow, { label: STOCK_ITEM_ACTIONS.find(a => a.id === id).label }));
     }
-    else if (tool) runRowAction(tool.dataset.tool, row.dataset.id);
-    else if (act) runAction(act.dataset.act);
+    else if (filter) {
+      const id = filter.dataset.filter;
+      if (id === 'clear') { view.mine = false; view.left = false; view.grp = 'all'; view.q = ''; box('#stk-search').value = ''; }
+      else view[id] = !view[id];
+      draw();
+    }
     else if (tab) { view.tab = tab.dataset.tab; draw(); }
-    else if (cat) { view.cat = cat.dataset.cat; view.sub = null; draw(); }
-    else if (sub) { view.sub = sub.dataset.sub || null; draw(); }
+    else if (grp) { view.grp = grp.dataset.grp; draw(); }
     else if (group) { const k = group.dataset.group; view.closed[k] = !view.closed[k]; draw(); }
-    else if (row && view.mode) { runRowAction(view.mode, row.dataset.id); view.mode = null; }
+    else if (row && view.mode && view.mode !== 'sort') runMode(row.dataset.id);
   });
 
-  // เปลี่ยนหมวดหลักในฟอร์ม → เปลี่ยนตัวเลือกหมวดย่อยให้ตรงกัน
-  root.addEventListener('change', event => {
-    if (!event.target.matches('[data-f="cat"]')) return;
-    root.querySelector('#stk-sub-select').innerHTML = subOptionsHtml(subs, event.target.value, null);
+  // กรอกตัวเลข: เก็บไว้ในตัวร่างก่อน (ช่องว่าง = ยังไม่ได้นับ ห้ามแปลงเป็น 0)
+  root.addEventListener('input', event => {
+    const field = event.target.closest('[data-f]');
+    if (!field) return;
+    const id = field.dataset.id;
+    const item = rows.find(r => r.id === id);
+    item[field.dataset.f] = field.value === '' ? null : Number(field.value);
+    // เก็บของสองที่: กรอกสต๊อกรวมกับครัวกลาง แล้วคิดคอนโดให้เอง
+    if (isBothPlaces(item)) item.condo = condoFromTotal(item.total, item.kitchen);
+    else item.total = sumPlaces(item);
+    draft[id] = true;
+    refresh(id);
   });
 
-  root.querySelector('#stk-search').addEventListener('input', event => {
+  box('#stk-search').addEventListener('input', event => {
     view.q = event.target.value.trim().toLowerCase();
     draw();
   });

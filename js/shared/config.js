@@ -58,8 +58,12 @@ export const OTHER_CARDS = [
     meta: 'คิดถึง 10 ก.ย.', icon: 'assets/icons/ic10.webp', accent: '#D9537F', accent2: '#FBD0DE'
   },
   {
-    id: 'equation', kind: 'capsule', title: 'ตรวจสอบสมการ', sub: 'เช็กสูตรคำนวณทุกหน้าให้ถูกต้อง',
-    meta: 'ผ่าน 9 / 10', glyph: 'check', accent: '#6E9B1F', accent2: '#DCEBAE'
+    id: 'equation', kind: 'capsule', goto: 'equation', title: 'ตรวจสอบสมการ Forecast', sub: 'คลังสูตรพยากรณ์ เกณฑ์วัดผล คัดเข้า-คัดออก',
+    meta: 'สูตรล็อกไว้ 11 รายการ', glyph: 'check', accent: '#6E9B1F', accent2: '#DCEBAE'
+  },
+  {
+    id: 'accounts', kind: 'capsule', goto: 'accounts', title: 'บัญชีและรหัสผ่าน', sub: 'แก้ PIN เพิ่ม/ลบบัญชีพนักงาน',
+    meta: 'อาเฮีย · แม่พัน แก้ได้ทุกคน', glyph: 'gear', accent: '#1E7A6E', accent2: '#BEE9E1'
   },
   {
     id: 'assumption', kind: 'data', title: 'Assumption', sub: 'สมมติฐานและตัวแปรที่ใช้ในทุกการคำนวณ',
@@ -217,6 +221,143 @@ export const FOOD_PHOTOS = [
 // หน่วยนับที่เลือกได้ในฟอร์มแก้ไขรายการสต๊อก
 export const STOCK_UNITS = ['กก.', 'กรัม', 'ใบ', 'ขวด', 'ถุง', 'แพ็ค', 'ชิ้น'];
 
+// ---------- หน้านับสต๊อก (รายการมาจากตาราง kk_count_item ในฐานข้อมูล) ----------
+
+// หมวดของรายการนับ (ต้องตรงกับช่อง grp ในฐาน) — ไอคอนและสีประจำหมวด
+export const STOCK_GROUPS = [
+  { id: 'เนื้อสัตว์', label: 'เนื้อสัตว์', icon: 'assets/cats/beef.webp', color: '#C1443C', tint: '#FDECEA' },
+  { id: 'ผัก', label: 'ผัก', icon: 'assets/cats/veg.webp', color: '#4E9A3E', tint: '#EEF7E9' },
+  { id: 'ซอส/เครื่องปรุง', label: 'ซอส/เครื่องปรุง', icon: 'assets/cats/sauce.webp', color: '#C98A2E', tint: '#FDF3E2' },
+  { id: 'ข้าว', label: 'ข้าว', icon: 'assets/prep/rice-homali.webp', color: '#B37A45', tint: '#FBF1E5' },
+  { id: 'ไข่', label: 'ไข่', icon: 'assets/stock/eggs.webp', color: '#E08A2E', tint: '#FDF1DF' },
+  { id: 'เครื่องดื่ม', label: 'เครื่องดื่ม', icon: 'assets/icons/ic07.webp', color: '#3B7FD4', tint: '#EAF2FD' },
+  { id: 'บรรจุภัณฑ์', label: 'บรรจุภัณฑ์', icon: 'assets/cats/pack.webp', color: '#8B63C9', tint: '#F4EEFB' }
+];
+
+// รูปสำรองประจำหมวด (ใช้เมื่อรายการนั้นยังไม่ได้จับคู่รูปไว้)
+export const STOCK_PHOTO_BY_GROUP = {
+  'เนื้อสัตว์': 'assets/cats/beef.webp',
+  'ผัก': 'assets/stock/veg-mix.webp',
+  'ซอส/เครื่องปรุง': 'assets/stock/house-sauce.webp',
+  'ข้าว': 'assets/prep/rice-homali.webp',
+  'ไข่': 'assets/stock/eggs.webp',
+  'เครื่องดื่ม': 'assets/stock/beverage.webp',
+  'บรรจุภัณฑ์': 'assets/stock/packaging.webp'
+};
+
+// รูปประจำรายการนับ (คีย์ = id ในตาราง kk_count_item) รายการที่ไม่ได้ใส่จะใช้รูปประจำหมวด
+export const STOCK_PHOTOS = {
+  meat_beef_mince: 'assets/prep/meat-beef-mince.webp',
+  meat_chicken_mince: 'assets/prep/meat-chicken-mince.webp',
+  meat_chicken_soft: 'assets/prep/meat-chicken-breast.webp',
+  meat_chicken_tender: 'assets/prep/meat-chicken-tender.webp',
+  meat_pork_soft: 'assets/prep/meat-pork-slice.webp',
+  meat_pork_mince: 'assets/food/pork-mince.webp',
+  meat_salmon: 'assets/prep/meat-salmon.webp',
+  meat_hokke: 'assets/prep/meat-hokke.webp',
+  meat_duck_mince: 'assets/prep/meat-duck-mince.webp',
+  meat_shrimp_mid: 'assets/prep/meat-shrimp-mid.webp',
+  meat_shrimp_big: 'assets/prep/meat-shrimp-big.webp',
+  veg_basil: 'assets/food/basil.webp',
+  veg_garlic: 'assets/food/garlic.webp',
+  veg_birdchili: 'assets/food/chili.webp',
+  veg_spurchili: 'assets/r9/chili-dry.webp',
+  sauce_kaprao: 'assets/food/sauce-bowl.webp',
+  sauce_kaprao_boran: 'assets/food/sauce-bowl.webp',
+  sauce_glassnoodle: 'assets/prep/noodle-glass.webp',
+  season_chilipaste: 'assets/stock/seasoning.webp',
+  season_kikkoman: 'assets/stock/seasoning.webp',
+  season_msg: 'assets/stock/powder.webp',
+  season_ricebranoil: 'assets/food/oil-bottle.webp',
+  season_chinesewine: 'assets/food/sauce-bottle.webp',
+  season_sake_cook: 'assets/food/sauce-bottle.webp',
+  season_oyster_silver: 'assets/food/sauce-bottle.webp',
+  season_oyster_maekrua: 'assets/r9/sauce-bottle.webp',
+  rice_riceberry: 'assets/stock/rice-riceberry.webp',
+  drink_pandan: 'assets/r9/drink-juice.webp',
+  drink_longan: 'assets/r9/drink-longan.webp',
+  drink_calamansi: 'assets/r9/drink-orange.webp',
+  drink_calamansi_ginger: 'assets/r9/drink-ginger.webp',
+  drink_grapetea: 'assets/r9/drink-tea.webp',
+  drink_thaitea_pistachio: 'assets/food/tea-bottle.webp',
+  drink_thaitea_coconut: 'assets/food/tea-bottle.webp',
+  drink_greentea_pistachio: 'assets/r9/drink-tea.webp',
+  drink_greentea_coconut: 'assets/r9/drink-tea.webp',
+  drink_greentea_oat: 'assets/r9/drink-tea.webp',
+  drink_hojicha: 'assets/r9/drink-honey-lemon.webp',
+  pkg_box_1: 'assets/food/box-1.webp',
+  pkg_box_2: 'assets/food/box-1.webp',
+  pkg_box_3: 'assets/food/box-3.webp'
+};
+
+// ที่เก็บของที่เลือกได้ตอนเพิ่ม/แก้รายการที่ต้องนับ (ต้องตรงกับค่าในฐาน)
+export const STOCK_LOCATIONS = ['ครัวกลาง', 'คอนโด', 'ทั้งสองที่'];
+
+// หน่วยนับที่เลือกได้ตอนเพิ่ม/แก้รายการที่ต้องนับ
+export const STOCK_COUNT_UNITS = ['กก.', 'กรัม', 'ฟอง', 'ฟอง/แผง', 'ขวด', 'ใบ', 'ถุง', 'กระสอบ', 'ชิ้น', 'ชุด', 'ม้วน', 'แพ็ค'];
+
+// ปุ่มจัดการรายการที่ต้องนับ (กดแล้วค้างเป็นโหมด แล้วแตะรายการที่ต้องการ)
+export const STOCK_ITEM_ACTIONS = [
+  { id: 'add', label: 'เพิ่มรายการ', glyph: 'plus', color: '#2FA36B', tint: '#E7F6EE' },
+  { id: 'edit', label: 'แก้ไขรายการ', glyph: 'pencil', color: '#E08A2E', tint: '#FDF1DF' },
+  { id: 'delete', label: 'ลบรายการ', glyph: 'trash', color: '#E5433B', tint: '#FDEBEA' },
+  { id: 'sort', label: 'สลับตำแหน่ง', glyph: 'sort', color: '#4C8FD8', tint: '#EAF3FC' }
+];
+
+// ข้อความทั้งหมดของหน้านับสต๊อก ({done} {all} {n} = ช่องเติมตัวเลข)
+export const STOCK_COUNT_UI = {
+  title: 'นับสต๊อก',
+  sumHead: 'ผลนับสต๊อกวันนี้',
+  cellAll: 'ต้องนับ',
+  cellDone: 'นับแล้ว',
+  cellLeft: 'ยังไม่นับ',
+  progress: 'กรอกครบ {done} จาก {all} รายการ',
+  mine: 'งานของฉัน',
+  onlyLeft: 'เฉพาะที่ยังไม่นับ',
+  clear: 'ดูทั้งหมด',
+  noWork: 'ดูได้ทุกรายการ',
+  kitchen: 'ครัวกลาง',
+  condo: 'คอนโด',
+  counted: 'นับแล้ว',
+  notCounted: 'ยังไม่นับ',
+  edited: 'รอบันทึก',
+  save: 'บันทึกทั้งหมด',
+  saving: 'กำลังบันทึก...',
+  saved: 'บันทึกผลนับแล้ว {n} รายการ',
+  nothing: 'ยังไม่ได้กรอกตัวเลขใหม่',
+  loading: 'กำลังโหลดรายการจากฐานข้อมูล...',
+  error: 'ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง',
+  empty: 'ไม่พบรายการที่ค้นหา',
+  search: 'ค้นหารายการที่ต้องนับ...',
+  photoPick: 'เลือกรูปสินค้า',
+  photoDone: 'เปลี่ยนรูปแล้ว',
+  formulaK: 'ครัวกลาง',
+  formulaC: 'คอนโด',
+  formulaSum: 'สต๊อกรวม',
+  condoAuto: 'คอนโด (คิดให้เอง)',
+  badSplit: 'ครัวกลางมากกว่าสต๊อกรวม แก้ตัวเลขก่อนบันทึก',
+  needTotal: 'ใส่สต๊อกรวมก่อน คอนโดจะคิดให้เอง',
+  badSkip: 'ข้าม {n} รายการที่ตัวเลขยังไม่ครบ',
+  pickRow: 'แตะรายการที่ต้องการ{label}',
+  addTitle: 'เพิ่มรายการที่ต้องนับ',
+  editTitle: 'แก้ไขรายการที่ต้องนับ',
+  fName: 'ชื่อรายการ',
+  fNameHint: 'เช่น อกไก่บด',
+  fGrp: 'หมวด',
+  fUnit: 'หน่วยนับ',
+  fLoc: 'เก็บไว้ที่',
+  fJob: 'อยู่ในงานไหน',
+  needName: 'ยังไม่ได้ใส่ชื่อรายการ',
+  added: 'เพิ่ม "{name}" แล้ว',
+  edited2: 'แก้ไข "{name}" แล้ว',
+  delAsk: 'ลบรายการนี้ทิ้ง?',
+  delText: 'จะไม่แสดงในหน้านับอีก แต่ผลนับเก่ายังเก็บไว้',
+  delOk: 'ลบทิ้ง',
+  deleted: 'ลบ "{name}" แล้ว',
+  moveEnd: 'อยู่สุดทางแล้ว',
+  moved: 'สลับตำแหน่งแล้ว'
+};
+
 // ---------- หน้าหลัก (Dashboard) ----------
 
 // ตัวละครวัยเรียน 6 คน + มาสคอต (รหัสตามชีต ไม่ผูกกับชื่อคนจริง) และตำแหน่งที่ใช้บนหน้าหลัก
@@ -310,19 +451,10 @@ export const PREP_HERO = {
   fahAll: { title: 'บันทึกอาหารเหลือ', sub: 'จัดการของเหลือวันนี้ เพื่อพรุ่งนี้ที่ดีกว่า', people: ['fah'] }
 };
 
-// ชิปกรองตามผู้รับผิดชอบ (people = ใครบ้าง, ว่าง = ทั้งหมด)
+// ชิปกรองตามผู้รับผิดชอบ (people = รหัสพนักงานใน kk_staff, ว่าง = ทั้งหมด) — เป็นการช่วยหา ไม่ใช่การจำกัดสิทธิ์
 export const PREP_FILTERS = {
-  meat: [{ id: 'all', label: 'ทั้งหมด', people: [] }, { id: 'fah', label: 'ของฟ้า', people: ['fah'] }, { id: 'ad', label: 'ของอัด', people: ['ad'] }],
-  rice: [{ id: 'all', label: 'ทั้งหมด', people: [] }, { id: 'fahemmy', label: 'ของฟ้า+เอมมี่', people: ['fah', 'emmy'] }, { id: 'ad', label: 'ของอัด', people: ['ad'] }],
-  forecast: [
-    { id: 'all', label: 'ทั้งหมด', people: [] },
-    { id: 'meat', label: 'เนื้อสัตว์', people: [], groups: ['chicken', 'meat'], icon: 'assets/cats/pork.webp' },
-    { id: 'sea', label: 'อาหารทะเล', people: [], groups: ['sea'], icon: 'assets/cats/fish.webp' },
-    { id: 'rice', label: 'ข้าว', people: [], groups: ['rice'], icon: 'assets/prep/rice-homali.webp' },
-    { id: 'fah', label: 'ฟ้า', people: ['fah'] },
-    { id: 'emmy', label: 'เอมมี่', people: ['emmy'] },
-    { id: 'ad', label: 'อัด', people: ['ad'] }
-  ]
+  meat: [{ id: 'all', label: 'ทั้งหมด', people: [] }, { id: 'fah', label: 'ของฟ้า', people: ['fah'] }, { id: 'ad', label: 'ของอัด+เอมมี่', people: ['ad', 'emmy'] }],
+  rice: [{ id: 'all', label: 'ทั้งหมด', people: [] }]
 };
 
 // ข้อความกำกับข้างชิปกรอง
@@ -335,7 +467,7 @@ export const PREP_NOTES = {
 export const PREP_KPI = {
   meat: [
     { key: 'count', label: 'รายการทั้งหมด', unit: 'รายการ', icon: 'assets/prep/ic3d-use.webp', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3', digits: 0 },
-    { key: 'rounds', label: 'เบิกเพิ่มทั้งหมด', unit: 'รอบ', icon: 'assets/prep/ic3d-extra.webp', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5', digits: 0 },
+    { key: 'extra', label: 'เบิกเพิ่มรวม', unit: 'กก.', icon: 'assets/prep/ic3d-extra.webp', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5', digits: 1 },
     { key: 'left', label: 'คงเหลือรวม', unit: 'กก.', icon: 'assets/prep/ic3d-left.webp', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3', digits: 1 },
     { key: 'waste', label: 'ทิ้ง/เสียรวม', unit: 'กก.', icon: 'assets/prep/ic3d-waste.webp', color: '#C0651B', tint: '#FDF3E6', border: '#F3DCC0', digits: 1 },
     { key: 'use', label: 'ใช้วัตถุดิบ/วัน รวม', unit: 'กก.', icon: 'assets/prep/ic3d-prep.webp', color: '#1E7A3C', tint: '#E4F3E4', border: '#BFE0C4', digits: 1 }
@@ -349,20 +481,17 @@ export const PREP_KPI = {
   ]
 };
 
-// หัวตารางเนื้อสัตว์ (ชื่อ + หน่วยบรรทัดล่าง + ผู้รับผิดชอบคอลัมน์นั้น ถ้ามี)
+// หัวตารางเนื้อสัตว์ (3 ช่องกรอกหลัก + ปรุงสุกเหลืออ่านอย่างเดียวจากแท็บอาหารเหลือ)
 export const PREP_MEAT_COLS = [
-  ['#', ''], ['วัตถุดิบ', ''], ['ผู้รับผิดชอบ', ''], ['แนะนำ', '(กก.)'], ['เตรียม', '(กก.)'],
-  ['เบิกเพิ่ม', '(กก.)'], ['ทิ้ง/เสีย', '(กก.)'], ['คงเหลือ', '(กก.)', 'emmy'], ['ใช้/วัน', '(กก.)'], ['', '']
+  ['#', ''], ['วัตถุดิบ', '(ผู้รับผิดชอบ)'], ['เตรียม', '(กก.)'], ['เบิกเพิ่ม', '(กก.)'],
+  ['ทิ้ง/เสีย', '(กก.)'], ['คงเหลือสด', '(กก.)'], ['ปรุงสุกเหลือ', '(กก.)'], ['ใช้ไปจริง', '(กก.)']
 ];
-
-// แถวที่ต้องทำสีพิเศษให้รู้ว่าเป็นของใคร (id รายการ → id คน)
-export const PREP_ROW_HILITE = { 'chicken-soft': 'fah' };
 
 // หัวตารางข้าว 3 ตาราง
 export const PREP_RICE_COLS = {
   cook: [['#', ''], ['ชนิดข้าว', ''], ['ผู้รับผิดชอบ', ''], ['หุงข้าว', '(กก. ดิบ)'], ['หุงเพิ่ม', 'รอบ 1'], ['หุงเพิ่ม', 'รอบ 2'], ['หุงเพิ่ม', 'รอบ 3'], ['ปริมาณหุงรวม', '(กก. ดิบ)']],
   left: [['#', ''], ['ชนิดข้าว', ''], ['ข้าวเหลือ', '(กก.)'], ['ทิ้ง-เสีย', '(กก.)'], ['ห่อกลับบ้าน', '(กก.)'], ['แจก', '(กก.)'], ['ข้าวเหลือเพื่อเก็บขายต่อ', '(กก.)'], ['เทียบข้าวดิบ', '(กก.)']],
-  ratio: [['#', ''], ['ชนิดข้าว', ''], ['สูตร/ส่วนผสมในการหุง', ''], ['อัตราแปลง ดิบ : สุก', '']]
+  ratio: [['#', ''], ['ชนิดข้าว', ''], ['อัตราหุง', 'ดิบ 1 กก. ได้สุกกี่ กก.'], ['สถานะ', '']]
 };
 
 // การ์ดสรุปสมการข้าว 3 ใบ (ใช้ขายจริง = ของเสีย + ข้าวเหลือขายต่อ)
@@ -393,55 +522,279 @@ export const PREP_TIPS = {
     checks: ['ข้าวเหลือเพื่อเก็บขายต่อ = ข้าวเหลือ - ทิ้ง/เสีย - ห่อกลับบ้าน - แจก', 'ระบบแปลงค่าสุกกลับเป็นดิบเพื่อคำนวณใช้จริง', 'ใช้ข้อมูลนี้ช่วยตัดสินใจหุงรอบถัดไป'],
     image: 'assets/prep/rice-homali.webp'
   },
-  forecast: {
-    title: 'เตรียมพอดี ขายดี ไม่มีของเสีย',
-    checks: ['ใช้ข้อมูลพยากรณ์ ช่วยลดการสตอกเกิน', 'วางแผนจัดซื้อได้อย่างมั่นใจ', 'สร้างกำไรอย่างยั่งยืนไปด้วยกันนะคะ'],
-    bubble: 'ข้อมูลวันนี้ คือกำไรในวันพรุ่งนี้ สู้ไปด้วยกันนะคะ!'
-  }
 };
 
-// ---------- แท็บพยากรณ์ (แท็บที่ 3) ----------
+// ---------- หน้าเตรียม-เหลือ: ค่าคงที่ของการบันทึกลงฐาน ----------
 
-// ข้อความบนหน้าพยากรณ์
+// ช่องบนจอ → ประเภทแถวในตาราง kk_prep_log / kk_cooked_leftover
+export const PREP_ENTRY = {
+  meat: { prep: 'เตรียม', extra: 'เบิกเพิ่ม', waste: 'ทิ้ง', left: 'คงเหลือ' },
+  rice: { cook: 'หุง', r: 'หุงเพิ่ม', left: 'คงเหลือสุก', waste: 'ทิ้ง', home: 'ห่อกลับบ้าน', give: 'แจก' },
+  fah: { left: 'เหลือ', waste: 'ทิ้ง', self: 'กินเอง', home: 'ห่อกลับบ้าน' }
+};
+
+// หมวดแสดงผลของเนื้อสัตว์แต่ละรายการ (id ใน kk_count_item → กลุ่มบนจอ)
+export const PREP_GROUP_OF = {
+  meat_chicken_mince: 'chicken', meat_chicken_soft: 'chicken', meat_chicken_tender: 'chicken',
+  meat_pork_soft: 'meat', meat_pork_mince: 'meat', meat_beef_mince: 'meat', meat_duck_mince: 'meat',
+  meat_salmon: 'sea', meat_hokke: 'sea', meat_shrimp_mid: 'sea', meat_shrimp_big: 'sea'
+};
+
+// รูปประจำเมนู (id ใน kk_menu)
+export const MENU_PHOTOS = {
+  'kaprao-chicken-mince': 'assets/dishes/dish-kaprao-chicken-mince.webp',
+  'kaprao-chicken-soft': 'assets/dishes/dish-kaprao-chicken-soft.webp',
+  'kaprao-pork-slice': 'assets/dishes/dish-kaprao-pork-slice.webp',
+  'kaprao-beef': 'assets/dishes/dish-kaprao-beef.webp',
+  'kaprao-duck': 'assets/dishes/dish-kaprao-duck.webp',
+  'kaprao-salmon': 'assets/dishes/dish-kaprao-salmon.webp',
+  'larb-salmon': 'assets/dishes/dish-larb-salmon.webp',
+  'kaprao-shrimp': 'assets/dishes/dish-kaprao-shrimp.webp',
+  'shrimp-garlic': 'assets/dishes/dish-shrimp-garlic.webp',
+  'chicken-jimjaew': 'assets/dishes/dish-chicken-jimjaew.webp',
+  'chicken-teriyaki': 'assets/dishes/dish-chicken-teriyaki.webp',
+  'pork-osaka': 'assets/dishes/dish-pork-osaka.webp'
+};
+
+// ข้อความทั้งหมดของหน้าเตรียม-เหลือ (ส่วนที่เพิ่มรอบนี้)
+export const PREP_UI = {
+  loading: 'กำลังโหลดข้อมูลจากฐาน...',
+  loadError: 'ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง',
+  retry: 'ลองใหม่',
+  saveError: 'บันทึกไม่สำเร็จ ตัวเลขเดิมยังอยู่ ลองใหม่อีกครั้ง',
+  dateToday: 'วันนี้',
+  datePast: 'ย้อนหลัง {n} วัน',
+  dateFuture: 'ล่วงหน้า {n} วัน',
+  dateBand: 'กำลังกรอกข้อมูลของวันที่ {d} ({s})',
+  dateBack: 'กลับมาวันนี้',
+  farTitle: 'วันที่ไกลจากวันนี้มาก',
+  farText: 'แน่ใจนะว่าเป็นวันที่ {d}?',
+  farOk: 'ยืนยันวันที่นี้',
+  histRev: 'ครั้งที่ {n}',
+  histCur: '← ใช้อยู่',
+  histClose: 'ปิด',
+  histBadge: 'แก้แล้ว {n} ครั้ง · กดดูประวัติ',
+  rec: 'แนะนำ —',
+  recOff: 'ยังไม่เปิดใช้การแนะนำปริมาณ',
+  cookedNote: 'คงเหลืออาหารปรุงสำเร็จ (เทียบเป็นวัตถุดิบสด) มาจากแท็บบันทึกอาหารเหลือของวันเดียวกัน',
+  stockCounted: 'สต๊อกครัวกลาง: มีนับจริง {d} = {q} กก. (ยึดยอดนับ)',
+  stockEst: 'สต๊อกครัวกลาง ≈ {r} กก. (นับล่าสุด {d} = {q} − ใช้ไปเบื้องต้น)',
+  stockWarn: 'ตัวเลขไม่ตรงกัน: คงเหลือสดมากกว่ายอดนับสต๊อกวันเดียวกัน',
+  noRatio: 'ยังไม่ได้ตั้งอัตราหุง',
+  ratioOk: 'ใช้คำนวณได้',
+  riceCheck: 'ผลรวมเทียบดิบไม่เท่าข้าวดิบที่ใช้ (คลาดเกิน 0.02 กก.) ตรวจตัวเลขอีกครั้ง',
+  noData: 'ยังไม่มีข้อมูล',
+  fcOffTitle: 'พยากรณ์ยังไม่เปิดใช้งาน',
+  fcOffText: 'รอข้อมูลใช้จริงสะสมจากหน้านี้ก่อน แล้วจึงเปิดการพยากรณ์ในรอบถัดไป ระหว่างนี้ไม่แสดงตัวเลขคาดการณ์ใดๆ',
+  noMenu: 'ยังไม่ได้ใส่รายการเมนู',
+  boundNote: 'แปลงเป็นเนื้อสัตว์ได้ {x} รายการ จาก {y} เมนูที่กรอกแล้ว',
+  unboundHead: 'เมนูที่ยังไม่ผูกเนื้อสัตว์/อัตราส่วน (ไม่ถูกนำมารวม):',
+  assumeTitle: 'Assumption · สูตรคำนวณใช้ไปจริง',
+  assumeCookedLabel: 'อาหารปรุงสุก 1 กรัม เทียบเท่าวัตถุดิบสด (กรัม)',
+  assumeStockNote: 'ใช้ไปเบื้องต้น (ยังไม่หักปรุงสุกเหลือ) = เตรียม + เบิกเพิ่ม − ทิ้ง/เสีย − คงเหลือสด และถูกนำไปหักจากสต๊อกครัวกลาง — ถ้ามีการนับสต๊อกหลังจากนั้น ระบบยึดยอดนับจริงแทน',
+  assumeMenuTitle: 'Assumption · แปลงเมนู → เนื้อสัตว์',
+  assumeMenuEq: 'คงเหลือใช้ต่อ = เหลือ − ทิ้ง/เสีย − กินเอง − ห่อกลับบ้าน · น้ำหนักเนื้อ (ก.) = คงเหลือใช้ต่อ × อัตราส่วน',
+  assumeNoProtein: '— ยังไม่เลือก —',
+  assumeRiceTitle: 'Assumption · อัตราหุงข้าวแต่ละชนิด (แก้ได้)',
+  convTitle: 'แปลงเป็นวัตถุดิบ (หักในแท็บเตรียมอาหารวันเดียวกัน)',
+  convEmpty: 'ยังไม่มีเมนูที่กรอกของเหลือและผูกเนื้อสัตว์ครบ',
+  weekTitle: 'สถิติของเหลือ 7 วันย้อนหลัง (เฉพาะช่อง "เหลือ")',
+  statsTitle: 'สถิติข้าว 7 วันย้อนหลัง (คิดเฉพาะชนิดที่ตั้งอัตราหุงแล้ว)',
+  copyPrev: 'คัดลอกจากวันก่อนหน้า',
+  copyNone: 'ยังไม่มีวันที่เคยกรอกไว้ให้คัดลอก',
+  copyDrafted: 'ดึงค่าของ {d} มาเป็นร่างแล้ว กดยืนยันทีละแถว',
+  draftUse: 'ใช้ {v} ✓',
+  satNote: 'วันเสาร์ห้ามเผื่อ — อาทิตย์ร้านปิด อาหารสุกยกข้ามวันไม่ได้ (แนะเป้าใช้ค่าพยากรณ์ตรงๆ ไม่ใช่ขอบบน)'
+};
+
+// ---------- พยากรณ์: สูตรที่ล็อกไว้ต่อรายการ (ห้ามเปลี่ยนเอง เปลี่ยนได้เฉพาะตอนจบรอบผ่านหน้าตรวจสอบสมการ) ----------
+export const FORECAST_MODELS = {
+  meat_chicken_mince: { kind: 'weekday_mean', label: 'weekday_mean — เฉลี่ยวันเดียวกันในสัปดาห์' },
+  meat_salmon: { kind: 'ema', alpha: 0.2, label: 'EMA α 0.2' },
+  meat_chicken_soft: { kind: 'ma', n: 6, label: 'MA6 — เฉลี่ย 6 วันเปิดล่าสุด' },
+  meat_beef_mince: { kind: 'ma', n: 3, label: 'MA3 — เฉลี่ย 3 วันเปิดล่าสุด' },
+  meat_shrimp_mid: { kind: 'ma', n: 6, label: 'MA6 — เฉลี่ย 6 วันเปิดล่าสุด' },
+  meat_chicken_tender: { kind: 'ratio_theo', n: 6, label: 'ratio_theo6 — รอข้อมูลยอดขายแปลงสูตร' },
+  meat_pork_soft: { kind: 'blend', alpha: 0.3, label: 'blend 0.5×EMA0.3 + 0.5×ratio_theo — รอข้อมูลยอดขาย' },
+  meat_duck_mince: { kind: 'ema', alpha: 0.5, label: 'EMA α 0.5' },
+  meat_shrimp_big: { kind: 'mean_last', n: 2, label: 'เฉลี่ย 2 วันเปิดล่าสุด' },
+  meat_hokke: { kind: 'const', v: 0.7, label: 'ค่าคงที่ 0.7 กก.' },
+  meat_pork_mince: { kind: 'none', label: 'ยังไม่กำหนดสูตร' }
+};
+
+// ข้อความแท็บพยากรณ์ (หน้าแสดงผล ไม่มีการกรอก)
 export const PREP_FC_UI = {
-  dateLabel: 'วันที่พยากรณ์',
-  modeLabel: 'รูปแบบการแสดงผล',
+  kpi: { count: 'จำนวนวัตถุดิบ<br>ที่ติดตาม', accuracy: 'ความแม่นยำ<br>(อยู่ในกรอบ)', days: 'ช่วงกราฟย้อนหลัง', date: 'วันที่พยากรณ์' },
+  insufficient: 'ข้อมูลยังไม่พอ',
   tableTitle: 'พยากรณ์การใช้วัตถุดิบ (รายรายการ)',
-  addLabel: 'เพิ่มรายการ',
-  adviceTitle: 'ข้อเสนอแนะจากพยากรณ์',
-  adviceAll: 'ดูทั้งหมด',
-  rangeHead: 'ช่วงคาดการณ์'
+  cols: [['#', ''], ['รายการ', '(สูตรที่ล็อก)'], ['เฉลี่ย 6 วัน', '(กก.)'], ['พยากรณ์', '(กก.)'], ['ต่ำสุด', '(กก.)'], ['สูงสุด', '(กก.)'], ['แนวโน้ม', ''], ['WAPE', '(%)'], ['ย้อนหลัง 10 วัน', '']],
+  status: {
+    insufficient: 'ข้อมูลยังไม่พอ',
+    no_band: 'รอ residual ครบ 8 ค่าเพื่อคำนวณกรอบ',
+    no_theo: 'รอข้อมูลยอดขายแปลงสูตร (theo_kg)',
+    no_model: 'ยังไม่กำหนดสูตร'
+  },
+  trends: {
+    up: { label: 'ขึ้น', arrow: '↗', color: '#E0453C', tint: '#FDECEA' },
+    down: { label: 'ลง', arrow: '↘', color: '#1E7A3C', tint: '#EAF6EC' },
+    flat: { label: 'คงที่', arrow: '→', color: '#3B8BE0', tint: '#EAF3FD' }
+  },
+  rules: 'กติกา: วัดผลเฉพาะวันที่ทำนายล่วงหน้าจริง · กรอบ = ±{band}SD ของ residual {sd} ค่าล่าสุด (ต้อง ≥{min} ค่า) · ความแม่นยำ/WAPE ต้องมี ≥{days} วัน · ข้ามวันที่ไม่มีข้อมูล ห้ามเติมค่าแทน · ไม่นับวันอาทิตย์ · กฎทุกข้อแก้ได้ที่หน้า "ตั้งค่ากฎการทดสอบ"',
+  needDays: 'ต้องมีวันวัดผล ≥{days} วัน'
 };
 
-// ปุ่มสลับรูปแบบการแสดงผลของตารางพยากรณ์
-export const PREP_FC_MODES = [{ id: 'num', label: 'ค่าตัวเลข' }, { id: 'chart', label: 'กราฟแนวโน้ม' }];
-
-// ป้ายแนวโน้ม (ขึ้น = ใช้มากขึ้น ใช้สีแดง / ลง = สีเขียว / คงที่ = สีฟ้า)
-export const PREP_TRENDS = {
-  up: { label: 'ขึ้น', arrow: '↗', color: '#E0453C', tint: '#FDECEA' },
-  down: { label: 'ลง', arrow: '↘', color: '#1E7A3C', tint: '#EAF6EC' },
-  flat: { label: 'คงที่', arrow: '→', color: '#3B8BE0', tint: '#EAF3FD' }
+// หน้าตรวจสอบสมการ Forecast (เกณฑ์จากสเปกคลังสูตร)
+export const EQ_UI = {
+  title: 'สมการ Forecast',
+  sub: 'คลังสูตรพยากรณ์ · ผลวัดจากข้อมูลจริง · เกณฑ์คัดเข้า-คัดออก',
+  regTitle: 'สูตรที่ล็อกไว้ (ใช้งานจริง)',
+  measureTitle: 'ผลวัดความแม่นยำปัจจุบัน (walk-forward จากบันทึกจริง)',
+  measureCols: ['รายการ', 'วันวัดผล', 'อัตราถูก', 'WAPE'],
+  sections: [
+    { head: 'การวัดผลทุกสูตร (ต่อสูตร ต่อวัตถุดิบ)', items: [
+      'ถูก = ใช้จริงอยู่ในกรอบล่าง–สูง (รวมค่าเท่าขอบพอดี) · ผิด = นอกกรอบ',
+      'ขนาดความเสียหาย = |ใช้จริง − พยากรณ์| เต็มจำนวน ไม่ใช่แค่ระยะที่เลยขอบ',
+      'ต้องมีอย่างน้อย 20 วันต่อวัตถุดิบจึงตัดสิน · ห้ามรายงาน MAPE รวมทุกวัตถุดิบ',
+      'ต้องแยกช่วงเลือกสูตรกับช่วงวัดผลเสมอ ห้ามเลือกและวัดจากข้อมูลชุดเดียวกัน'
+    ] },
+    { head: 'เกณฑ์คัดออก (เข้าข้อใดข้อหนึ่ง · ห้ามคัดสูตรใช้งานจริง/ตัวเทียบ)', items: [
+      'อัตราถูกต่ำกว่าตัวเทียบ "เตรียมคงที่" → คัดออกทันที',
+      'อัตราถูก < 85% ที่กรอบ 2SD ติดกัน 2 รอบ',
+      'มูลค่าความเสียหายสูงกว่าสูตรใช้งานจริงเกิน 50% ติดกัน 2 รอบ'
+    ] },
+    { head: 'เกณฑ์ขึ้นเป็นสูตรใช้งานจริง (ต้องครบ 3 ข้อ · เปลี่ยนได้เฉพาะตอนจบรอบ)', items: [
+      'อัตราถูกสูงกว่าสูตรปัจจุบัน', 'มูลค่าความเสียหายต่ำกว่า', 'ชนะติดกัน 2 รอบขึ้นไป'
+    ] },
+    { head: 'วิธีสร้างสูตรใหม่ (ใช้ได้ 4 วิธีเท่านั้น)', items: [
+      'ขยับพารามิเตอร์: top-3 ปรับ α ±0.05/0.1 หรือวันย้อนหลัง ±1–3 วัน',
+      'ผสมสูตร: 2 สูตรที่ดีสุด ถ่วงน้ำหนัก 0.3 / 0.5 / 0.7',
+      'ชั้นแก้อคติ: residual เฉลี่ยตามวัน (28 วัน) เกิน 0.3 กก. และทางเดียวกัน >70% → สูตรเดิม + ค่าแก้',
+      'บีบกรอบ: อัตราถูก >97% ติดกัน 2 รอบ → บีบกรอบลง 0.25SD'
+    ] },
+    { head: 'ข้อห้าม', items: [
+      'ห้ามใช้ข้อมูลอนาคต · พารามิเตอร์ไม่เกิน 3 ตัว · ย้อนหลังไม่เกิน 60 วันเปิด',
+      'สูตรใหม่ต้องชนะตัวเทียบในช่วงทดสอบก่อนเข้าคลัง',
+      'ทดสอบพร้อมกันไม่เกิน 8 สูตร · ต้องมีอย่างน้อย 3 สายจาก 4 สาย (เฉลี่ย / EMA / ยอดขาย / วันในสัปดาห์)'
+    ] },
+    { head: 'ป้ายสถานการณ์ (ประเมินใหม่ทุกรอบจากผลจริง)', items: [
+      'ยอดนิ่ง · ยอดผันผวนแรง · มีแนวโน้มชัด · ยกข้ามวันได้/ไม่ได้ · ของแพงพลาดแล้วเสียหายมาก'
+    ] }
+  ],
+  noteNow: 'ตอนนี้คลังมีเฉพาะสูตรใช้งานจริงที่ล็อกไว้ การคัดเข้า-คัดออกจะเริ่มเมื่อข้อมูลใช้จริงสะสมครบ 20 วันต่อวัตถุดิบ'
 };
 
-// หัวตารางพยากรณ์ 2 รูปแบบ (ค่าตัวเลข / กราฟแนวโน้ม)
-export const PREP_FC_COLS = {
-  num: [['#', ''], ['รายการวัตถุดิบ', ''], ['ผู้รับผิดชอบ', ''], ['ใช้จริงเฉลี่ย', '(กก./วัน)'], ['พยากรณ์', '(กก.)'], ['ต่ำสุด', '(กก.)'], ['สูงสุด', '(กก.)'], ['แนวโน้ม', ''], ['กราฟย้อนหลัง 10 วัน', '']],
-  chart: [['#', ''], ['รายการวัตถุดิบ', ''], ['ผู้รับผิดชอบ', ''], ['พยากรณ์', '(กก.)'], ['แนวโน้ม', ''], ['กราฟย้อนหลัง 10 วัน', '']]
-};
-
-// การ์ดตัวชี้วัด 4 ใบบนหน้าพยากรณ์ (ค่าจริงเติมโดย prep-forecast.js)
-export const PREP_FC_KPI = [
-  { key: 'count', label: 'จำนวนวัตถุดิบ<br>ที่ติดตาม', icon: 'assets/prep/ic3d-use.webp', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3' },
-  { key: 'accuracy', label: 'ความแม่นยำ<br>ของโมเดล', icon: 'assets/prep/ic3d-forecast.webp', color: '#D4322A', tint: '#FDECEA', border: '#F5CFCB' },
-  { key: 'days', label: 'ช่วงพยากรณ์', icon: 'assets/prep/ic3d-date.webp', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
-  { key: 'date', label: 'วันที่พยากรณ์', icon: 'assets/prep/ic3d-history.webp', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' }
+// ---------- หน้าสมการ Forecast: แท็บย่อย 4 หน้า ----------
+export const EQ_TABS = [
+  { id: 'overview', label: 'ภาพรวม', glyph: 'check' },
+  { id: 'lab', label: 'ห้องทดสอบ', glyph: 'chart' },
+  { id: 'lib', label: 'คลังสูตร', glyph: 'layers' },
+  { id: 'cfg', label: 'ตั้งค่ากฎ', glyph: 'gear' }
 ];
 
-// สีป้ายของการ์ดข้อเสนอแนะ
-export const PREP_FC_TONES = {
-  pink: { color: '#D93A6B', tint: '#FDEAF0' },
-  amber: { color: '#B4741B', tint: '#FDF3E2' },
-  green: { color: '#1E7A3C', tint: '#EAF6EC' }
+// คำแปลที่ใช้ร่วมกันทุกหน้าของสมการ Forecast
+export const FC_FAMILY_TH = { mean: 'เฉลี่ย', ema: 'EMA', weekday: 'วันในสัปดาห์', sales: 'ยอดขาย', trend: 'แนวโน้ม', control: 'ตัวเทียบ' };
+export const FC_STATUS_TH = { live: 'ใช้งานจริง', testing: 'กำลังทดสอบ', bench: 'สำรอง', dropped: 'ถูกคัดออก', control: 'ตัวเทียบ' };
+export const FC_VERDICT_TH = { pass: 'ผ่าน', fail: 'ไม่ผ่าน', inconclusive: 'ข้อมูลยังไม่พอ' };
+export const FC_SOURCE_TH = { seed: 'ตั้งต้น', mutate: 'ขยับพารามิเตอร์', combine: 'ผสมสูตร', bias_correct: 'แก้อคติ', band_adjust: 'บีบกรอบ', manual: 'เพิ่มเอง' };
+export const FC_REGIME_TH = {
+  growth: { label: 'ขาขึ้น', arrow: '↗', color: '#D4322A', tint: '#FDECEA' },
+  stable: { label: 'ทรงตัว', arrow: '→', color: '#2F63C9', tint: '#EAF1FD' },
+  decline: { label: 'ขาลง', arrow: '↘', color: '#1E7A3C', tint: '#EAF6EC' }
+};
+
+// หน้าห้องทดสอบสูตร รายวัตถุดิบ
+export const EQ_LAB_UI = {
+  sub: 'เอาทุกสูตรมาแข่งกันบนวัตถุดิบตัวเดียวกัน วัดผลเดินวันต่อวันจากข้อมูลจริง',
+  pickItem: 'เลือกวัตถุดิบ',
+  stateHead: 'สภาพปัจจุบันของวัตถุดิบ',
+  stats: [['เฉลี่ยใช้จริง 6 วัน', 'กก.'], ['ความแกว่ง (SD)', 'กก.'], ['วันที่มีข้อมูล', 'วัน'], ['สถานการณ์ตอนนี้', '']],
+  liveHead: 'สูตรที่ใช้จริงกับวัตถุดิบนี้',
+  fixedModel: 'เตรียมคงที่ (ไม่พยากรณ์)',
+  noLive: 'ยังไม่ได้ตั้งสูตรใช้จริง',
+  subtabs: [['kg', 'ตารางปริมาณ'], ['baht', 'ตารางมูลค่า'], ['chart', 'กราฟเทียบสูตร']],
+  cols: ['รหัสสูตร', 'ชื่อสูตร', 'กลุ่ม', 'วันทดสอบ', 'win rate', 'ครั้งที่แพ้', 'แพ้เยอะสุด', 'แพ้เฉลี่ย', 'แพ้น้อยสุด', 'แพ้รวม', 'กรอบเฉลี่ย', 'สถานะ'],
+  colUnits: ['', '', '', 'วัน', '%', 'ครั้ง', 'กก.', 'กก.', 'กก.', 'กก.', 'กก.', ''],
+  bahtCols: ['รหัสสูตร', 'ชื่อสูตร', 'แพ้เฉลี่ย/ครั้ง', 'แพ้รวมทั้งช่วง', 'แพ้รวมต่อเดือน'],
+  noPrice: 'ไม่มีราคาต่อกิโลของวัตถุดิบนี้ในฐาน จึงคิดเป็นเงินไม่ได้',
+  priceHead: 'ราคาต่อกิโล',
+  chartHint: 'เลือกสูตรจากตารางปริมาณได้สูงสุด 3 สูตร แล้วกลับมาดูกราฟ',
+  chartEmpty: 'ยังไม่ได้เลือกสูตร — ติ๊กช่องหน้าแถวในตารางปริมาณก่อน',
+  chartLegend: 'ใช้จริง',
+  btnLive: 'ตั้งเป็นสูตรใช้จริงของวัตถุดิบนี้',
+  btnSave: 'บันทึกผลการทดสอบ',
+  liveAsk: { title: 'ตั้งเป็นสูตรใช้จริง?', ok: 'ตั้งสูตรนี้' },
+  liveNeedOne: 'ติ๊กเลือกสูตรที่จะตั้งเป็นสูตรใช้จริง 1 สูตร',
+  liveDone: 'ตั้ง {c} เป็นสูตรใช้จริงของ {n} แล้ว',
+  savedTrials: 'บันทึกผลทดสอบ {n} แถวลงฐานแล้ว',
+  saveErr: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',
+  max3: 'เลือกเทียบกราฟได้สูงสุด 3 สูตร',
+  foot: 'ทุกคอลัมน์เป็นปริมาณหน่วยกิโลกรัม · แพ้รวมต่อเดือนคิดจาก {r} วันเปิดต่อรอบ · แถวที่วันทดสอบไม่ถึง {d} วัน = ข้อมูลยังไม่พอ ไม่ตัดสิน'
+};
+
+// หน้าคลังสูตร และประวัติการทดสอบ
+export const EQ_LIB_UI = {
+  sub: 'ทุกสูตรที่มี · เคยทดสอบแล้วผลเป็นยังไง · สูตรไหนเหมาะกับสถานการณ์ไหน',
+  sums: [['ทั้งหมด', 'all'], ['ใช้งานจริง', 'live'], ['กำลังทดสอบ', 'testing'], ['สำรอง', 'bench'], ['ถูกคัดออก', 'dropped'], ['ตัวเทียบ', 'control']],
+  filterHeads: ['กลุ่มสูตร', 'สถานะ', 'สถานการณ์ที่เหมาะ', 'ผลล่าสุด'],
+  all: 'ทั้งหมด',
+  tableHead: 'คลังสูตรทั้งหมด',
+  cols: ['รหัส', 'ชื่อสูตร', 'กลุ่ม', 'สถานะ', 'ทดสอบ', 'ผลล่าสุด', 'เก่งตอน'],
+  eqHead: 'สมการ',
+  paramHead: 'พารามิเตอร์',
+  tagHead: 'แท็กเหมาะกับ',
+  trialHead: 'ประวัติการทดสอบ',
+  trialCols: ['วันที่ทดสอบ', 'ช่วงข้อมูล', 'วัตถุดิบ', 'สถานการณ์', 'วัน', 'win rate', 'แพ้เฉลี่ย', 'แพ้เยอะสุด', 'ผล'],
+  noTrial: 'ยังไม่เคยทดสอบสูตรนี้',
+  droppedHead: 'สูตรที่ไม่ผ่านแล้ว',
+  droppedEmpty: 'ยังไม่มีสูตรที่ถูกคัดออก',
+  retestBtn: 'เอากลับมาทดสอบใหม่',
+  retestAsk: { title: 'เอากลับมาทดสอบใหม่?', ok: 'ส่งเข้าทดสอบ' },
+  retestWarn: 'สูตรนี้ตกไปเมื่อ {d} ({n} วันก่อน) เพราะ: {why}',
+  retestNoDate: 'สูตรนี้ถูกคัดออก เพราะ: {why}',
+  untestedHead: 'สูตรที่ยังไม่เคยทดสอบ',
+  untestedEmpty: 'ทุกสูตรเคยถูกทดสอบแล้ว',
+  sendBtn: 'ส่งเข้าทดสอบ',
+  addBtn: 'เพิ่มสูตรเอง',
+  evolveBtn: 'ให้ระบบสร้างสูตรใหม่',
+  addForm: { title: 'เพิ่มสูตรเอง', code: 'รหัสสูตร (อังกฤษ)', name: 'ชื่อสูตร', family: 'กลุ่มสูตร', eq: 'สมการ (อธิบายเป็นคำ)', params: 'พารามิเตอร์ เช่น {"window":7}', ok: 'บันทึกลงคลัง' },
+  addBad: 'ต้องกรอกรหัสสูตรและชื่อสูตร',
+  addDup: 'มีรหัสสูตรนี้ในคลังแล้ว',
+  addBadParams: 'พารามิเตอร์ต้องเป็น JSON เช่น {"window":7}',
+  addDone: 'เพิ่มสูตร {c} ลงคลังแล้ว',
+  evolveNoTrial: 'ยังไม่มีผลทดสอบในฐาน — ไปหน้าห้องทดสอบ กดบันทึกผลการทดสอบก่อน',
+  evolveNone: 'ไม่มีสูตรใหม่ที่สร้างได้ตามกฎในรอบนี้',
+  evolveAsk: { title: 'สร้างสูตรใหม่ {n} สูตร?', ok: 'สร้างและบันทึก' },
+  evolveDone: 'สร้างสูตรใหม่ {n} สูตร (เข้าทดสอบ {p} · ตกด่านแรก {d})',
+  matrixHead: 'สูตรไหนเก่งตอนไหน (win rate ตามสถานการณ์)',
+  matrixEmpty: 'ต้องมีผลทดสอบที่ติดป้ายสถานการณ์ก่อน จึงจะเทียบได้',
+  matrixNote: 'ช่องว่าง = ยังไม่มีผลทดสอบในสถานการณ์นั้น · คอลัมน์ "เก่งตอน" ในตารางคลังสูตรอัปเดตจากตารางนี้',
+  bestDone: 'อัปเดตสถานการณ์ที่ทำได้ดีที่สุดของ {n} สูตรแล้ว',
+  statusDone: 'เปลี่ยนสถานะ {c} เป็นกำลังทดสอบแล้ว'
+};
+
+// หน้าตั้งค่ากฎการทดสอบ
+export const EQ_CFG_UI = {
+  sub: 'กฎทุกข้ออ่านจากตาราง kk_forecast_config · แก้แล้วทุกหน้าที่คำนวณใช้ค่าใหม่ทันที',
+  groups: ['นิยามชนะ-แพ้', 'การคำนวณ', 'เกณฑ์คัดออก', 'เกณฑ์เลื่อนขั้น', 'การสร้างสูตรใหม่', 'สถานการณ์'],
+  picks: {
+    band_type: [['SD', 'SD — ตามความแกว่ง'], ['PCT', 'PCT — เป็นเปอร์เซ็นต์']],
+    loss_mode: [['full', 'full — ส่วนต่างเต็มก้อน'], ['outside', 'outside — เฉพาะระยะที่เลยขอบ']]
+  },
+  impactHead: 'ผลกระทบถ้าบันทึกค่านี้',
+  impactCalc: 'กำลังคำนวณผลกระทบ...',
+  impactWin: 'win rate รวมทุกวัตถุดิบ',
+  impactKg: 'ของที่ต้องเตรียมต่อเดือน',
+  impactNone: 'ยังวัดผลกระทบไม่ได้ (ข้อมูลไม่พอในกฎชุดใหม่)',
+  impactSame: 'ค่านี้ไม่กระทบผลการวัดในข้อมูลที่มี',
+  dirty: 'แก้ไว้ {n} ค่า ยังไม่บันทึก',
+  save: 'บันทึกกฎทั้งหมด',
+  reset: 'คืนค่าเริ่มต้น',
+  resetAsk: { title: 'คืนค่าเริ่มต้นทั้ง 27 ค่า?', text: 'ค่าที่แก้ไว้เองจะกลับเป็นค่าตั้งต้นของระบบ', ok: 'คืนค่าเริ่มต้น' },
+  saveNone: 'ยังไม่มีค่าที่แก้',
+  saveDone: 'บันทึกกฎใหม่ {n} ค่าแล้ว ทุกหน้าที่คำนวณใช้ค่าใหม่ทันที',
+  resetDone: 'คืนค่าเริ่มต้นแล้ว',
+  saveErr: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',
+  outRange: 'ค่าต้องอยู่ระหว่าง {a} ถึง {b}'
 };
 
 // ---------- แท็บของฟ้าทั้งหมด (แท็บที่ 4) ----------
@@ -644,4 +997,49 @@ export const R9_UI = {
   sent: 'บันทึกและส่งเรียบร้อย',
   cleared: 'ล้างปริมาณและราคาทั้งหมดแล้ว',
   clearAsk: { title: 'ล้างทั้งหมด?', text: 'ปริมาณ ราคา ค่าส่ง และหมายเหตุของรอบนี้จะถูกล้าง', ok: 'ล้างทั้งหมด' }
+};
+
+// ---------- หน้าบัญชีและรหัสผ่าน ----------
+
+// ตำแหน่งสิทธิ์ที่เลือกได้ตอนเพิ่ม/แก้บัญชี
+export const ACCOUNT_ROLES = [
+  { value: 'admin', label: 'แอดมิน (แก้ได้ทุกคน)' },
+  { value: 'lead', label: 'หัวหน้า' },
+  { value: 'staff', label: 'พนักงาน' }
+];
+
+// รูปตัวละครที่เลือกได้ตอนเพิ่มบัญชี (ไฟล์อยู่ที่ assets/login/avatar-*.webp)
+export const ACCOUNT_AVATARS = ['ahhia', 'maepan', 'fah', 'emmy', 'ad', 'som']
+  .map(id => ({ value: id, label: id, image: `assets/login/avatar-${id}.webp` }));
+
+// ข้อความทั้งหมดของหน้าบัญชีและรหัสผ่าน
+export const ACCOUNT_UI = {
+  title: 'บัญชีและรหัสผ่าน',
+  sub: 'รหัสพนักงาน 4 หลัก + PIN 4 หลัก สำหรับเข้าแอป',
+  count: '{n} บัญชี',
+  adminNote: 'คุณเป็นแอดมิน แก้รหัสของทุกคนได้',
+  staffNote: 'แก้ได้เฉพาะ PIN ของบัญชีคุณเอง',
+  codeLabel: 'รหัส',
+  pinLabel: 'PIN',
+  meTag: 'บัญชีของคุณ',
+  add: 'เพิ่มบัญชี',
+  editPin: 'แก้ PIN',
+  remove: 'ลบบัญชี',
+  show: 'ดู PIN',
+  hide: 'ซ่อน PIN',
+  roleName: { admin: 'แอดมิน', lead: 'หัวหน้า', staff: 'พนักงาน' },
+  pinAsk: { title: 'แก้ PIN ของ {name}', field: 'PIN ใหม่ (4 หลัก)', ok: 'บันทึก PIN' },
+  addAsk: { title: 'เพิ่มบัญชีใหม่', name: 'ชื่อที่แสดง', code: 'รหัสพนักงาน (4 หลัก)', pin: 'PIN (4 หลัก)', role: 'สิทธิ์', avatar: 'รูปตัวละคร', ok: 'เพิ่มบัญชี' },
+  delAsk: { title: 'ลบบัญชี {name}?', text: 'บัญชีนี้จะเข้าแอปไม่ได้อีก', ok: 'ลบบัญชี' },
+  done: { pin: 'เปลี่ยน PIN ของ {name} แล้ว', add: 'เพิ่มบัญชี {name} แล้ว', del: 'ลบบัญชี {name} แล้ว' },
+  err: {
+    deny: 'คุณไม่มีสิทธิ์แก้บัญชีนี้',
+    pin: 'PIN ต้องเป็นตัวเลข 4 หลัก',
+    code: 'รหัสพนักงานต้องเป็นตัวเลข 4 หลัก',
+    name: 'ใส่ชื่อที่แสดงด้วยนะ',
+    dup: 'รหัสพนักงานนี้มีอยู่แล้ว',
+    self: 'ลบบัญชีของตัวเองไม่ได้',
+    lastAdmin: 'ต้องเหลือแอดมินอย่างน้อย 1 คน',
+    missing: 'ไม่พบบัญชีนี้'
+  }
 };

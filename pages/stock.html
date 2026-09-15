@@ -1,38 +1,44 @@
-<!-- โครงหน้าสต๊อก (ตัวเลขและรายการจริงถูกเติมโดย js/pages/stock.js) -->
-<section class="stk" data-screen-label="สต๊อก">
+<!-- โครงหน้านับสต๊อก (รายการและตัวเลขจริงถูกเติมโดย js/pages/stock.js จากฐานข้อมูล) -->
+<section class="stk" data-screen-label="นับสต๊อก">
 
   <header class="stk__bar">
     <button class="stk__round" type="button" aria-label="ย้อนกลับ" data-glyph="back"></button>
-    <h1 class="stk__title"><span>สต๊อก</span></h1>
+    <h1 class="stk__title"><span id="stk-head"></span></h1>
     <button class="stk__date" type="button"><span class="stk__date-ic" data-glyph="calendar"></span><span id="stk-date"></span></button>
-    <button class="stk__round stk__round--gear" type="button" aria-label="ตั้งค่า" data-glyph="gear"></button>
+    <button class="stk__round stk__round--gear" type="button" aria-label="โหลดใหม่" data-glyph="sort" id="stk-reload"></button>
   </header>
+
+  <div class="stk__who" id="stk-who"></div>
 
   <div class="stk__tabs" id="stk-tabs"></div>
 
   <div class="stk__sum">
     <img class="stk__sum-mascot" src="assets/mascot/wave.webp" alt="กุ๊กไก่" width="70" height="87" decoding="async">
     <div class="stk__sum-body">
-      <div class="stk__sum-head">ข้อมูลสต๊อกวันนี้</div>
+      <div class="stk__sum-head" id="stk-sum-head"></div>
       <div class="stk__sum-box" id="stk-sum"></div>
     </div>
     <img class="stk__sum-art" src="assets/food/clipboard-boxes.webp" alt="" width="54" height="54" loading="lazy" decoding="async">
   </div>
 
+  <div class="stk__fx" id="stk-formula"></div>
+
+  <div class="stk__prog" id="stk-prog"></div>
+
   <div class="stk__find">
     <label class="stk__search">
       <span class="stk__search-ic" data-glyph="search"></span>
-      <input id="stk-search" type="search" placeholder="ค้นหารายการสต๊อก...">
+      <input id="stk-search" type="search">
     </label>
-    <button class="stk__pick" type="button" id="stk-pick"><span>ทุกหมวดหมู่</span><span class="stk__pick-ic" data-glyph="chevron"></span></button>
-    <button class="stk__filter" type="button" aria-label="ตัวกรอง" data-glyph="filter"></button>
   </div>
 
-  <div class="stk__scroller"><div class="stk__actions" id="stk-actions"></div></div>
+  <div class="stk__scroller"><div class="stk__actions" id="stk-filters"></div></div>
+  <div class="stk__scroller"><div class="stk__actions" id="stk-tools"></div></div>
   <div class="stk__scroller"><div class="stk__cats" id="stk-cats"></div></div>
-  <div class="stk__scroller"><div class="stk__subs" id="stk-subs"></div></div>
 
   <div class="stk__groups" id="stk-groups"></div>
-  <p class="stk__empty" id="stk-empty" hidden>ไม่พบรายการที่ค้นหา</p>
+  <p class="stk__empty" id="stk-empty" hidden></p>
+
+  <button class="stk__save" type="button" id="stk-save"></button>
 
 </section>

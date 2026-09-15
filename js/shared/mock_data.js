@@ -190,36 +190,7 @@ export const MOCK_DATA = {
     { date: '2 ก.ย.', sold: 45.8, soldRaw: 32.9, left: 1.1 }
   ],
 
-  // ข้อมูลหัวเรื่องของแท็บพยากรณ์: วันที่พยากรณ์ / ความแม่นยำ / MAPE / ช่วงพยากรณ์ / เวลาอัปเดต
-  prepForecastMeta: { date: '2024-09-03', accuracy: 92, mape: 8.1, days: 10, updated: '09:24 น.' },
-
-  // ตารางพยากรณ์การใช้วัตถุดิบรายรายการ 16 รายการ
-  // avg = ใช้จริงเฉลี่ย (กก./วัน), fc = ค่าพยากรณ์ (กก.), min/max = ช่วงคาดการณ์, trend = up/down/flat
-  prepForecast: [
-    { id: 'chicken-mince', name: 'อกไก่สับ', group: 'chicken', owner: 'ad', avg: 2.2, fc: 2.4, min: 1.9, max: 2.9, trend: 'up', photo: 'assets/prep/meat-chicken-mince.webp' },
-    { id: 'chicken-tender', name: 'สันในไก่', group: 'chicken', owner: 'fah', avg: 1.8, fc: 1.6, min: 1.2, max: 2.1, trend: 'down', photo: 'assets/prep/meat-chicken-tender.webp' },
-    { id: 'chicken-soft', name: 'อกไก่นุ่ม', group: 'chicken', owner: 'emmy', avg: 2.5, fc: 2.8, min: 2.0, max: 3.6, trend: 'up', photo: 'assets/prep/meat-chicken-breast.webp' },
-    { id: 'pork-slice', name: 'หมูสไลด์', group: 'meat', owner: 'ad', avg: 1.9, fc: 2.0, min: 1.4, max: 2.8, trend: 'flat', photo: 'assets/prep/meat-pork-slice.webp' },
-    { id: 'duck-mince', name: 'เป็ดบด', group: 'meat', owner: 'fah', avg: 1.2, fc: 1.1, min: 0.8, max: 1.6, trend: 'down', photo: 'assets/prep/meat-duck-mince.webp' },
-    { id: 'beef-mince', name: 'เนื้อสับ', group: 'meat', owner: 'emmy', avg: 2.6, fc: 2.9, min: 2.1, max: 3.8, trend: 'up', photo: 'assets/prep/meat-beef-mince.webp' },
-    { id: 'salmon', name: 'แซลมอน', group: 'sea', owner: 'ad', avg: 1.1, fc: 1.2, min: 0.7, max: 1.8, trend: 'up', photo: 'assets/prep/meat-salmon.webp' },
-    { id: 'hokke', name: 'ฮอกเกะ', group: 'sea', owner: 'fah', avg: 0.9, fc: 0.8, min: 0.5, max: 1.3, trend: 'down', photo: 'assets/prep/meat-hokke.webp' },
-    { id: 'shrimp-mid', name: 'กุ้งกลาง', group: 'sea', owner: 'emmy', avg: 1.7, fc: 1.9, min: 1.1, max: 2.7, trend: 'up', photo: 'assets/prep/meat-shrimp-mid.webp' },
-    { id: 'shrimp-big', name: 'กุ้งใหญ่', group: 'sea', owner: 'ad', avg: 1.0, fc: 1.2, min: 0.7, max: 1.8, trend: 'up', photo: 'assets/prep/meat-shrimp-big.webp' },
-    { id: 'noodle-glass', name: 'เส้นแก้ว', group: 'rice', owner: 'fah', avg: 2.3, fc: 2.1, min: 1.5, max: 2.9, trend: 'down', photo: 'assets/prep/noodle-glass.webp' },
-    { id: 'homali', name: 'ข้าวหอมมะลิ', group: 'rice', owner: 'emmy', avg: 2.8, fc: 3.2, min: 2.4, max: 4.1, trend: 'up', photo: 'assets/prep/rice-homali.webp' },
-    { id: 'riceberry', name: 'ข้าวไรซ์เบอรี่', group: 'rice', owner: 'ad', avg: 1.3, fc: 1.4, min: 0.9, max: 2.0, trend: 'flat', photo: 'assets/prep/rice-riceberry.webp' },
-    { id: 'fat5', name: 'ข้าวมัน 5%', group: 'rice', owner: 'fah', avg: 2.1, fc: 1.9, min: 1.2, max: 2.8, trend: 'down', photo: 'assets/prep/rice-fat5.webp' },
-    { id: 'fat12', name: 'ข้าวมัน 12%', group: 'rice', owner: 'emmy', avg: 1.6, fc: 1.8, min: 1.0, max: 2.5, trend: 'up', photo: 'assets/prep/rice-fat12.webp' },
-    { id: 'fat-riceberry', name: 'ข้าวมันไรซ์เบอรี่', group: 'rice', owner: 'ad', avg: 1.4, fc: 1.3, min: 0.8, max: 2.0, trend: 'down', photo: 'assets/prep/rice-fat-riceberry.webp' }
-  ],
-
-  // ข้อเสนอแนะจากพยากรณ์ (การ์ด 3 ใบใต้ตาราง)
-  prepForecastTips: [
-    { id: 'chicken-soft', name: 'อกไก่นุ่ม', tag: 'ควรเตรียมเพิ่ม', tone: 'pink', lines: ['พยากรณ์ 2.8 กก.', 'สูงกว่าเฉลี่ย 12%'], photo: 'assets/prep/meat-chicken-breast.webp' },
-    { id: 'salmon', name: 'แซลมอน', tag: 'เฝ้าระวังสต็อก', tone: 'amber', lines: ['พยากรณ์ 1.2 กก.', 'ใกล้ระดับขั้นต่ำ'], photo: 'assets/prep/meat-salmon.webp' },
-    { id: 'homali', name: 'ข้าวหอมมะลิ', tag: 'แนวโน้มเพิ่มขึ้น', tone: 'green', lines: ['พยากรณ์ 3.2 กก.', 'สูงกว่าเฉลี่ย 14%'], photo: 'assets/prep/rice-homali.webp' }
-  ],
+  // (แท็บพยากรณ์ยังไม่เปิดใช้งาน — ลบข้อมูลพยากรณ์จำลองออกแล้ว ห้ามใส่ตัวเลขแต่งขึ้น)
 
   // 7 วันของสัปดาห์ที่ใช้เป็นหัวคอลัมน์ในแท็บของฟ้าทั้งหมด
   fahDays: [

@@ -1,6 +1,9 @@
 // ชิ้นส่วนหน้าจอที่ใช้ซ้ำทั้งแอป — เมนูล่าง 7 ปุ่ม + การ์ดกระจก + แผงถาม + ชุดไอคอนเส้น
-import { APP_NAV, PASTEL_DOTS } from './config.js';
+import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP } from './config.js';
 import { fillText } from './format.js';
+
+// รูปประจำรายการวัตถุดิบ (ชุดเดียวกันทุกหน้า)
+export const itemPhoto = item => STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
 
 // ชุดไอคอนเส้นของแอป (เรียกใช้ด้วย glyph('pencil'))
 const GLYPHS = {
@@ -39,7 +42,9 @@ const GLYPHS = {
   copy: '<rect x="4" y="4" width="12" height="12" rx="2"/><path d="M8 20h10a2 2 0 0 0 2-2V8"/>',
   layers: '<path d="M12 3l8 4-8 4-8-4z"/><path d="M4 12l8 4 8-4M4 17l8 4 8-4"/>',
   music: '<circle cx="7" cy="18" r="2.6"/><circle cx="18" cy="16" r="2.6"/><path d="M9.6 18V7l11-2v11"/>',
-  out: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h9"/>'
+  out: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h9"/>',
+  eye: '<path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeOff: '<path d="M4 4l16 16"/><path d="M9.6 5.9A9.6 9.6 0 0 1 12 5.6c6 0 9.5 5.5 9.5 5.5a17 17 0 0 1-2.6 3.2"/><path d="M6.3 7.7A17 17 0 0 0 2.5 11.1s3.5 5.5 9.5 5.5a9.7 9.7 0 0 0 3.2-.53"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'
 };
 
 // สร้างโค้ดไอคอนเส้นหนึ่งอัน (สีตามตัวอักษรที่ครอบ)
@@ -146,7 +151,7 @@ export function toast(message) {
 }
 
 // เปิดแผงลอยด้านล่าง คืนค่าที่ผู้ใช้เลือก (null = ปิดไปเฉยๆ)
-function openSheet(inner) {
+export function openSheet(inner) {
   return new Promise(resolve => {
     const host = appHost();
     const wrap = document.createElement('div');
@@ -211,9 +216,9 @@ export function bindSteppers(root) {
   });
 }
 
-// ช่องกรอกตัวเลขหน่วยกรัม (จำนวนเต็ม) ใช้ในตารางของหลายหน้า
-export function gramCell(id, field, value) {
-  return `<input class="ptab__in ptab__in--g" type="number" inputmode="numeric" step="10" min="0" placeholder="-" data-id="${id}" data-f="${field}" value="${value === null || value === undefined ? '' : Math.round(value)}">`;
+// ช่องกรอกตัวเลขหน่วยกรัม (จำนวนเต็ม) ใช้ในตารางของหลายหน้า (save = ปลายทางการบันทึก)
+export function gramCell(id, field, value, save = '') {
+  return `<input class="ptab__in ptab__in--g" type="number" inputmode="numeric" step="10" min="0" placeholder="-" data-id="${id}" data-f="${field}"${save ? ` data-save="${save}"` : ''} value="${value === null || value === undefined ? '' : Math.round(value)}">`;
 }
 
 // กราฟแท่งเล็กท้ายแถว (sparkline) — ใช้ทั้งหน้าพยากรณ์และหน้าของฟ้าทั้งหมด

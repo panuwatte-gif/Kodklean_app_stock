@@ -1,4 +1,5 @@
 // สูตรคำนวณที่ใช้ร่วมหลายหน้า — คำนวณที่ไฟล์นี้ที่เดียว หน้าจอห้ามคำนวณเอง
+import { shiftIso } from './format.js';
 
 // ยอดคงเหลือรวมของวัตถุดิบ 1 รายการ = ครัวกลาง + คอนโด
 export function stockTotal(item) {
@@ -31,71 +32,123 @@ export function stockCounts(items) {
   return { all: items.length, low, out };
 }
 
+// ---------- หน้านับสต๊อก (ข้อมูลจริงจากฐาน) ----------
+
+// ช่องว่าง = ยังไม่ได้นับ (null / undefined / สตริงว่าง)
+const blank = v => v === null || v === undefined || v === '';
+
+// ผลรวมจากตัวเลขสองที่ที่บันทึกไว้ (ใช้ตั้งค่าเริ่มต้นของช่องสต๊อกรวมตอนโหลด)
+export function sumPlaces(row) {
+  if (blank(row.kitchen) && blank(row.condo)) return null;
+  return Math.round(((Number(row.kitchen) || 0) + (Number(row.condo) || 0)) * 10) / 10;
+}
+
+// ผลนับรวมของ 1 รายการ — ของที่เก็บสองที่ถือสต๊อกรวมเป็นตัวตั้ง (ยังไม่ใส่ = ยังไม่ได้นับ ห้ามเป็น 0)
+export function countTotal(row) {
+  if (row.location === 'ทั้งสองที่') return blank(row.total) ? null : Math.round(Number(row.total) * 10) / 10;
+  return sumPlaces(row);
+}
+
+// ผลนับตามคลังที่เลือกดู (สต๊อกรวม / ครัวกลาง / คอนโด)
+export function countByPlace(row, place) {
+  if (place === 'kitchen') return blank(row.kitchen) ? null : Number(row.kitchen);
+  if (place === 'condo') return blank(row.condo) ? null : Number(row.condo);
+  return countTotal(row);
+}
+
+// คอนโดคิดให้เอง = สต๊อกรวม − ครัวกลาง (สต๊อกรวมว่าง = ยังไม่ได้นับ)
+export function condoFromTotal(total, kitchen) {
+  if (blank(total)) return null;
+  return Math.round(((Number(total) || 0) - (Number(kitchen) || 0)) * 10) / 10;
+}
+
+// ความคืบหน้าการนับ: ทั้งหมด / นับแล้ว / ยังไม่นับ / เปอร์เซ็นต์
+export function countProgress(rows) {
+  const done = rows.filter(r => countTotal(r) !== null).length;
+  return { all: rows.length, done, left: rows.length - done, pct: rows.length ? Math.round(done / rows.length * 100) : 0 };
+}
+
 // ---------- เตรียม-เหลือ: เนื้อสัตว์ ----------
 
 // ปัดทศนิยม 1 ตำแหน่งกันเศษลอย (0.1+0.2)
 const r1 = n => Math.round(n * 10) / 10;
 
-// เบิกเพิ่มรวมของรายการ (บวกทุกรอบ)
-export function prepExtra(item) {
-  return r1((item.extras || []).reduce((s, v) => s + (Number(v) || 0), 0));
+// เบิกเพิ่มมีช่องเดียว (เบิกหลายรอบให้บวกรวมแก้ตัวเลขในช่อง)
+
+// ใช้ไปเบื้องต้น (ยังไม่หักอาหารปรุงสุก): "เตรียม" ว่าง = ยังไม่เริ่มแถวนี้ → null / ช่องอื่นว่างถือเป็น 0
+export function prepUseBase(row) {
+  if (blank(row.prep)) return null;
+  return r1((Number(row.prep) || 0) + (Number(row.extra) || 0) - (Number(row.waste) || 0) - (Number(row.left) || 0));
 }
 
-// ใช้จริง/วัน = เตรียม + เบิกเพิ่ม − ทิ้ง/เสีย − คงเหลือ
-export function prepUse(item) {
-  return r1((Number(item.prep) || 0) + prepExtra(item) - (Number(item.waste) || 0) - (Number(item.left) || 0));
+// ใช้ไปจริง = เตรียม + เบิกเพิ่ม − ทิ้ง/เสีย − คงเหลือสด − คงเหลืออาหารปรุงสำเร็จ (กก.)
+export function prepUse(row) {
+  const base = prepUseBase(row);
+  return base === null ? null : r1(base - (Number(row.cooked) || 0));
 }
 
-// ตัวเลขสรุปหน้าเตรียมเนื้อสัตว์: จำนวนรายการ / รอบเบิกเพิ่ม / คงเหลือรวม / ทิ้งรวม / ใช้รวม
+// ตัวเลขสรุปหน้าเตรียมเนื้อสัตว์: จำนวนรายการ / เบิกเพิ่มรวม / คงเหลือรวม / ทิ้งรวม / ใช้รวม
 export function prepMeatTotals(items) {
-  const t = { count: items.length, rounds: 0, left: 0, waste: 0, use: 0 };
+  const t = { count: items.length, extra: 0, left: 0, waste: 0, use: 0 };
   items.forEach(i => {
-    t.rounds += (i.extras || []).length;
+    t.extra += Number(i.extra) || 0;
     t.left += Number(i.left) || 0;
     t.waste += Number(i.waste) || 0;
-    t.use += prepUse(i);
+    t.use += prepUse(i) || 0;
   });
-  return { ...t, left: r1(t.left), waste: r1(t.waste), use: r1(t.use) };
+  return { count: t.count, extra: r1(t.extra), left: r1(t.left), waste: r1(t.waste), use: r1(t.use) };
 }
 
 // ---------- เตรียม-เหลือ: ข้าว ----------
 
-// หุงรวม (กก. ดิบ) = หุงรอบแรก + หุงเพิ่มทุกรอบ
+// หุงรวม (กก. ดิบ) = หุงรอบแรก + หุงเพิ่มทุกรอบ (ยังไม่กรอกเลยสักช่อง = null ไม่คำนวณ)
 export function riceRaw(r) {
+  if (blank(r.cook) && (r.rounds || []).every(blank)) return null;
   return r1((Number(r.cook) || 0) + (r.rounds || []).reduce((s, v) => s + (Number(v) || 0), 0));
 }
 
-// ข้าวสุกที่คาดว่าจะได้ = ดิบ × อัตราแปลง
+// ข้าวสุกที่คาดว่าจะได้ = ดิบ × อัตราหุง (อัตราหุงยังไม่ตั้ง = null ห้ามคำนวณ)
 export function riceCooked(r) {
-  return r1(riceRaw(r) * (Number(r.ratio) || 1));
+  const raw = riceRaw(r);
+  return raw === null || !(Number(r.ratio) > 0) ? null : r1(raw * Number(r.ratio));
 }
 
-// ข้าวสุกเหลือเพื่อเก็บขายต่อ = ข้าวเหลือ − ทิ้ง/เสีย − ห่อกลับบ้าน − แจก
+// ข้าวสุกเหลือเพื่อเก็บขายต่อ = ข้าวเหลือ − ทิ้ง/เสีย − ห่อกลับบ้าน − แจก ("ข้าวเหลือ" ว่าง = ยังไม่ชั่ง ไม่คำนวณ)
 export function riceResale(r) {
+  if (blank(r.left)) return null;
   return r1((Number(r.left) || 0) - (Number(r.waste) || 0) - (Number(r.home) || 0) - (Number(r.give) || 0));
 }
 
-// แปลงข้าวสุกกลับเป็นข้าวดิบ
+// แปลงข้าวสุกกลับเป็นข้าวดิบ (ไม่มีอัตราหุง = null)
 export function riceToRaw(cooked, ratio) {
-  return r1((Number(cooked) || 0) / (Number(ratio) || 1));
+  return cooked === null || cooked === undefined || !(Number(ratio) > 0) ? null : r1(Number(cooked) / Number(ratio));
 }
 
-// ตัวเลขสรุปหน้าเตรียมข้าว (รวมทุกชนิด)
+// ตัวเลขสรุปหน้าเตรียมข้าว (รวมเฉพาะชนิดที่คำนวณได้) + ตรวจผลรวมเทียบดิบต้องเท่าดิบที่ใช้ (คลาดเกิน 0.02 = เตือน)
 export function riceTotals(list) {
-  const t = { count: list.length, raw: 0, cook: 0, r1: 0, r2: 0, r3: 0, cooked: 0, left: 0, loss: 0, resale: 0, soldRaw: 0, lossRaw: 0, resaleRaw: 0 };
+  const t = { count: list.length, raw: 0, cook: 0, r1: 0, r2: 0, r3: 0, cooked: 0, left: 0, loss: 0, resale: 0, sold: 0, soldRaw: 0, lossRaw: 0, resaleRaw: 0, noRatio: 0 };
+  let rawOk = 0;
   list.forEach(r => {
-    const raw = riceRaw(r), cooked = riceCooked(r);
+    const raw = riceRaw(r);
+    if (raw !== null) {
+      t.raw += raw; t.cook += Number(r.cook) || 0;
+      t.r1 += Number(r.rounds?.[0]) || 0; t.r2 += Number(r.rounds?.[1]) || 0; t.r3 += Number(r.rounds?.[2]) || 0;
+    }
+    const cooked = riceCooked(r);
+    if (cooked === null) { if (raw !== null && !(Number(r.ratio) > 0)) t.noRatio += 1; return; }
+    rawOk += raw;
+    const left = Number(r.left) || 0;
     const loss = (Number(r.waste) || 0) + (Number(r.home) || 0) + (Number(r.give) || 0);
-    const resale = riceResale(r);
-    t.raw += raw; t.cook += Number(r.cook) || 0;
-    t.r1 += Number(r.rounds?.[0]) || 0; t.r2 += Number(r.rounds?.[1]) || 0; t.r3 += Number(r.rounds?.[2]) || 0;
-    t.cooked += cooked; t.left += Number(r.left) || 0; t.loss += loss; t.resale += resale;
-    t.soldRaw += riceToRaw(cooked - (Number(r.left) || 0), r.ratio);
-    t.lossRaw += riceToRaw(loss, r.ratio);
-    t.resaleRaw += riceToRaw(resale, r.ratio);
+    const resale = riceResale(r) ?? 0;
+    t.cooked += cooked; t.left += left; t.loss += loss; t.resale += resale;
+    t.sold += cooked - left;
+    t.soldRaw += (cooked - left) / Number(r.ratio);
+    t.lossRaw += loss / Number(r.ratio);
+    t.resaleRaw += resale / Number(r.ratio);
   });
   const out = {}; Object.keys(t).forEach(k => { out[k] = r1(t[k]); });
-  out.sold = r1(t.cooked - t.left);   // ใช้ขายจริง (กก. สุก) = สุกทั้งหมด − ที่เหลือ
+  // ตรวจ: ขายจริง(ดิบ) + เก็บขายต่อ(ดิบ) + เสียเปล่า(ดิบ) ต้องเท่าข้าวดิบที่ใช้
+  out.checkFail = rawOk > 0 && Math.abs(rawOk - (t.soldRaw + t.lossRaw + t.resaleRaw)) > 0.02;
   return out;
 }
 
@@ -106,23 +159,7 @@ export function historyAverage(rows, keys) {
   return out;
 }
 
-// ---------- เตรียม-เหลือ: พยากรณ์ ----------
-
-// สร้างชุดตัวเลขย้อนหลังของกราฟเล็ก จากค่าใช้จริงเฉลี่ยและแนวโน้มของรายการนั้น
-export function forecastHistory(row, days = 10) {
-  const slope = row.trend === 'up' ? 0.05 : row.trend === 'down' ? -0.045 : 0;
-  const seed = String(row.id).split('').reduce((s, c) => s + c.charCodeAt(0), 0);
-  return Array.from({ length: days }, (_, i) => {
-    const wobble = Math.sin(seed + i * 1.7) * 0.11;
-    return Math.max(0.1, r1((Number(row.avg) || 0) * (1 + slope * (i - days / 2) + wobble)));
-  });
-}
-
-// ส่วนต่างของค่าพยากรณ์เทียบค่าเฉลี่ย เป็นเปอร์เซ็นต์ (บวก = ต้องเตรียมมากขึ้น)
-export function forecastGap(row) {
-  const avg = Number(row.avg) || 0;
-  return avg ? Math.round(((Number(row.fc) || 0) - avg) / avg * 100) : 0;
-}
+// ---------- เตรียม-เหลือ: พยากรณ์ (รอบนี้ยังไม่เปิดใช้ — ไม่มีสูตร/ข้อมูลจำลองใดๆ ในโค้ด) ----------
 
 // ---------- หน้าหลัก (Dashboard) ----------
 
@@ -209,12 +246,147 @@ export function fahTotals(rows) {
   return t;
 }
 
-// แปลงของเหลือวันนี้เป็นวัตถุดิบ: รวมคงเหลือใช้ต่อของทุกเมนูที่ใช้วัตถุดิบตัวเดียวกัน
-export function fahToIngredient(rows, menuIds) {
-  return (menuIds || []).reduce((sum, id) => {
-    const row = rows.find(r => r.id === id);
-    return sum + (row ? fahKeep(row) : 0);
-  }, 0);
+// คงเหลือใช้ต่อ แบบเคารพช่องว่าง: "เหลือ" ว่าง = ยังไม่กรอกเมนูนี้ → null (ช่องอื่นว่าง = 0)
+export function fahKeepOrNull(row) {
+  return row.left === null || row.left === undefined || row.left === '' ? null : fahKeep(row);
+}
+
+// แปลงของเหลือเมนู → น้ำหนักเนื้อสัตว์ (กก. เทียบวัตถุดิบสด) ตาม protein_item_id / protein_ratio ของแต่ละเมนู
+// เมนูที่ยังไม่ผูกเนื้อ/อัตราส่วน ถูกตัดออกจากผลรวม (ห้ามเดาอัตราส่วนเอง)
+export function leftoverByProtein(menus, recOf, cookedToRaw = 1) {
+  const grams = {}, unboundFilled = [];
+  let boundMenus = 0, filled = 0;
+  (menus || []).forEach(m => {
+    const keep = fahKeepOrNull(recOf(m.id) || {});
+    if (keep === null) return;
+    filled += 1;
+    if (!m.protein_item_id || !(Number(m.protein_ratio) > 0)) { unboundFilled.push(m.name); return; }
+    boundMenus += 1;
+    grams[m.protein_item_id] = (grams[m.protein_item_id] || 0) + keep * Number(m.protein_ratio);
+  });
+  const kg = {};
+  Object.keys(grams).forEach(k => { kg[k] = Math.round(grams[k] / 1000 * (Number(cookedToRaw) || 1) * 100) / 100; });
+  const unbound = (menus || []).filter(m => !m.protein_item_id || !(Number(m.protein_ratio) > 0)).map(m => m.name);
+  return { kg, grams, items: Object.keys(kg).length, boundMenus, filled, unbound, unboundFilled };
+}
+
+// สต๊อกครัวกลางของรายการ ณ วันที่เลือก: ถ้ามีนับสต๊อกหลังวันนั้น ยึดยอดนับจริง / ยังไม่มี = ยอดนับล่าสุด − ใช้ไปเบื้องต้น
+export function stockAfterPrep(counts, itemId, date, useBase) {
+  const mine = (counts || []).filter(c => c.count_item_id === itemId && c.kitchen_qty !== null && c.kitchen_qty !== undefined);
+  const after = mine.filter(c => c.count_date > date).sort((a, b) => (a.count_date < b.count_date ? -1 : 1))[0];
+  if (after) return { mode: 'counted', qty: Number(after.kitchen_qty), date: after.count_date };
+  const base = mine.filter(c => c.count_date <= date).sort((a, b) => (a.count_date > b.count_date ? -1 : 1))[0];
+  if (!base) return null;
+  return { mode: 'est', baseQty: Number(base.kitchen_qty), baseDate: base.count_date, est: useBase === null ? null : r1(Number(base.kitchen_qty) - useBase) };
+}
+
+// ---------- ประกอบข้อมูลหน้าเตรียม-เหลือจากฐาน (ทุกแท็บใช้วันที่เดียวกัน) ----------
+
+// ค่าจากแถวบันทึก (ไม่มีแถว/ค่าว่าง = null ห้ามเติม 0)
+const qtyOf = log => (log ? (log.qty === null || log.qty === undefined ? null : Number(log.qty)) : null);
+// ข้อมูลการแก้: เคยแก้ (rev_no > 1) ถึงจะมีจุดประวัติ
+const revOf = log => (log && log.rev_no > 1 ? { n: log.rev_no, by: log.edited_by || log.logged_by } : null);
+
+// ประกอบโมเดลทั้งหน้าจากชุดข้อมูลดิบของวัน (getPrepBundle)
+export function buildPrepModel(b) {
+  const asum = {}; (b.assumptions || []).forEach(a => { asum[a.key] = a.value === null ? null : Number(a.value); });
+  const cookedToRaw = asum.cooked_to_raw ?? 1;
+  const respMap = {};
+  (b.resp || []).forEach(r => (respMap[r.responsibility] = respMap[r.responsibility] || []).push(r.staff_code));
+  const logMap = {};
+  (b.logs || []).forEach(l => { (logMap[l.count_item_id] = logMap[l.count_item_id] || {})[l.entry_type + ':' + l.seq] = l; });
+  const leftMap = {};
+  (b.leftovers || []).forEach(l => { (leftMap[l.menu_id] = leftMap[l.menu_id] || {})[l.entry_type] = l; });
+
+  // แถวแท็บบันทึกอาหารเหลือ (หน่วยกรัม)
+  const fahRows = (b.menus || []).map(m => {
+    const rec = leftMap[m.id] || {};
+    const row = {
+      ...m,
+      left: qtyOf(rec['เหลือ']), waste: qtyOf(rec['ทิ้ง']), self: qtyOf(rec['กินเอง']), home: qtyOf(rec['ห่อกลับบ้าน']),
+      revs: { left: revOf(rec['เหลือ']), waste: revOf(rec['ทิ้ง']), self: revOf(rec['กินเอง']), home: revOf(rec['ห่อกลับบ้าน']) }
+    };
+    row.keep = fahKeepOrNull(row);
+    return row;
+  });
+  const conv = leftoverByProtein(b.menus || [], id => fahRows.find(r => r.id === id), cookedToRaw);
+
+  // แถวแท็บเตรียมอาหาร (เนื้อสัตว์)
+  const meatItems = (b.items || []).filter(i => i.grp === 'เนื้อสัตว์');
+  const meatRows = meatItems.map(i => {
+    const lg = logMap[i.id] || {};
+    const row = {
+      ...i, owners: respMap[i.responsibility] || [],
+      prep: qtyOf(lg['เตรียม:1']), extra: qtyOf(lg['เบิกเพิ่ม:1']), waste: qtyOf(lg['ทิ้ง:1']), left: qtyOf(lg['คงเหลือ:1']),
+      revs: { prep: revOf(lg['เตรียม:1']), extra: revOf(lg['เบิกเพิ่ม:1']), waste: revOf(lg['ทิ้ง:1']), left: revOf(lg['คงเหลือ:1']) },
+      cooked: conv.kg[i.id] || 0
+    };
+    row.useBase = prepUseBase(row);
+    row.use = prepUse(row);
+    row.stock = stockAfterPrep(b.stocks, i.id, b.date, row.useBase);
+    const same = (b.stocks || []).find(c => c.count_item_id === i.id && c.count_date === b.date && c.kitchen_qty !== null);
+    row.stockWarn = !!(row.left !== null && same && Number(row.left) > Number(same.kitchen_qty));
+    return row;
+  });
+
+  // แถวแท็บเตรียมข้าว
+  const riceItems = (b.items || []).filter(i => i.grp === 'ข้าว');
+  const riceRows = riceItems.map(i => {
+    const lg = logMap[i.id] || {};
+    return {
+      ...i, owners: respMap[i.responsibility] || [], ratio: i.cook_ratio === null || i.cook_ratio === undefined ? null : Number(i.cook_ratio),
+      cook: qtyOf(lg['หุง:1']), rounds: [qtyOf(lg['หุงเพิ่ม:1']), qtyOf(lg['หุงเพิ่ม:2']), qtyOf(lg['หุงเพิ่ม:3'])],
+      left: qtyOf(lg['คงเหลือสุก:1']), waste: qtyOf(lg['ทิ้ง:1']), home: qtyOf(lg['ห่อกลับบ้าน:1']), give: qtyOf(lg['แจก:1']),
+      revs: {
+        cook: revOf(lg['หุง:1']), r0: revOf(lg['หุงเพิ่ม:1']), r1: revOf(lg['หุงเพิ่ม:2']), r2: revOf(lg['หุงเพิ่ม:3']),
+        left: revOf(lg['คงเหลือสุก:1']), waste: revOf(lg['ทิ้ง:1']), home: revOf(lg['ห่อกลับบ้าน:1']), give: revOf(lg['แจก:1'])
+      }
+    };
+  });
+
+  return {
+    date: b.date, cookedToRaw, meatRows, riceRows, fahRows, conv,
+    menus: b.menus || [], meatItems,
+    riceStats: riceHistory(b.logs7 || [], riceItems, b.date),
+    fahWeek: leftoverWeek(b.left7 || [], b.date)
+  };
+}
+
+// สถิติข้าว 7 วันย้อนหลังจากบันทึกจริง (คิดเฉพาะชนิดที่มีอัตราหุง · วันที่ไม่มีข้อมูล = แสดงขีด ไม่เดา)
+export function riceHistory(logs, riceItems, endDate) {
+  const ratio = {};
+  riceItems.forEach(i => { if (Number(i.cook_ratio) > 0) ratio[i.id] = Number(i.cook_ratio); });
+  const byDate = {};
+  (logs || []).forEach(l => { if (ratio[l.count_item_id]) (byDate[l.log_date] = byDate[l.log_date] || []).push(l); });
+  const days = [];
+  for (let k = 6; k >= 0; k--) {
+    const d = shiftIso(endDate, -k);
+    const rows = byDate[d] || [];
+    if (!rows.length) { days.push({ date: d, has: false }); continue; }
+    let cooked = 0, left = 0, soldRaw = 0;
+    const per = {};
+    rows.forEach(l => (per[l.count_item_id] = per[l.count_item_id] || []).push(l));
+    Object.keys(per).forEach(id => {
+      let raw = 0, lf = 0;
+      per[id].forEach(l => {
+        if (l.entry_type === 'หุง' || l.entry_type === 'หุงเพิ่ม') raw += Number(l.qty) || 0;
+        if (l.entry_type === 'คงเหลือสุก') lf += Number(l.qty) || 0;
+      });
+      const ck = raw * ratio[id];
+      cooked += ck; left += lf; soldRaw += (ck - lf) / ratio[id];
+    });
+    days.push({ date: d, has: true, sold: r1(cooked - left), soldRaw: r1(soldRaw), left: r1(left) });
+  }
+  return days;
+}
+
+// ของเหลือ 7 วันย้อนหลัง (เฉพาะช่อง "เหลือ") → รายเมนูรายวัน
+export function leftoverWeek(rows, endDate) {
+  const days = [];
+  for (let k = 6; k >= 0; k--) days.push(shiftIso(endDate, -k));
+  const byMenu = {};
+  (rows || []).forEach(r => { (byMenu[r.menu_id] = byMenu[r.menu_id] || {})[r.left_date] = Number(r.qty_box); });
+  return { days, byMenu };
 }
 
 // ---------- หน้าพระราม 9 (ส่งของ / ประวัติ / Report) ----------

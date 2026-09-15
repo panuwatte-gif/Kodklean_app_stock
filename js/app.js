@@ -8,6 +8,8 @@ import { mountVillagePage } from './pages/village.js';
 import { mountLoginPage } from './pages/login.js';
 import { mountOtherPage } from './pages/other.js';
 import { mountSpecialPage } from './pages/special.js';
+import { mountAccountsPage } from './pages/accounts.js';
+import { mountEquationPage } from './pages/equation.js';
 import { mountNav, fillGlyphs, confirmSheet, toast } from './shared/ui.js';
 import { currentUser, signOut } from './shared/auth.js';
 import { APP_UI } from './shared/config.js';
@@ -20,7 +22,9 @@ const PAGES = {
   rama9: { file: 'pages/rama9.html', mount: mountRama9Page },
   village: { file: 'pages/village.html', mount: mountVillagePage },
   other: { file: 'pages/other.html', mount: mountOtherPage },
-  special: { file: 'pages/special.html', mount: mountSpecialPage }
+  special: { file: 'pages/special.html', mount: mountSpecialPage },
+  accounts: { file: 'pages/accounts.html', mount: mountAccountsPage },
+  equation: { file: 'pages/equation.html', mount: mountEquationPage }
 };
 
 const app = document.querySelector('.app');

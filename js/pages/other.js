@@ -3,7 +3,10 @@ import { OTHER_CARDS, OTHER_UI } from '../shared/config.js';
 import { mountGlassPage, toast } from '../shared/ui.js';
 import { fillText } from '../shared/format.js';
 
-// เมนูปลายทางยังไม่มีหน้าของตัวเอง กดแล้วแจ้งสถานะไว้ก่อน
-export function mountOtherPage(root) {
-  mountGlassPage(root, OTHER_UI, OTHER_CARDS, card => toast(fillText(OTHER_UI.soon, { name: card.title })));
+// เมนูปลายทางที่มีหน้าของตัวเอง (goto) กดแล้วเข้าหน้านั้น ที่ยังไม่มีก็แจ้งสถานะไว้ก่อน
+export function mountOtherPage(root, onGo) {
+  mountGlassPage(root, OTHER_UI, OTHER_CARDS, card => {
+    if (card.goto && onGo) return onGo(card.goto);
+    toast(fillText(OTHER_UI.soon, { name: card.title }));
+  });
 }

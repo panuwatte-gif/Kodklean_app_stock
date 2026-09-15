@@ -1,6 +1,5 @@
 // หน้าเข้าสู่ระบบ: เลือกตัวละคร → ใส่ PIN 4 หลัก → เข้าแอป
-import { LOGIN_USERS } from '../shared/config.js';
-import { signIn } from '../shared/auth.js';
+import { signIn, users } from '../shared/auth.js';
 
 export function mountLoginPage(root, onDone) {
   const cast = root.querySelector('#login-cast');
@@ -10,7 +9,7 @@ export function mountLoginPage(root, onDone) {
   const eye = root.querySelector('#login-eye');
   let picked = null;
 
-  cast.innerHTML = LOGIN_USERS.map(u => `
+  cast.innerHTML = users().map(u => `
     <button type="button" data-code="${u.code}" aria-pressed="false">
       <img src="assets/login/avatar-${u.avatar}.webp" alt="" width="60" height="66" decoding="async">
       <span>${u.name}</span>

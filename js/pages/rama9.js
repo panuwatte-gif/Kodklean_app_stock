@@ -1,16 +1,21 @@
-// หน้าพระราม 9 — ต่อปุ่มทุกปุ่มเข้ากับข้อมูล (การวาดอยู่ที่ rama9-view / -send / -history / -report)
-import { get, save, revise } from '../shared/data.js';
-import { R9_UI, R9_PLACE, R9_PHOTOS, R9_UNITS, R9_CAT_ICONS, CAT_COLOR_PRESETS } from '../shared/config.js';
-import { fillGlyphs, toast, confirmSheet, pickerSheet, formSheet, printArea } from '../shared/ui.js';
+// หน้าพระราม 9 — คุมสถานะหน้า โหลดข้อมูลจริงจากฐาน และต่อทุกปุ่มเข้ากับประตูข้อมูล (การวาดอยู่ที่ rama9-view / -send / -history / -report / -setup)
+import { getR9Bundle, getR9Revisions, getR9Draft, saveR9Draft, newR9Key, saveR9Round, voidR9Round, todayIso } from '../shared/data.js';
+import { staffCode } from '../shared/auth.js';
+import { R9_UI, R9_PLACE } from '../shared/config.js';
+import { fillGlyphs, toast, openSheet, confirmSheet, pickerSheet, printArea, glyph, handleDateClick, handleDatePick, r9Photo } from '../shared/ui.js';
 import { r9Row, r9RoundTotals } from '../shared/calc.js';
-import { money, moneyFine, weight, dayLongTh } from '../shared/format.js';
+import { money, moneyFine, weight, dayLongTh, fillText } from '../shared/format.js';
 import { heroHtml, kpisHtml, tabsHtml } from './rama9-view.js';
-import { tableHtml, sumHtml, footHtml } from './rama9-send.js';
+import { dateHtml, tableHtml, sumHtml, footHtml } from './rama9-send.js';
 import { filterHtml, roundsHtml, briefHtml } from './rama9-history.js';
 import { pickHtml, reportHtml } from './rama9-report.js';
+import { setupHtml, handleSetupClick, editR9Item, deleteR9Item, changeR9Photo, moveR9Item, addR9ItemTo } from './rama9-setup.js';
 
 // สิ่งที่ผู้ใช้เลือกอยู่บนหน้านี้ (ไม่แชร์ข้ามหน้า)
-const view = { tab: 'send', closed: {}, rClosed: {}, range: 'all', q: '', picked: {}, from: '', to: '', rPage: 0 };
+const view = {
+  tab: 'send', date: todayIso(), closed: {}, rClosed: {}, range: 'all', q: '', picked: {}, from: '', to: '', rPage: 0,
+  cats: [], items: [], rounds: [], draft: null, saving: false, loading: true, error: false, sel: {}, pick: false
+};
 
 // รอบส่งที่อยู่ในช่วงเวลาที่เลือก + ตรงกับคำค้น
 function pickRounds(rounds, today) {
@@ -51,250 +56,232 @@ function kpiVals(tab, rounds, today, picked) {
 
 // เอาโครงหน้าที่โหลดมาแล้ว มาเติมข้อมูลพระราม 9 จากประตูข้อมูล
 export function mountRama9Page(root) {
-  let items = get('rama9Items');
-  let cats = get('rama9Cats');
-  let rounds = get('rama9Rounds');
-  let draft = get('rama9Draft');
-  const today = draft.date;
-  if (!view.from) { view.from = rounds.length ? rounds[0].date : today; view.to = today; }
-  if (!Object.keys(view.picked).length) rounds.forEach(rd => { view.picked[rd.id] = true; });
+  view.date = todayIso();
+  view.draft = getR9Draft();
   fillGlyphs(root, 17);
-
-  const body = root.querySelector('#r9-body');
+  const el = id => root.querySelector(id);
+  const body = el('#r9-body');
   const inRange = rd => rd.date >= view.from && rd.date <= view.to;
 
+  // รายการที่เปิดใช้ + ค่าที่กำลังกรอกของรอบนี้ (ราคาว่าง = ยังไม่ตั้งราคา ต้องเป็น null ห้ามเป็น 0)
+  const sendItems = () => view.items.filter(i => i.active).map(i => ({
+    ...i,
+    qty: i.id in view.draft.qty ? view.draft.qty[i.id] : '',
+    price: i.id in view.draft.price ? view.draft.price[i.id] : i.price
+  }));
+
+  // โหลดข้อมูลทั้งหน้าจากฐานในครั้งเดียว
+  const load = async () => {
+    view.loading = true; view.error = false;
+    try {
+      const b = await getR9Bundle();
+      view.cats = b.cats; view.items = b.items; view.rounds = b.rounds;
+      const first = b.rounds.length ? b.rounds[0].date : view.date;
+      if (!view.from || view.from > first) view.from = first;
+      if (!view.to) view.to = view.date;
+      b.rounds.forEach(rd => { if (view.picked[rd.id] === undefined) view.picked[rd.id] = true; });
+    } catch { view.error = true; }
+    view.loading = false;
+    draw();
+  };
+
   const draw = () => {
-    const listed = pickRounds(rounds, today);
-    const picked = rounds.filter(rd => view.picked[rd.id] && inRange(rd));
-    root.querySelector('#r9-hero').innerHTML = heroHtml(view.tab);
-    root.querySelector('#r9-kpis').innerHTML = kpisHtml(view.tab, kpiVals(view.tab, view.tab === 'history' ? listed : rounds, today, picked));
-    root.querySelector('#r9-tabs').innerHTML = tabsHtml(view.tab);
-    root.querySelector('#r9-sub').textContent = view.tab === 'history' ? R9_PLACE.subHistory : view.tab === 'report' ? R9_PLACE.subReport : R9_PLACE.sub;
-    root.querySelector('#r9-date').textContent = view.tab === 'report' ? `${dayLongTh(view.from)} - ${dayLongTh(view.to)}` : dayLongTh(today);
-    if (view.tab === 'send') body.innerHTML = tableHtml(items, cats, view.closed) + sumHtml(items, draft.fee) + footHtml(draft.note);
-    else if (view.tab === 'history') body.innerHTML = filterHtml(view) + roundsHtml(listed, items, cats, rounds.length ? rounds[rounds.length - 1].id : null) + briefHtml(rounds);
+    const listed = pickRounds(view.rounds, view.date);
+    const picked = view.rounds.filter(rd => view.picked[rd.id] && inRange(rd));
+    el('#r9-hero').innerHTML = heroHtml(view.tab === 'setup' ? 'send' : view.tab);
+    el('#r9-kpis').innerHTML = kpisHtml(view.tab, kpiVals(view.tab, view.tab === 'history' ? listed : view.rounds, view.date, picked));
+    el('#r9-tabs').innerHTML = tabsHtml(view.tab);
+    el('#r9-sub').textContent = view.tab === 'history' ? R9_PLACE.subHistory : view.tab === 'report' ? R9_PLACE.subReport : R9_PLACE.sub;
+    el('#r9-date').textContent = view.tab === 'report' ? `${dayLongTh(view.from)} - ${dayLongTh(view.to)}` : dayLongTh(view.date);
+    if (view.error) { body.innerHTML = `<div class="r9-card"><p class="r9-empty">${R9_UI.loadError} <button class="r9-btn r9-btn--soft" type="button" data-act="retry">${R9_UI.retry}</button></p></div>`; return; }
+    if (view.loading) { body.innerHTML = `<div class="r9-card"><p class="r9-empty">${R9_UI.loading}</p></div>`; return; }
+    if (view.tab === 'send') {
+      const items = sendItems();
+      body.innerHTML = dateHtml(view.date) + tableHtml(items, view.cats.filter(c => c.active), view.closed)
+        + sumHtml(items, view.draft.fee) + footHtml({ note: view.draft.note, saving: view.saving, editing: view.draft.editing });
+    }
+    else if (view.tab === 'history') body.innerHTML = filterHtml(view) + roundsHtml(listed, view.items, view.cats, view.rounds.length ? view.rounds[view.rounds.length - 1].id : null) + briefHtml(view.rounds);
+    else if (view.tab === 'setup') body.innerHTML = setupHtml(view.items, view.cats, view.sel, view.pick);
     else {
-      // หน้าคอลัมน์รอบต้องไม่เกินจำนวนรอบที่เลือกไว้
       const maxPage = Math.max(0, Math.ceil(picked.length / 3) - 1);
       if (view.rPage > maxPage) view.rPage = maxPage;
-      body.innerHTML = pickHtml(view, rounds) + `<div id="r9-print">${reportHtml(picked, items, cats, view, view.rClosed)}</div>`;
+      body.innerHTML = pickHtml(view, view.rounds) + `<div id="r9-print">${reportHtml(picked, view.items, view.cats, view, view.rClosed)}</div>`;
     }
   };
 
-  // เก็บรายการทั้งชุด / ค่าที่กำลังกรอก ลงที่เก็บ แล้ววาดใหม่
-  const commit = list => { items = save('rama9Items', list); draw(); };
-  const saveDraft = () => { draft = save('rama9Draft', draft); };
+  const keepDraft = () => { view.draft = saveR9Draft(view.draft); };
 
-  // สลับตำแหน่งรายการขึ้น/ลง ภายในหมวดเดียวกัน
-  const move = (id, step) => {
-    const at = items.findIndex(r => r.id === id);
-    const mine = items[at];
-    let to = at + step;
-    while (to >= 0 && to < items.length && items[to].cat !== mine.cat) to += step;
-    if (to < 0 || to >= items.length) return toast('อยู่สุดทางแล้ว');
-    const list = items.slice();
-    [list[at], list[to]] = [list[to], list[at]];
-    commit(list);
+  // ล้างปริมาณ ราคา ค่าส่ง หมายเหตุ และสถานะกำลังแก้ของรอบนี้
+  const clearDraft = () => {
+    view.draft = { date: view.date, qty: {}, price: {}, fee: '', note: '', editing: null, key: null };
+    keepDraft();
   };
 
-  // เปลี่ยนรูปสินค้าจากคลังรูป
-  const changePhoto = async id => {
-    const picked = await pickerSheet({ title: 'เลือกรูปสินค้า', options: R9_PHOTOS });
-    if (!picked) return;
-    revise('rama9Items', id, { photo: picked });
-    items = get('rama9Items');
-    draw();
-    toast('เปลี่ยนรูปแล้ว');
+  // บันทึกและส่ง: สร้างกุญแจครั้งเดียว ปุ่มกดไม่ได้ระหว่างรอ ส่งไม่สำเร็จใช้กุญแจเดิมซ้ำได้ (ไม่มีรอบซ้ำ)
+  const send = async () => {
+    if (view.saving) return;
+    const items = sendItems();
+    const filled = items.filter(i => Number(i.qty) > 0);
+    if (!filled.length) return toast(R9_UI.noLines);
+    const noPrice = filled.filter(i => i.price === null || i.price === '' || i.price === undefined);
+    if (noPrice.length) return toast(fillText(R9_UI.noPrice, { names: noPrice.map(i => i.name).join(', ') }));
+    const lines = filled.map(i => ({ item_id: i.id, qty: Number(i.qty), price: Number(i.price) }));
+    if (!view.draft.key) { view.draft.key = newR9Key(view.date); keepDraft(); }
+    const editing = view.draft.editing;
+    view.saving = true; draw();
+    try {
+      await saveR9Round({
+        date: view.date, fee: Number(view.draft.fee) || 0, note: view.draft.note, by: staffCode(),
+        lines, key: view.draft.key, replaces: editing ? editing.id : null
+      });
+      clearDraft();
+      view.saving = false;
+      view.tab = 'history';
+      await load();
+      const fresh = view.rounds.reduce((a, b) => (!a || b.id > a.id ? b : a), null);
+      toast(editing ? fillText(R9_UI.savedEdit, { no: editing.no }) : fillText(R9_UI.saved, { no: fresh ? fresh.no : '' }));
+    } catch {
+      view.saving = false;
+      draw();
+      toast(R9_UI.saveError);
+    }
   };
 
-  // แก้ไขชื่อ / หน่วย / หมวด ของรายการ
-  const editItem = async id => {
-    const it = items.find(r => r.id === id);
-    const res = await formSheet({
-      title: 'แก้ไขรายการ',
-      fields: [
-        { key: 'name', label: 'ชื่อรายการ', kind: 'text', value: it.name },
-        { key: 'cat', label: 'หมวด', kind: 'select', value: it.cat, options: cats.map(c => ({ value: c.id, label: c.label })) },
-        { key: 'unit', label: 'หน่วยนับ', kind: 'select', value: it.unit, options: R9_UNITS.map(u => ({ value: u, label: u })) }
-      ]
-    });
-    if (!res) return;
-    if (!res.name) return toast('ยังไม่ได้ใส่ชื่อรายการ');
-    revise('rama9Items', id, res);
-    items = get('rama9Items');
-    draw();
-    toast('บันทึกแล้ว');
-  };
-
-  // ลบรายการ (ถามยืนยันก่อน)
-  const removeItem = async id => {
-    const it = items.find(r => r.id === id);
-    if (!await confirmSheet({ title: 'ลบรายการนี้?', text: it.name, okLabel: 'ลบ', danger: true })) return;
-    commit(items.filter(r => r.id !== id));
-    toast('ลบแล้ว');
-  };
-
-  // เพิ่มรายการใหม่เข้าท้ายหมวดที่เลือก
-  const addItem = async catId => {
-    const res = await formSheet({
-      title: R9_UI.addItem,
-      fields: [
-        { key: 'name', label: 'ชื่อรายการ', kind: 'text', placeholder: 'เช่น น้ำมะนาว' },
-        { key: 'cat', label: 'หมวด', kind: 'select', value: catId || cats[0].id, options: cats.map(c => ({ value: c.id, label: c.label })) },
-        { key: 'unit', label: 'หน่วยนับ', kind: 'select', options: R9_UNITS.map(u => ({ value: u, label: u })) },
-        { key: 'price', label: 'ราคาต่อหน่วย (บาท)', kind: 'number', step: 1 },
-        { key: 'photo', label: 'รูปสินค้า', kind: 'image', options: R9_CAT_ICONS }
-      ]
-    });
-    if (!res) return;
-    if (!res.name) return toast('ยังไม่ได้ใส่ชื่อรายการ');
-    const row = { id: 'r9-new-' + Date.now(), name: res.name, cat: res.cat, unit: res.unit, qty: 0, price: Number(res.price) || 0, photo: res.photo };
-    const lastOfCat = items.reduce((n, r, i) => r.cat === res.cat ? i : n, -1);
-    const list = items.slice();
-    list.splice(lastOfCat + 1 || list.length, 0, row);
-    commit(list);
-    toast(`เพิ่ม "${res.name}" แล้ว`);
-  };
-
-  // เพิ่มหมวดใหม่ต่อท้าย
-  const addCat = async () => {
-    const res = await formSheet({
-      title: R9_UI.addCat,
-      fields: [
-        { key: 'name', label: 'ชื่อหมวด', kind: 'text', placeholder: 'เช่น ของแช่แข็ง' },
-        { key: 'color', label: 'สีประจำหมวด', kind: 'swatch', options: CAT_COLOR_PRESETS.map(p => ({ value: p.color })) },
-        { key: 'icon', label: 'ไอคอน', kind: 'image', options: R9_CAT_ICONS }
-      ]
-    });
-    if (!res) return;
-    if (!res.name) return toast('ยังไม่ได้ใส่ชื่อหมวด');
-    const preset = CAT_COLOR_PRESETS.find(p => p.color === res.color) || CAT_COLOR_PRESETS[0];
-    cats = save('rama9Cats', cats.concat([{ id: 'r9c-' + Date.now(), label: res.name, icon: res.icon, color: preset.color, tint: preset.tint }]));
-    draw();
-    toast(`เพิ่มหมวด "${res.name}" แล้ว`);
-  };
-
-  // ล้างปริมาณ ราคา ค่าส่ง และหมายเหตุของรอบนี้
-  const clearAll = async () => {
-    if (!await confirmSheet({ ...R9_UI.clearAsk, okLabel: R9_UI.clearAsk.ok, danger: true })) return;
-    draft.fee = 0; draft.note = '';
-    saveDraft();
-    commit(items.map(r => ({ ...r, qty: 0, price: 0 })));
-    toast(R9_UI.cleared);
-  };
-
-  // บันทึกและส่ง: เก็บรอบนี้เข้าประวัติ
-  const send = () => {
-    const lines = items.filter(r => (Number(r.qty) || 0) > 0).map(r => ({ id: r.id, qty: Number(r.qty), price: Number(r.price) || 0 }));
-    if (!lines.length) return toast('ยังไม่ได้กรอกปริมาณรายการใด');
-    const now = new Date();
-    const no = rounds.reduce((n, rd) => Math.max(n, rd.no), 0) + 1;
-    const round = { id: 'r9r-' + Date.now(), no, date: draft.date, time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`, status: 'done', fee: Number(draft.fee) || 0, note: draft.note, lines };
-    rounds = save('rama9Rounds', rounds.concat([round]));
-    view.picked[round.id] = true;
-    view.tab = 'history';
-    draw();
-    toast(`${R9_UI.sent} (รอบ #${no})`);
-  };
-
-  // ทำซ้ำรอบเดิม: ดึงปริมาณและราคาของรอบนั้นมาใส่รอบใหม่
-  const repeat = id => {
-    const rd = rounds.find(r => r.id === id);
-    const at = lineId => (rd.lines || []).find(l => l.id === lineId);
-    draft.fee = Number(rd.fee) || 0;
-    saveDraft();
+  // ทำซ้ำ / แก้รอบเดิม: ดึงปริมาณและราคาของรอบนั้นมาเป็นร่างของวันที่เลือก (ต้องกดบันทึกเองอีกที)
+  const toDraft = (id, editing) => {
+    const rd = view.rounds.find(r => r.id === id);
+    view.draft = { date: view.date, qty: {}, price: {}, fee: rd.fee || '', note: rd.note || '', editing: editing ? { id: rd.id, no: rd.no } : null, key: null };
+    (rd.lines || []).forEach(l => { view.draft.qty[l.id] = l.qty; view.draft.price[l.id] = l.price; });
+    keepDraft();
     view.tab = 'send';
-    commit(items.map(r => { const l = at(r.id); return { ...r, qty: l ? l.qty : 0, price: l ? l.price : r.price }; }));
-    toast(`ทำซ้ำรอบ #${rd.no} แล้ว`);
+    draw();
+    toast(editing ? fillText(R9_UI.editing, { no: rd.no }) : `ทำซ้ำรอบ #${rd.no} แล้ว`);
   };
 
-  // ดูรายละเอียดรอบส่ง
+  // ดูรายละเอียดรอบส่ง (อ่านอย่างเดียว)
   const detail = id => {
-    const rd = rounds.find(r => r.id === id);
+    const rd = view.rounds.find(r => r.id === id);
     const t = r9RoundTotals(rd);
     const options = (rd.lines || []).map(l => {
-      const it = items.find(i => i.id === l.id) || { name: l.id, unit: '', photo: '' };
-      return { value: '', label: `${it.name} · ${weight(l.qty)} ${it.unit} × ${money(l.price)} = ${money(r9Row(l))} บาท`, image: it.photo };
+      const it = view.items.find(i => i.id === l.id) || { name: l.id, unit: '', photo: '' };
+      return { value: '', label: `${it.name} · ${weight(l.qty)} ${it.unit} × ${moneyFine(l.price)} = ${moneyFine(r9Row(l))} บาท`, image: r9Photo(it) };
     }).concat([{ value: '', label: `ค่าส่ง ${money(rd.fee)} บาท · ยอดสุทธิ ${money(t.net)} บาท`, image: 'assets/r9/truck.webp' }]);
     pickerSheet({ title: `รอบส่งของ #${rd.no} · ${dayLongTh(rd.date)}`, options });
   };
 
-  draw();
+  // ของเดิมของรอบที่เคยแก้: เดิมเท่าไหร่ ใครแก้ เมื่อไหร่ (อ่านจากฐานทุกครั้ง)
+  const revisions = async id => {
+    const rd = view.rounds.find(r => r.id === id);
+    const rows = await getR9Revisions(rd.rootId);
+    const list = rows.map(r => {
+      const t = r9RoundTotals({ fee: Number(r.fee) || 0, lines: (r.lines || []).map(l => ({ qty: Number(l.qty), price: Number(l.price) })) });
+      const at = new Date(r.created_at);
+      return `<div class="hist__row${r.is_current ? ' is-cur' : ''}"><span>${fillText(R9_UI.revRow, {
+        n: r.rev_no, items: t.items, net: money(t.net), by: r.edited_by || r.sent_by || '', at: `${dayLongTh(r.date)} ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+      })}</span><i>${r.is_current ? R9_UI.revNow : ''}</i></div>`;
+    }).join('');
+    openSheet(`<div class="ask__title">รอบส่งของ #${rd.no} · ${R9_UI.revHistory}</div><div class="hist">${list}</div>
+      <div class="ask__go"><button class="ask__btn ask__btn--off" type="button" data-pick="">ปิด</button></div>`);
+  };
 
-  root.addEventListener('click', event => {
+  // ลบรอบ = ปิดไม่ให้นับในรายงาน (ของเก่ายังอยู่ในฐาน)
+  const voidRound = async id => {
+    const rd = view.rounds.find(r => r.id === id);
+    if (!await confirmSheet({ title: R9_UI.delAsk.title, text: `รอบ #${rd.no} · ${dayLongTh(rd.date)} — ${R9_UI.delAsk.text}`, okLabel: R9_UI.delAsk.ok, danger: true })) return;
+    try { await voidR9Round(rd.id, staffCode()); delete view.picked[rd.id]; await load(); toast(fillText(R9_UI.deleted, { no: rd.no })); }
+    catch { toast(R9_UI.saveError); }
+  };
+
+  // ชิปช่วงเวลาในแท็บ Report ปรับช่วงวันที่ให้ตรงกัน
+  const applyRange = () => {
+    const last = view.rounds[view.rounds.length - 1];
+    if (view.range === 'month') { view.from = view.date.slice(0, 7) + '-01'; view.to = view.date; }
+    else if (view.range === 'ytd' || view.range === 'year') { view.from = view.date.slice(0, 4) + '-01-01'; view.to = view.date; }
+    else if (view.range === 'last' && last) { view.from = last.date; view.to = last.date; }
+    else { view.from = view.rounds.length ? view.rounds[0].date : view.date; view.to = view.date; }
+  };
+
+  draw();
+  load();
+
+  root.addEventListener('click', async event => {
     const hit = sel => event.target.closest(sel);
-    const row = hit('.r9-item[data-id]');
     const tab = hit('[data-tab]'), grp = hit('[data-group]'), tool = hit('[data-tool]'), act = hit('[data-act]');
     const range = hit('[data-range]'), pick = hit('[data-pickround]'), ex = hit('[data-export]');
     const rep = hit('[data-repeat]'), det = hit('[data-detail]'), addin = hit('[data-addin]'), rgrp = hit('[data-rgroup]');
-    const rpg = hit('[data-rpage]');
+    const rpg = hit('[data-rpage]'), ed = hit('[data-edit]'), revs = hit('[data-revs]'), vd = hit('[data-void]');
 
+    if (view.tab === 'setup' && (hit('[data-setsw]') || hit('[data-setedit]') || hit('[data-setdel]') || hit('[data-setcat]') || hit('[data-setpick]') || hit('[data-setphoto]') || act)) {
+      const res = await handleSetupClick(event, { items: view.items, cats: view.cats, sel: view.sel, pick: view.pick, setPick: v => { view.pick = v; } });
+      if (res === true) return load();
+      if (res === 'draw') return draw();
+      if (res !== null) return;
+    }
     if (rpg) { view.rPage = Number(rpg.dataset.rpage); draw(); }
     else if (tab) { view.tab = tab.dataset.tab; draw(); }
     else if (rgrp) { const k = rgrp.dataset.rgroup; view.rClosed[k] = !view.rClosed[k]; draw(); }
     else if (grp) { const k = grp.dataset.group; view.closed[k] = !view.closed[k]; draw(); }
     else if (tool) {
-      const id = row.dataset.id, kind = tool.dataset.tool;
-      if (kind === 'photo') changePhoto(id);
-      else if (kind === 'edit') editItem(id);
-      else if (kind === 'delete') removeItem(id);
-      else if (kind === 'move') pickerSheet({ title: 'จัดลำดับรายการ', options: [{ value: 'up', label: 'ย้ายขึ้น' }, { value: 'down', label: 'ย้ายลง' }] }).then(p => p && move(id, p === 'up' ? -1 : 1));
+      const it = view.items.find(i => i.id === hit('.r9-item[data-id]').dataset.id), kind = tool.dataset.tool;
+      let res = null;
+      if (kind === 'photo') res = await changeR9Photo(it);
+      else if (kind === 'edit') res = await editR9Item(it, view.cats);
+      else if (kind === 'delete') res = await deleteR9Item(it);
+      else if (kind === 'move') {
+        const dir = await pickerSheet({ title: 'จัดลำดับรายการ', options: [{ value: 'up', label: 'ย้ายขึ้น' }, { value: 'down', label: 'ย้ายลง' }] });
+        if (dir) res = await moveR9Item(view.items, it.id, dir === 'up' ? -1 : 1);
+      }
+      if (res) load();
     }
-    else if (addin) addItem(addin.dataset.addin);
+    else if (addin) { if (await addR9ItemTo(view.items, view.cats, addin.dataset.addin)) load(); }
     else if (act) {
       const kind = act.dataset.act;
-      if (kind === 'add') addItem(null);
-      else if (kind === 'addCat') addCat();
-      else if (kind === 'clear') clearAll();
-      else if (kind === 'send') send();
+      if (kind === 'send') send();
+      else if (kind === 'retry') load();
+      else if (kind === 'editCancel') { clearDraft(); draw(); }
+      else if (kind === 'clear') { if (await confirmSheet({ ...R9_UI.clearAsk, okLabel: R9_UI.clearAsk.ok, danger: true })) { clearDraft(); draw(); toast(R9_UI.cleared); } }
       else if (kind === 'build') { draw(); toast('สร้างรายงานตามช่วงที่เลือกแล้ว'); }
     }
     else if (range) { view.range = range.dataset.range; if (view.tab === 'report') applyRange(); draw(); }
     else if (pick) { const k = pick.dataset.pickround; view.picked[k] = !view.picked[k]; view.rPage = 0; draw(); }
-    else if (rep) repeat(rep.dataset.repeat);
-    else if (det) detail(det.dataset.detail);
-    else if (ex) {
-      if (ex.dataset.export === 'print') printArea('.r9');
-      else toast('รอบนี้เปิดใช้เฉพาะพิมพ์รายงาน');
-    }
+    else if (rep) toDraft(Number(rep.dataset.repeat), false);
+    else if (ed) toDraft(Number(ed.dataset.edit), true);
+    else if (revs) revisions(Number(revs.dataset.revs));
+    else if (vd) voidRound(Number(vd.dataset.void));
+    else if (det) detail(Number(det.dataset.detail));
+    else if (ex) { if (ex.dataset.export === 'print') printArea('.r9'); else toast(R9_UI.exportOff); }
+    else if (await handleDateClick(event, view)) draw();
   });
 
-  // ชิปช่วงเวลาในแท็บ Report ปรับช่วงวันที่ให้ตรงกัน
-  function applyRange() {
-    const last = rounds[rounds.length - 1];
-    if (view.range === 'month') { view.from = today.slice(0, 7) + '-01'; view.to = today; }
-    else if (view.range === 'ytd' || view.range === 'year') { view.from = today.slice(0, 4) + '-01-01'; view.to = today; }
-    else if (view.range === 'last' && last) { view.from = last.date; view.to = last.date; }
-    else { view.from = rounds.length ? rounds[0].date : today; view.to = today; }
-  }
-
-  // กรอกปริมาณ/ราคา/ค่าส่ง/หมายเหตุ → คำนวณและเก็บทันที
+  // กรอกปริมาณ/ราคา/ค่าส่ง/หมายเหตุ → เก็บเป็นร่างของรอบนี้ (ยังไม่ขึ้นฐานจนกดบันทึก)
   root.addEventListener('input', event => {
-    const el = event.target;
-    if (el.matches('[data-f]')) {
-      const id = el.closest('.r9-item').dataset.id;
-      revise('rama9Items', id, { [el.dataset.f]: Number(el.value) || 0 });
-      items = get('rama9Items');
-      const it = items.find(r => r.id === id), sum = r9Row(it);
-      const cell = el.closest('.r9-item').querySelector('.r9-item__sum');
-      cell.textContent = sum ? money(sum) : '-';
+    const elm = event.target;
+    if (elm.matches('[data-f]')) {
+      const id = elm.closest('.r9-item').dataset.id, f = elm.dataset.f;
+      view.draft[f][id] = elm.value === '' ? (f === 'price' ? null : '') : Number(elm.value);
+      keepDraft();
+      const items = sendItems(), it = items.find(r => r.id === id);
+      const sum = it.price === null ? 0 : r9Row(it);
+      const cell = elm.closest('.r9-item').querySelector('.r9-item__sum');
+      cell.textContent = sum ? moneyFine(sum) : '—';
       cell.classList.toggle('is-zero', !sum);
-      root.querySelector('#r9-sumcard').outerHTML = sumHtml(items, draft.fee);
+      root.querySelector('#r9-sumcard').outerHTML = sumHtml(items, view.draft.fee);
     }
-    else if (el.matches('[data-fee]')) {
-      draft.fee = Number(el.value) || 0;
-      saveDraft();
+    else if (elm.matches('[data-fee]')) {
+      view.draft.fee = elm.value === '' ? '' : Number(elm.value);
+      keepDraft();
       // อัปเดตเฉพาะตัวเลขยอดสุทธิ เพื่อไม่ให้ช่องค่าส่งที่กำลังพิมพ์หายไป
-      const goods = items.reduce((s, i) => s + r9Row(i), 0);
-      el.closest('.r9-sum').querySelectorAll('.r9-sum__num')[1].innerHTML = moneyFine(goods + draft.fee) + '<small>บาท</small>';
+      const goods = sendItems().reduce((s, i) => s + (i.price === null ? 0 : r9Row(i)), 0);
+      elm.closest('.r9-sum').querySelectorAll('.r9-sum__num')[1].innerHTML = moneyFine(goods + (Number(view.draft.fee) || 0)) + '<small>บาท</small>';
     }
-    else if (el.matches('#r9-note')) { draft.note = el.value; saveDraft(); }
-    else if (el.matches('#r9-q')) { view.q = el.value.trim(); draw(); }
+    else if (elm.matches('#r9-note')) { view.draft.note = elm.value; keepDraft(); }
+    else if (elm.matches('#r9-q')) { view.q = elm.value.trim(); draw(); }
   });
 
-  root.addEventListener('change', event => {
-    const el = event.target;
-    if (el.matches('[data-from]')) { view.from = el.value; draw(); }
-    else if (el.matches('[data-to]')) { view.to = el.value; draw(); }
+  root.addEventListener('change', async event => {
+    const elm = event.target;
+    if (elm.matches('[data-from]')) { view.from = elm.value; draw(); }
+    else if (elm.matches('[data-to]')) { view.to = elm.value; draw(); }
+    else if (elm.matches('#r9-date-pick') && await handleDatePick(elm.value, view)) draw();
   });
 }

@@ -493,6 +493,19 @@ export function r9TopItems(rounds, items, top = 5) {
     .slice(0, top);
 }
 
+// สรุปรายสินค้าของรอบที่เลือก: ส่งไปกี่หน่วย กี่บาท เรียงมาก→น้อย (ตอบว่า "น้ำใบเตย 42 ขวด 672 บาท")
+export function r9ItemSummary(rounds, items) {
+  const map = new Map();
+  rounds.forEach(rd => (rd.lines || []).forEach(l => {
+    const cur = map.get(l.id) || { qty: 0, value: 0, rounds: 0 };
+    map.set(l.id, { qty: cur.qty + (Number(l.qty) || 0), value: cur.value + r9Row(l), rounds: cur.rounds + 1 });
+  }));
+  return [...map.entries()]
+    .map(([id, v]) => ({ item: items.find(i => i.id === id) || { id, name: id, unit: '' }, qty: r2(v.qty), value: r2(v.value), rounds: v.rounds }))
+    .filter(r => r.qty > 0)
+    .sort((a, b) => b.value - a.value || b.qty - a.qty);
+}
+
 // จัดกลุ่มรอบส่งตามเดือน (ใช้ทำกราฟย้อนหลังในแท็บประวัติ)
 export function r9ByMonth(rounds, months = 6) {
   const key = iso => iso.slice(0, 7);

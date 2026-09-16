@@ -1,8 +1,13 @@
-// แท็บส่งของ — วาดตารางรายการส่งของ ยอดรวม และปุ่มท้ายหน้า (การกดปุ่มอยู่ที่ rama9.js)
+// แท็บส่งของ — วาดแถบวันที่ ตารางรายการ ยอดรวม และปุ่มท้ายหน้า (การกดปุ่มอยู่ที่ rama9.js)
 import { R9_UI, R9_SEND_COLS, R9_ROW_TOOLS } from '../shared/config.js';
-import { glyph } from '../shared/ui.js';
-import { money, moneyFine } from '../shared/format.js';
+import { glyph, dateBarHtml, dateBandHtml, r9Photo } from '../shared/ui.js';
+import { money, moneyFine, fillText } from '../shared/format.js';
 import { r9Row, r9Totals, r9ByCat } from '../shared/calc.js';
+
+// แถบวันที่ของรอบส่ง + แถบเตือนเมื่อไม่ใช่วันนี้ (บันทึกด้วยวันที่นี้ ไม่ใช่วันที่ของเครื่อง)
+export function dateHtml(date) {
+  return `<div class="r9-datewrap">${dateBarHtml(date, 'r9-date-pick')}${dateBandHtml(date, R9_UI.dateBand)}</div>`;
+}
 
 // ปุ่มไอคอนท้ายแถว 4 ปุ่ม
 function toolsHtml() {
@@ -10,18 +15,19 @@ function toolsHtml() {
     <button class="r9-tool" type="button" data-tool="${t.id}" aria-label="${t.label}" style="--c:${t.color};--tint:${t.tint}">${glyph(t.glyph, 13)}</button>`).join('');
 }
 
-// แถวรายการ 1 แถว: ชื่อ + ปริมาณ + ราคา + รวม + ปุ่มจัดการ
+// แถวรายการ 1 แถว: ชื่อ + ปริมาณ + ราคา + รวม + ปุ่มจัดการ (ราคายังไม่ตั้ง = ว่างไว้ ห้ามเป็น 0)
 function itemHtml(item) {
-  const sum = r9Row(item);
+  const hasPrice = item.price !== null && item.price !== '' && item.price !== undefined;
+  const sum = hasPrice ? r9Row(item) : 0;
   return `
     <div class="r9-row r9-item" data-id="${item.id}">
       <span class="r9-item__name">
-        <img src="${item.photo}" alt="" width="22" height="22" loading="lazy" decoding="async">
+        <img src="${r9Photo(item)}" alt="" width="22" height="22" loading="lazy" decoding="async">
         <span title="${item.name} (${item.unit})">${item.name}</span>
       </span>
-      <input class="r9-in" type="number" inputmode="decimal" step="0.1" min="0" placeholder="-" data-f="qty" value="${item.qty || ''}">
-      <input class="r9-in" type="number" inputmode="decimal" step="1" min="0" placeholder="-" data-f="price" value="${item.price || ''}">
-      <span class="r9-item__sum${sum ? '' : ' is-zero'}">${sum ? money(sum) : '-'}</span>
+      <input class="r9-in" type="number" inputmode="decimal" step="0.1" min="0" placeholder="—" data-f="qty" value="${item.qty ?? ''}">
+      <input class="r9-in${hasPrice ? '' : ' is-nil'}" type="number" inputmode="decimal" step="1" min="0" placeholder="—" data-f="price" value="${hasPrice ? item.price : ''}">
+      <span class="r9-item__sum${sum ? '' : ' is-zero'}">${sum ? moneyFine(sum) : '—'}</span>
       <span class="r9-item__tools">${toolsHtml()}</span>
     </div>`;
 }
@@ -96,12 +102,14 @@ export function sumHtml(items, fee) {
     </div>`;
 }
 
-// ช่องหมายเหตุ + ปุ่มล้างทั้งหมด / บันทึกและส่ง
-export function footHtml(note) {
+// ช่องหมายเหตุ + ปุ่มล้างทั้งหมด / บันทึกและส่ง (กำลังบันทึก = กดไม่ได้ + วงหมุน)
+export function footHtml({ note, saving, editing }) {
+  const label = saving ? R9_UI.saving : editing ? R9_UI.editSave : R9_UI.send;
   return `
+    ${editing ? `<div class="r9-editbar">${glyph('pencil', 14)}<b>${fillText(R9_UI.editing, { no: editing.no })}</b><button type="button" data-act="editCancel">${R9_UI.editCancel}</button></div>` : ''}
     <textarea class="r9-note" id="r9-note" placeholder="${R9_UI.notePlaceholder}">${note || ''}</textarea>
     <div class="r9-go">
-      <button class="r9-btn r9-btn--danger" type="button" data-act="clear">${glyph('trash', 16)}<span>${R9_UI.clear}</span></button>
-      <button class="r9-btn" type="button" data-act="send">${glyph('send', 16)}<span>${R9_UI.send}</span></button>
+      <button class="r9-btn r9-btn--danger" type="button" data-act="clear"${saving ? ' disabled' : ''}>${glyph('trash', 16)}<span>${R9_UI.clear}</span></button>
+      <button class="r9-btn${saving ? ' is-busy' : ''}" type="button" data-act="send"${saving ? ' disabled' : ''}>${saving ? '<span class="r9-spin"></span>' : glyph('send', 16)}<span>${label}</span></button>
     </div>`;
 }

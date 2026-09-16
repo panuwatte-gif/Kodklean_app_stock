@@ -2,7 +2,7 @@
 import { R9_UI, R9_PLACE, R9_RANGES, R9_EXPORTS } from '../shared/config.js';
 import { glyph, barChart, lineChart, donut } from '../shared/ui.js';
 import { money, moneyFine, weight, dayLongTh } from '../shared/format.js';
-import { r9Matrix, r9ReportKpi, r9TopItems, r9RoundTotals } from '../shared/calc.js';
+import { r9Matrix, r9ReportKpi, r9TopItems, r9RoundTotals, r9ItemSummary } from '../shared/calc.js';
 
 // การ์ดตัวกรอง: ช่วงวันที่ + ชิปช่วงเวลา + เลือกรอบ
 export function pickHtml(view, rounds) {
@@ -88,6 +88,30 @@ function sumTable(picked, items, cats, closed, page) {
     </div>`;
 }
 
+// สรุปรายสินค้า: สินค้าแต่ละตัวส่งไปกี่หน่วย กี่บาท (มาก→น้อย)
+function itemSumHtml(picked, items) {
+  const rows = r9ItemSummary(picked, items).map((r, i) => `
+    <tr class="is-item">
+      <td>${i + 1}. ${r.item.name}</td>
+      <td>${weight(r.qty)}<i>${r.item.unit || ''}</i></td>
+      <td>${r.rounds}</td>
+      <td class="is-value">${moneyFine(r.value)}</td>
+    </tr>`).join('');
+  return `
+    <div class="r9-card">
+      <div class="r9-card__head">
+        <img class="r9-card__ic" src="assets/r9/icon-report.webp" alt="" width="26" height="26" loading="lazy" decoding="async">
+        <div class="r9-card__t"><div class="r9-card__title">${R9_UI.itemSum}</div><div class="r9-card__sub">${R9_UI.itemSumSub}</div></div>
+      </div>
+      <div class="r9-rtwrap">
+        <table class="r9-rt">
+          <thead><tr><th>รายการสินค้า</th><th>ปริมาณรวม</th><th>กี่รอบ</th><th>มูลค่า (บาท)</th></tr></thead>
+          <tbody>${rows || `<tr><td colspan="4">${R9_UI.emptyReport}</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 // ส่วนวิเคราะห์: กราฟแท่งตามหมวด / กราฟเส้นรายรอบ / สัดส่วน / รายการยอดนิยม
 function analyzeHtml(picked, items, cats) {
   const m = r9Matrix(picked, items, cats);
@@ -135,6 +159,7 @@ export function reportHtml(picked, items, cats, view, closed) {
       </div>
       ${sumTable(picked, items, cats, closed || {}, view.rPage || 0)}
     </div>
+    ${itemSumHtml(picked, items)}
     ${analyzeHtml(picked, items, cats)}
     <div class="r9-card r9-noprint">
       <div class="r9-card__head">

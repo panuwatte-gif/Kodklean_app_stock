@@ -1,7 +1,7 @@
 // แท็บประวัติ — วาดตัวกรอง การ์ดรอบส่งของ และกราฟย้อนหลัง (การกดปุ่มอยู่ที่ rama9.js)
 import { R9_UI, R9_PLACE, R9_RANGES, R9_STATUS } from '../shared/config.js';
 import { glyph, lineChart } from '../shared/ui.js';
-import { money, dayLongTh, timeTh, monthShortTh } from '../shared/format.js';
+import { money, dayLongTh, timeTh, monthShortTh, fillText } from '../shared/format.js';
 import { r9RoundTotals, r9RoundByCat, r9ByMonth } from '../shared/calc.js';
 
 // แถบค้นหาและชิปกรองช่วงเวลา
@@ -37,6 +37,7 @@ function roundHtml(round, items, cats, latest) {
         ${latest ? '<span class="r9-round__tag">ล่าสุด</span>' : ''}
         <span class="r9-round__meta">${dayLongTh(round.date)} · ${timeTh(round.time)}</span>
       </div>
+      ${round.rev > 1 ? `<div class="r9-revbar">${glyph('pencil', 13)}<b>${fillText(R9_UI.revised, { n: round.rev })}</b><button type="button" data-revs="${round.id}">${R9_UI.revHistory}</button></div>` : ''}
       <div class="r9-round__line">
         <span>${glyph('pin', 14)}ส่งไปที่ สาขา${R9_PLACE.title}</span>
         <span>${glyph('box', 14)}${t.items} รายการ</span>
@@ -50,6 +51,8 @@ function roundHtml(round, items, cats, latest) {
       <div class="r9-round__go">
         <button class="r9-btn r9-btn--soft" type="button" data-detail="${round.id}">${glyph('file', 14)}<span>${R9_UI.detail}</span></button>
         <button class="r9-btn r9-btn--soft" type="button" data-repeat="${round.id}">${glyph('copy', 14)}<span>${R9_UI.repeat}</span></button>
+        <button class="r9-btn r9-btn--soft" type="button" data-edit="${round.id}">${glyph('pencil', 14)}<span>${R9_UI.edit}</span></button>
+        <button class="r9-btn r9-btn--soft r9-btn--red" type="button" data-void="${round.id}">${glyph('trash', 14)}<span>${R9_UI.del}</span></button>
       </div>
     </div>`;
 }

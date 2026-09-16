@@ -1,9 +1,59 @@
 // ชิ้นส่วนหน้าจอที่ใช้ซ้ำทั้งแอป — เมนูล่าง 7 ปุ่ม + การ์ดกระจก + แผงถาม + ชุดไอคอนเส้น
-import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP } from './config.js';
-import { fillText } from './format.js';
+import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, DATE_UI } from './config.js';
+import { fillText, dayLongTh, shiftIso } from './format.js';
+import { todayIso } from './data.js';
 
 // รูปประจำรายการวัตถุดิบ (ชุดเดียวกันทุกหน้า)
 export const itemPhoto = item => STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
+
+// รูปของรายการส่งของ — ลบรูปแล้วให้ใช้รูปกล่องแทน (ไม่ปล่อยให้รูปเสีย)
+export const r9Photo = item => (item && item.photo) || 'assets/r9/boxes.webp';
+
+// เลือกรูปจากเครื่องของผู้ใช้ แล้วแปลงเป็น WebP ย่อให้เหลือด้านยาว size พิกเซล (คืน data URL · null = ไม่ได้เลือก)
+export function pickPhotoWebp(size = 192) {
+  return new Promise(resolve => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      input.remove();
+      if (!file) return resolve(null);
+      try { resolve(await toWebpUrl(file, size)); } catch { resolve(null); }
+    });
+    input.addEventListener('cancel', () => { input.remove(); resolve(null); });
+    input.click();
+  });
+}
+
+// แปลงไฟล์รูป → WebP คุณภาพ 0.9 โดยย่อทีละครี่งเพื่อให้ภาพยังคม ไม่เบลอ (รูปเล็กกว่าเกณฑ์ไม่ขยาย)
+async function toWebpUrl(file, size) {
+  const url = URL.createObjectURL(file);
+  const img = await new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = url; });
+  URL.revokeObjectURL(url);
+  const scale = Math.min(1, size / Math.max(img.naturalWidth, img.naturalHeight));
+  const tw = Math.max(1, Math.round(img.naturalWidth * scale)), th = Math.max(1, Math.round(img.naturalHeight * scale));
+  let cur = document.createElement('canvas');
+  cur.width = img.naturalWidth; cur.height = img.naturalHeight;
+  cur.getContext('2d').drawImage(img, 0, 0);
+  while (cur.width > tw * 2 && cur.height > th * 2) {
+    const half = document.createElement('canvas');
+    half.width = Math.max(tw, Math.round(cur.width / 2));
+    half.height = Math.max(th, Math.round(cur.height / 2));
+    const hx = half.getContext('2d');
+    hx.imageSmoothingEnabled = true; hx.imageSmoothingQuality = 'high';
+    hx.drawImage(cur, 0, 0, half.width, half.height);
+    cur = half;
+  }
+  const out = document.createElement('canvas');
+  out.width = tw; out.height = th;
+  const ox = out.getContext('2d');
+  ox.imageSmoothingEnabled = true; ox.imageSmoothingQuality = 'high';
+  ox.drawImage(cur, 0, 0, tw, th);
+  return out.toDataURL('image/webp', 0.9);
+}
 
 // ชุดไอคอนเส้นของแอป (เรียกใช้ด้วย glyph('pencil'))
 const GLYPHS = {
@@ -238,7 +288,7 @@ export function formSheet({ title, fields, okLabel = 'บันทึก' }) {
   const fieldHtml = f => {
     if (f.kind === 'select') return `<label class="ask__field"><span>${f.label}</span><select data-k="${f.key}">${f.options.map(o => `<option value="${o.value}"${o.value === f.value ? ' selected' : ''}>${o.label}</option>`).join('')}</select></label>`;
     if (f.kind === 'swatch') return `<div class="ask__field"><span>${f.label}</span><div class="ask__swatches" data-k="${f.key}">${f.options.map((o, i) => `<button class="ask__swatch${i === 0 ? ' is-on' : ''}" type="button" data-v="${o.value}" style="background:${o.value}" aria-label="สี"></button>`).join('')}</div></div>`;
-    if (f.kind === 'image') return `<div class="ask__field"><span>${f.label}</span><div class="ask__icons" data-k="${f.key}">${f.options.map((o, i) => `<button class="ask__icon${i === 0 ? ' is-on' : ''}" type="button" data-v="${o.value}" title="${o.label}"><img src="${o.image}" alt="${o.label}"></button>`).join('')}</div></div>`;
+    if (f.kind === 'image') return `<div class="ask__field"><span>${f.label}</span><div class="ask__icons" data-k="${f.key}">${f.options.map((o, i) => `<button class="ask__icon${i === 0 ? ' is-on' : ''}" type="button" data-v="${o.value}" title="${o.label}"><img src="${o.image || o.value}" alt="${o.label}"></button>`).join('')}</div></div>`;
     if (f.kind === 'number') return `<label class="ask__field"><span>${f.label}</span><input type="number" inputmode="decimal" step="${f.step || 0.1}" min="0" data-k="${f.key}" value="${f.value ?? ''}" placeholder="${f.placeholder || ''}"></label>`;
     return `<label class="ask__field"><span>${f.label}</span><input data-k="${f.key}" value="${f.value || ''}" placeholder="${f.placeholder || ''}"></label>`;
   };
@@ -471,6 +521,73 @@ export function mountGlassPage(root, ui, cards, onPick) {
     if (hit) onPick(cards.find(c => c.id === hit.dataset.card));
   };
 }
+
+// ---------- แถบวันที่ทำงาน (ใช้ร่วมหน้าเตรียม-เหลือ และหน้าพระราม 9) ----------
+
+// วันที่เลือกห่างจากวันนี้กี่วัน (บวก = ล่วงหน้า)
+const diffDays = iso => Math.round((new Date(iso + 'T00:00:00') - new Date(todayIso() + 'T00:00:00')) / 86400000);
+
+// ป้ายสถานะวัน: วันนี้ (เทา) / ย้อนหลัง (ส้ม) / ล่วงหน้า (ฟ้า)
+function dateStatus(iso) {
+  const d = diffDays(iso);
+  if (d === 0) return { cls: 'today', text: DATE_UI.today };
+  if (d < 0) return { cls: 'past', text: fillText(DATE_UI.past, { n: -d }) };
+  return { cls: 'future', text: fillText(DATE_UI.future, { n: d }) };
+}
+
+// แถบวันที่: ◀ วันที่+ปฏิทิน ▶ + ป้ายสถานะ (pickId = id ของช่องปฏิทิน ให้แต่ละหน้าจับ event เอง)
+export function dateBarHtml(iso, pickId = 'prep-date-pick') {
+  const s = dateStatus(iso);
+  return `
+    <div class="pdate">
+      <button class="pdate__arrow" type="button" data-date-nav="-1" aria-label="ถอยหลัง 1 วัน">${glyph('back', 16)}</button>
+      <label class="pdate__mid" aria-label="เลือกวันที่จากปฏิทิน">
+        <span class="pdate__ic">${glyph('calendar', 15)}</span>
+        <b>${dayLongTh(iso)}</b>
+        <input class="pdate__pick" id="${pickId}" type="date" value="${iso}">
+      </label>
+      <button class="pdate__arrow pdate__arrow--next" type="button" data-date-nav="1" aria-label="เดินหน้า 1 วัน">${glyph('back', 16)}</button>
+      <span class="pdate__pill pdate__pill--${s.cls}">${s.text}</span>
+    </div>`;
+}
+
+// แถบสีพาดเต็มความกว้างเมื่อวันที่เลือกไม่ใช่วันนี้ — กันพนักงานกรอกผิดวันแบบไม่รู้ตัว (text = ข้อความของหน้านั้น)
+export function dateBandHtml(iso, text = DATE_UI.band) {
+  const s = dateStatus(iso);
+  if (s.cls === 'today') return '';
+  return `
+    <div class="pdate-band pdate-band--${s.cls}">
+      <span class="pdate-band__ic">${glyph('warn', 14)}</span>
+      <b>${fillText(text, { d: dayLongTh(iso), s: s.text })}</b>
+      <button type="button" data-date-today="1">${DATE_UI.back}</button>
+    </div>`;
+}
+
+// วันที่ไกลเกิน (ล่วงหน้า >7 / ย้อนหลัง >60 วัน) → ถามยืนยันก่อน แต่ไม่บล็อก
+async function confirmFarDate(iso) {
+  const d = diffDays(iso);
+  if (d <= 7 && d >= -60) return true;
+  return confirmSheet({ title: DATE_UI.farTitle, text: fillText(DATE_UI.farText, { d: dayLongTh(iso) }), okLabel: DATE_UI.farOk });
+}
+
+// เปลี่ยนวันที่ใน state ของหน้านั้น (คืน true เมื่อเปลี่ยนจริง)
+async function applyDate(iso, state) {
+  if (!iso || iso === state.date) return false;
+  if (!await confirmFarDate(iso)) return false;
+  state.date = iso;
+  return true;
+}
+
+// ปุ่ม ◀ ▶ และ "กลับมาวันนี้"
+export async function handleDateClick(event, state) {
+  const nav = event.target.closest('[data-date-nav]');
+  if (nav) return applyDate(shiftIso(state.date, Number(nav.dataset.dateNav)), state);
+  if (event.target.closest('[data-date-today]')) return applyDate(todayIso(), state);
+  return false;
+}
+
+// เลือกวันที่จากปฏิทิน
+export const handleDatePick = (iso, state) => applyDate(iso, state);
 
 // สั่งพิมพ์เฉพาะกล่องที่ระบุ (ใช้กับรายงาน)
 export function printArea(selector) {

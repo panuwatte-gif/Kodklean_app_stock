@@ -29,3 +29,6 @@ export const dbPatch = (query, body) => req(query, 'PATCH', body, 'return=minima
 
 // เพิ่มแถว ถ้าชนกุญแจเดิมให้ทับแถวนั้น (ต้องใส่ ?on_conflict=คอลัมน์ ในชื่อตาราง)
 export const dbUpsert = (query, rows) => req(query, 'POST', rows, 'resolution=merge-duplicates,return=minimal');
+
+// ลบแถวจริงตามเงื่อนไข (ใช้เฉพาะของที่ยังไม่มีประวัติใช้งาน เช่น รายการสินค้าที่ไม่เคยถูกส่ง)
+export const dbDelete = query => req(query, 'DELETE', undefined, 'return=minimal');

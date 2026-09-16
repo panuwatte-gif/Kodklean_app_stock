@@ -1,7 +1,7 @@
 // ประตูข้อมูลบานเดียวของแอป — ทุกหน้าต้องเรียกผ่านไฟล์นี้เท่านั้น
 // รอบนี้อ่านจาก mock_data.js ถ้าจะเปลี่ยนไปต่อฐานจริง แก้เฉพาะไฟล์นี้ หน้าจอไม่ต้องแก้
 import { MOCK_DATA } from './mock_data.js';
-import { dbGet, dbPost, dbPatch, dbUpsert } from './db.js';
+import { dbGet, dbPost, dbPatch, dbUpsert, dbDelete } from './db.js';
 import { parseCfg } from './fclab.js';
 import { shiftIso } from './format.js';
 
@@ -251,4 +251,73 @@ export async function getFcBundle() {
     getFcConfig(), getFcFormulas(), getFcHistory(), getFcModelMap(), getFcTrials(), getFcPrices()
   ]);
   return { cfgRows, cfg: parseCfg(cfgRows), formulas, history, map, trials, prices };
+}
+
+// ---------- ข้อมูลจริงจากฐาน: หน้าพระราม 9 (ส่งของไปสาขา) ----------
+
+// แปลงแถวจากฐาน → รูปแบบที่หน้าจอและ calc.js ใช้ (ราคายังไม่ตั้ง = null ห้ามแปลงเป็น 0)
+const numOrNull = v => (v === null || v === undefined || v === '' ? null : Number(v));
+const toR9Item = r => ({
+  id: r.id, name: r.name, cat: r.cat_id, unit: r.unit, price: numOrNull(r.price), photo: r.photo,
+  kind: r.kind, sortOrder: r.sort_order, active: r.active, used: Number(r.used_rounds) || 0, qty: 0
+});
+const toR9Round = r => ({
+  id: r.id, no: r.no, date: r.date, time: r.time, status: r.status, fee: Number(r.fee) || 0, note: r.note || '',
+  rev: r.rev_no, rootId: r.root_id, sentBy: r.sent_by, editedBy: r.edited_by, createdAt: r.created_at,
+  lines: (r.lines || []).map(l => ({ id: l.id, qty: Number(l.qty), price: numOrNull(l.price) }))
+});
+
+// หมวดสินค้า (ส่งมาทั้งที่ปิดไว้ เพื่อให้หน้าตั้งค่าเปิดกลับได้)
+export const getR9Cats = () =>
+  dbGet('kk_rama9_cat?select=id,label,icon,color,tint,sort_order,active&order=sort_order');
+
+// รายการสินค้า + จำนวนรอบที่เคยถูกส่ง (ฐานนับมาให้จากวิว หน้าจอไม่ต้องนับเอง)
+export const getR9Items = () =>
+  dbGet('kk_r9_item?select=id,name,cat_id,unit,price,photo,kind,note,sort_order,active,used_rounds&order=sort_order,id');
+
+// รอบส่งที่เป็นค่าล่าสุด (แถวที่ถูกแก้ไปแล้วไม่ส่งมา จึงไม่มียอดเบิ้ล)
+export const getR9Rounds = () =>
+  dbGet('kk_r9_round?is_current=is.true&select=id,no,root_id,date,time,status,fee,note,sent_by,edited_by,rev_no,created_at,lines&order=date,created_at');
+
+// ทุกครั้งที่แก้ของรอบนั้น ใหม่→เก่า (ดูได้ว่าเดิมเท่าไหร่ ใครแก้ เมื่อไหร่)
+export const getR9Revisions = rootId =>
+  dbGet(`kk_r9_round?root_id=eq.${rootId}&select=id,no,date,fee,note,sent_by,edited_by,rev_no,is_current,created_at,lines&order=rev_no.desc`);
+
+// โหลดข้อมูลทั้งหน้าพระราม 9 ในครั้งเดียว
+export async function getR9Bundle() {
+  const [cats, items, rounds] = await Promise.all([getR9Cats(), getR9Items(), getR9Rounds()]);
+  return { cats, items: items.map(toR9Item), rounds: rounds.map(toR9Round) };
+}
+
+// กุญแจกันกดเบิ้ล — สร้างครั้งเดียวตอนกดปุ่ม ส่งซ้ำกุญแจเดิม = ไม่เกิดรอบใหม่
+export const newR9Key = date => `r9:${date}:${crypto.randomUUID()}`;
+
+// บันทึกรอบส่ง 1 รอบ (หัวรอบ + รายการ ในคำสั่งเดียวฝั่งฐาน) · ส่ง replaces = แก้รอบเก่าแบบไม่ทับของเดิม
+export const saveR9Round = ({ date, fee, note, by, lines, key, replaces = null }) =>
+  dbPost('rpc/kk_r9_save', { p_date: date, p_fee: fee, p_note: note, p_by: by, p_lines: lines, p_key: key, p_replaces: replaces });
+
+// ลบรอบส่ง = ปิดไม่ให้นับ (ของเก่ายังอยู่ในฐาน)
+export const voidR9Round = (id, by) => dbPost('rpc/kk_r9_void', { p_id: id, p_by: by });
+
+// หน้าตั้งค่ารายการ: เพิ่ม / แก้ / ลบ / เปิด-ปิด / ย้ายหมวด (ราคาตั้งต้นเป็นค่าตั้ง แก้ทับได้)
+export const addR9Item = row => dbPost('kk_rama9_item', [{ active: true, ...row }]);
+export const saveR9Item = (id, changes) =>
+  dbPatch(`kk_rama9_item?id=eq.${enc(id)}`, { ...changes, updated_at: new Date().toISOString() });
+export const removeR9Item = id => dbDelete(`kk_rama9_item?id=eq.${enc(id)}`);
+export const setR9CatActive = (catId, active) => dbPatch(`kk_rama9_cat?id=eq.${enc(catId)}`, { active });
+export const setR9ItemsActive = (catId, active) => dbPatch(`kk_rama9_item?cat_id=eq.${enc(catId)}`, { active });
+export const moveR9Items = (ids, catId) =>
+  dbPatch(`kk_rama9_item?id=in.(${ids.map(enc).join(',')})`, { cat_id: catId });
+export const addR9Cat = row => dbPost('kk_rama9_cat', [{ active: true, ...row }]);
+
+// ร่างที่กำลังกรอกของรอบนี้ (เก็บในเครื่อง ยังไม่ขึ้นฐานจนกดบันทึก)
+export function getR9Draft() {
+  const store = readStore();
+  return copy(store.r9Draft) || { date: '', qty: {}, price: {}, fee: '', note: '', editing: null, key: null };
+}
+export function saveR9Draft(draft) {
+  const store = readStore();
+  store.r9Draft = copy(draft);
+  writeStore(store);
+  return getR9Draft();
 }

@@ -50,7 +50,7 @@ async function askPin(root, user) {
     okLabel: T.pinAsk.ok
   });
   if (!out) return;
-  const err = setPin(user.code, out.pin);
+  const err = await setPin(user.code, out.pin);
   if (err) return toast(T.err[err]);
   draw(root);
   toast(fillText(T.done.pin, { name: user.name }));

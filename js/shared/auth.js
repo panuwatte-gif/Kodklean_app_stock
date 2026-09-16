@@ -1,6 +1,6 @@
 // ใครล็อกอินอยู่ + จัดการบัญชีผู้ใช้ — ที่เดียวของแอป หน้าอื่นเรียกผ่านไฟล์นี้เท่านั้น
 import { LOGIN_USERS } from './config.js';
-import { get, save } from './data.js';
+import { get, save, getAccounts, saveAccountPin } from './data.js';
 
 const KEY = 'kodklean.session';
 
@@ -38,13 +38,29 @@ export function canEdit(code) {
   return !!me && (me.role === 'admin' || me.code === code);
 }
 
+// ดึง PIN ล่าสุดจากฐานมาทับรายชื่อในเครื่อง — เรียกครั้งเดียวตอนเปิดแอป
+// (แก้ PIN จากเครื่องไหนก็เห็นตรงกันทุกเครื่อง และตรงกับเกมหมู่บ้าน)
+export async function loadAccounts() {
+  try {
+    const rows = await getAccounts();
+    if (!rows || !rows.length) return;
+    const local = users();
+    rows.forEach(r => {
+      const u = local.find(x => x.code === String(r.emp_code));
+      if (u && r.pin) u.pin = String(r.pin);
+    });
+    save('users', local);
+  } catch (err) { /* ต่อฐานไม่ได้ ใช้ PIN ที่เคยบันทึกไว้ในเครื่องต่อไป */ }
+}
+
 // เปลี่ยน PIN ของบัญชีหนึ่ง (คืน '' = สำเร็จ, ไม่ว่าง = รหัสข้อผิดพลาด)
-export function setPin(code, pin) {
+export async function setPin(code, pin) {
   if (!canEdit(code)) return 'deny';
   if (!/^\d{4}$/.test(String(pin))) return 'pin';
   const rows = users();
   const row = rows.find(u => u.code === code);
   if (!row) return 'missing';
+  try { await saveAccountPin(code, pin); } catch (err) { return 'save'; }
   row.pin = String(pin);
   save('users', rows);
   return '';

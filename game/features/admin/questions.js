@@ -2,7 +2,7 @@
 import * as api from '../../core/api.js';
 import { VOLATILE } from '../../core/autoquiz.js';
 
-export const CATS = [['storage','เก็บอาหาร'], ['recipe','สูตร'], ['webapp','webapp'], ['grab','Grab'], ['ourshop','ร้านของเรา']];
+export const CATS = [['storage','เก็บอาหาร'], ['recipe','สูตร'], ['menu','สลิป/เมนู'], ['webapp','webapp'], ['grab','Grab'], ['ourshop','ร้านของเรา']];
 let edit = null, importing = false;
 
 const catName = id => (CATS.find(c => c[0] === id) || [,id])[1];

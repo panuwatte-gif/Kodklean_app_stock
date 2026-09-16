@@ -9,16 +9,18 @@ import { PETS } from '../config.js';
 
 const HOUSE = { baby:'house1', kid:'house1', student:'house2', teen:'house2', work:'house2', middle:'house3', elder:'house3' };
 const PLACES = { board:{ img:'board', go:null }, tent:{ img:'tent', go:'tent' }, school:{ img:'school', go:'school' }, wheel:{ img:'wheel', go:'wheel' } };
-const STEP = 190, PAD = 40;
+const STEP = 250, PAD = 44;
 
 export async function mountVillage(root, go) {
   const [chars, pets, notices] = await Promise.all([api.listCharacters(), api.allPets(), api.activeNotices()]);
   const byUser = id => chars.find(c => c.user_id === id) || { wp: 0, generation: 1 };
   const petOf = id => pets.find(p => p.user_id === id);
 
-  // สลับบ้านคนกับอาคารกลาง ให้เดินผ่านเจอเรื่อยๆ
+  // สลับบ้านคนกับอาคารกลาง ให้เดินผ่านเจอเรื่อยๆ — บ้านของคนที่ล็อกอินอยู่หน้าสุดเสมอ
+  const order = [...S.users].sort((a, b) =>
+    (a.id === S.user.id ? -1 : 0) - (b.id === S.user.id ? -1 : 0));
   const slots = [];
-  S.users.forEach((u, i) => {
+  order.forEach((u, i) => {
     slots.push({ kind: 'user', u });
     if (i === 0) slots.push({ kind: 'place', id: 'board' });
     if (i === 1) slots.push({ kind: 'place', id: 'tent' });
@@ -31,15 +33,15 @@ export async function mountVillage(root, go) {
     if (s.kind === 'place') {
       const p = PLACES[s.id];
       return `<button class="spot" style="left:${x}px" data-place="${s.id}">
-        <img src="${ASSETS.village}${p.img}.webp" alt="" width="118" height="118" style="object-fit:contain">
+        <img src="${ASSETS.village}${p.img}.webp" alt="" width="146" height="146" style="object-fit:contain">
         <span class="plate" style="margin-bottom:10px">${label(s.id)}</span></button>`;
     }
     const c = byUser(s.u.id), st = stageOf(c.wp), pet = petOf(s.u.id);
     return `<button class="spot" style="left:${x}px" data-user="${s.u.id}">
-      <img src="${ASSETS.village}${HOUSE[st]}.webp" alt="" width="128" height="128" style="object-fit:contain">
-      <span style="display:flex;align-items:flex-end;margin-top:-26px">
-        <span class="sprite" style="${charSprite(s.u.asset_folder, st, 'idle', 74)}"></span>
-        ${pet ? `<span class="sprite" style="${petSprite(pet.species_id, pet.stage, pet.mood, 54)};margin-left:-8px"></span>` : ''}
+      <img src="${ASSETS.village}${HOUSE[st]}.webp" alt="" width="158" height="158" style="object-fit:contain">
+      <span style="display:flex;align-items:flex-end;margin-top:-34px">
+        <span class="sprite" style="${charSprite(s.u.asset_folder, st, 'idle', 118)}"></span>
+        ${pet ? `<span class="sprite" style="${petSprite(pet.species_id, pet.stage, pet.mood, 96)};margin-left:-12px"></span>` : ''}
       </span>
       <span class="plate" style="margin-bottom:10px">${s.u.name_th} · ${t('gen')} ${c.generation}</span></button>`;
   };

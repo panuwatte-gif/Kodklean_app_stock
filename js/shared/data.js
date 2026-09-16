@@ -310,6 +310,15 @@ export const moveR9Items = (ids, catId) =>
   dbPatch(`kk_rama9_item?id=in.(${ids.map(enc).join(',')})`, { cat_id: catId });
 export const addR9Cat = row => dbPost('kk_rama9_cat', [{ active: true, ...row }]);
 
+// ---------- บัญชีพนักงาน: PIN เก็บที่ฐานเดียวกับเกม ทุกเครื่องจึงเห็นรหัสตรงกัน ----------
+
+// รายชื่อบัญชีพร้อม PIN ล่าสุดจากฐาน
+export const getAccounts = () => dbGet('game_users?select=emp_code,pin,name_th,role&order=emp_code');
+
+// เปลี่ยน PIN ของบัญชีหนึ่งลงฐาน (ทุกเครื่องเห็นผลทันทีที่เปิดแอปรอบถัดไป)
+export const saveAccountPin = (code, pin) =>
+  dbPatch(`game_users?emp_code=eq.${enc(code)}`, { pin: String(pin) });
+
 // ร่างที่กำลังกรอกของรอบนี้ (เก็บในเครื่อง ยังไม่ขึ้นฐานจนกดบันทึก)
 export function getR9Draft() {
   const store = readStore();

@@ -11,7 +11,7 @@ import { mountSpecialPage } from './pages/special.js';
 import { mountAccountsPage } from './pages/accounts.js';
 import { mountEquationPage } from './pages/equation.js';
 import { mountNav, fillGlyphs, confirmSheet, toast } from './shared/ui.js';
-import { currentUser, signOut } from './shared/auth.js';
+import { currentUser, signOut, loadAccounts } from './shared/auth.js';
 import { APP_UI } from './shared/config.js';
 
 const PAGES = {
@@ -67,7 +67,8 @@ async function showLogin() {
   mountLoginPage(view, () => { app.classList.remove('app--login'); showPage('home'); });
 }
 
-if (currentUser()) showPage('home'); else showLogin();
+// ดึง PIN ล่าสุดจากฐานก่อนเปิดหน้าแรก (แก้รหัสจากเครื่องไหนก็ใช้ได้ทุกเครื่อง)
+loadAccounts().then(() => { if (currentUser()) showPage('home'); else showLogin(); });
 
 // ปุ่มออกจากระบบบนแถบบนสุด: ถามยืนยันก่อน แล้วกลับไปหน้าเข้าสู่ระบบ
 const logoutBtn = document.getElementById('btn-logout');

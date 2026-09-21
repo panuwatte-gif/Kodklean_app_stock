@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KodKlean Stock</title>
+<meta name="theme-color" content="#125B2A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KodKlean">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/app/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/app/icon-192.png">
 <link rel="stylesheet" href="_ds/kodklean-group-design-system-7c7d5da7-d21a-4848-ba0e-a7258f620fe7/tokens/fonts.css">
 <link rel="stylesheet" href="_ds/kodklean-group-design-system-7c7d5da7-d21a-4848-ba0e-a7258f620fe7/tokens/colors.css">
 <link rel="stylesheet" href="_ds/kodklean-group-design-system-7c7d5da7-d21a-4848-ba0e-a7258f620fe7/tokens/typography.css">
@@ -19,6 +27,12 @@
 <link rel="stylesheet" href="css/pages/village.css">
 <link rel="stylesheet" href="css/pages/login.css">
 <link rel="stylesheet" href="css/pages/accounts.css">
+<link rel="stylesheet" href="css/pages/music.css">
+<link rel="stylesheet" href="css/pages/assign.css">
+<link rel="stylesheet" href="css/pages/settings.css">
+<link rel="stylesheet" href="css/pages/fah.css">
+<link rel="stylesheet" href="css/pages/som.css">
+<link rel="stylesheet" href="css/pages/kitchen.css">
 </head>
 <body>
 
@@ -45,6 +59,12 @@
 </div>
 
 <script type="module" src="js/app.js"></script>
+<script>
+  /* ลงทะเบียน service worker เพื่อให้เพิ่มแอปไว้หน้าจอโทรศัพท์แล้วเปิดแบบเต็มจอได้ */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
 
 </body>
 </html>

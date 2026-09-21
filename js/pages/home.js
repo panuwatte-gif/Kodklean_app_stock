@@ -1,6 +1,6 @@
 // หน้าหลัก (Dashboard) — ถือสถานะตัวเลือกของทุกการ์ด แล้วสั่งวาดใหม่เฉพาะการ์ดที่เปลี่ยน
 // การวาดแยกอยู่ที่ home-top (หัว/ประกาศ/เตรียม/ข้าว), home-usage (ใช้ไป/ของเหลือ), home-money (ประหยัด/ยอดขาย/พระราม 9)
-import { get, save } from '../shared/data.js';
+import { get, save, getHomeBundle, todayIso } from '../shared/data.js';
 import { HOME_UI } from '../shared/config.js';
 import { toast, pickerSheet } from '../shared/ui.js';
 import { dayLongTh, shiftIso } from '../shared/format.js';
@@ -19,19 +19,26 @@ function fitHomeWidth(root) {
 }
 
 // เอาโครงหน้าที่โหลดมาแล้ว มาเติมข้อมูลหน้าหลัก (onGo = พาไปหน้าอื่นเมื่อกดดูรายละเอียด)
-export function mountHomePage(root, onGo) {
+// การ์ดที่ต่อฐานแล้ว: ประกาศ / ใช้ไปเท่าไหร่ / ยอดคงเหลือ / แนะนำเตรียมพรุ่งนี้ / พระราม 9
+// การ์ดที่ยังไม่มีตารางในฐาน (หุงข้าว / ยอดขาย / ลดของเหลือ) ใช้ข้อมูลตั้งต้นไปก่อน
+export async function mountHomePage(root, onGo) {
   fitHomeWidth(root);   // ย่อทั้งหน้าให้พอดีจอมือถือ (เลย์เอาต์วางไว้ที่ 794 ตามแบบอ้างอิง)
-  const meta = get('homeMeta');
   const ui = get('homeUi');   // ค่าที่เลือกไว้ครั้งก่อน (คงอยู่หลัง refresh)
+  let live = null;
+  try { live = await getHomeBundle(todayIso()); } catch { live = null; }   // ต่อฐานไม่ได้ = ใช้ข้อมูลตั้งต้น
+
+  const meta = live ? live.meta : get('homeMeta');
   const data = {
-    prep: get('homePrep'), rice: get('homeRice'), usage: get('homeUsage'), left: get('homeLeftovers'),
-    save: get('homeSavings'), sales: get('homeSales'), r9: get('homeR9')
+    prep: live ? live.prep : get('homePrep'), rice: get('homeRice'),
+    usage: live ? live.usage : get('homeUsage'), left: live ? live.left : get('homeLeftovers'),
+    save: get('homeSavings'), sales: get('homeSales'), r9: live ? live.r9 : get('homeR9'),
+    notices: live ? live.notices : get('homeNotices')
   };
 
   // ตัววาดของแต่ละช่อง (id ช่อง = home-<key>)
   const draw = {
     hero: () => heroHtml(meta, ui),
-    notices: () => noticesHtml(get('homeNotices')),
+    notices: () => noticesHtml(data.notices),
     prep: () => prepCard(data.prep, meta, ui),
     rice: () => riceCard(data.rice, ui),
     usage: () => usageCard(data.usage, ui),

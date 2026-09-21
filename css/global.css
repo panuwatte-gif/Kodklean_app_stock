@@ -328,6 +328,8 @@ a:hover { color: #0C3F1D; }
 
 /* ---------- กราฟแท่ง/เส้นมีแกน (ui.js axisBarChart / axisLineChart) ---------- */
 .ch { display: flex; flex-direction: column; gap: 6px; }
+/* ยังไม่มีข้อมูลสักจุด = กล่องว่างพร้อมข้อความ แทนการวาดกราฟเปล่า */
+.ch--empty { align-items: center; justify-content: center; min-height: 110px; border: 1px dashed #D9E3E0; border-radius: 12px; color: #8A9A96; font-size: 12px; }
 .ch__legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; font-size: 11px; color: #667B83; }
 .ch__legend span { display: inline-flex; align-items: center; gap: 5px; }
 .ch__legend i { width: 10px; height: 10px; border-radius: 3px; }

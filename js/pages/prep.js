@@ -1,7 +1,7 @@
 // หน้าเตรียม-เหลือ — คุมสถานะกลาง (วันที่/แท็บ/ตัวกรอง) โหลดข้อมูลจริงจากฐาน และรับการกรอกของทุกแท็บ
 import { get, getPrepBundle, savePrep, saveLeft, saveMenuSetting, saveCookRatio, saveAssumption, getPrepHistory, getLeftHistory, getPrepLogs, getLastPrepDateBefore, todayIso } from '../shared/data.js';
 import { staffCode } from '../shared/auth.js';
-import { PREP_FILTERS, PREP_ENTRY, PREP_UI } from '../shared/config.js';
+import { PREP_FILTERS, PREP_ENTRY, PREP_UI, PREP_PEOPLE_LOOK } from '../shared/config.js';
 import { topBarHtml, toast, dateBarHtml, dateBandHtml, handleDateClick, handleDatePick } from '../shared/ui.js';
 import { buildPrepModel, prepMeatTotals, riceTotals } from '../shared/calc.js';
 import { buildForecast, recTarget, carryOver } from '../shared/forecast.js';
@@ -22,9 +22,16 @@ function entryOf(kind, f) {
   return { type: PREP_ENTRY[kind][f], seq: 1 };
 }
 
+// คนที่รับผิดชอบงานเตรียม: ชื่อจากตาราง kk_staff · สี/รูปประจำตัวจาก config
+const peopleOf = staff => (staff || []).filter(s => PREP_PEOPLE_LOOK[s.code])
+  .map(s => ({ id: s.code, name: s.name, ...PREP_PEOPLE_LOOK[s.code] }));
+
+// รูป/สีไว้ใช้ระหว่างรอโหลดชื่อจากฐาน (กันรูปแตกตอนเปิดหน้าวินาทีแรก)
+const PEOPLE_WAIT = Object.keys(PREP_PEOPLE_LOOK).map(id => ({ id, name: '', ...PREP_PEOPLE_LOOK[id] }));
+
 // เอาโครงหน้าที่โหลดมาแล้ว มาเติมข้อมูลจริง
 export function mountPrepPage(root) {
-  setPeople(get('prepPeople'));
+  setPeople(PEOPLE_WAIT);
   root.querySelector('#prep-bar').innerHTML = topBarHtml({ title: 'เตรียม-เหลือ', date: dayShort(state.date), dateId: 'prep-date-top' });
   const el = id => root.querySelector(id);
   state.date = todayIso();   // เปิดหน้าครั้งแรก = วันนี้เสมอ
@@ -34,6 +41,7 @@ export function mountPrepPage(root) {
     state.error = false;
     try {
       const b = await getPrepBundle(state.date);
+      setPeople(peopleOf(b.staff));
       state.model = buildPrepModel(b);
       state.fc = buildForecast(b.items, b.logsFc, state.date, b.cfg);
       // แนะเป้าเตรียม = ขอบบนพยากรณ์ − คงเหลือเมื่อวาน (เสาร์ห้ามเผื่อ)

@@ -28,6 +28,11 @@ export const OTHER_UI = {
 // การ์ดเมนูของหน้าอื่นๆ (kind = รูปแบบการ์ด: hero ใบใหญ่ / half ครึ่งจอ / stack ซ้อนรายการ / capsule แคปซูล / data การ์ดวิเคราะห์)
 export const OTHER_CARDS = [
   {
+    id: 'assignwork', kind: 'hero', goto: 'assign', title: 'แบ่งงาน', sub: 'มอบหมายว่าใครนับอะไร ใครกรอกงานไหน',
+    kicker: 'เห็นเพาะอาเฮีย กับ แม่พัน', meta: 'นับสต๊อก · เตรียมอาหาร · อาหารปรุงสำเร็จคงเหลือ',
+    icon: 'assets/icons/ic19.webp', accent: '#1E7A6E', accent2: '#BEE9E1', only: ['1001', '1004']
+  },
+  {
     id: 'recipe', kind: 'hero', title: 'สูตรอาหาร', sub: 'สูตรและอัตราส่วนวัตถุดิบของทุกเมนู',
     kicker: 'ใช้บ่อยที่สุด', meta: '48 เมนู · อัปเดต 12 ก.ย.', icon: 'assets/icons/ic09.webp',
     accent: '#2FA38F', accent2: '#9CE7DA'
@@ -104,8 +109,8 @@ export const SPECIAL_CARDS = [
     meta: 'ถามได้ทั้งวัน', icon: 'assets/chars/ahhia-port.webp', accent: '#3B7FD4', accent2: '#C6DEF9'
   },
   {
-    id: 'songs', kind: 'capsule', title: 'เพลง', sub: 'เพลงประจำร้านและเพลงของทีม',
-    meta: '6 เพลง', glyph: 'music', accent: '#8A6BD8', accent2: '#D9CBF7'
+    id: 'songs', kind: 'capsule', goto: 'music', title: 'เพลง', sub: 'เพลย์ลิสต์ประจำร้านและเพลงของทีม',
+    meta: 'สร้างเพลย์ลิสต์ · นำเข้าเพลงเองได้', glyph: 'music', accent: '#8A6BD8', accent2: '#D9CBF7'
   }
 ];
 
@@ -231,7 +236,9 @@ export const STOCK_GROUPS = [
   { id: 'ข้าว', label: 'ข้าว', icon: 'assets/prep/rice-homali.webp', color: '#B37A45', tint: '#FBF1E5' },
   { id: 'ไข่', label: 'ไข่', icon: 'assets/stock/eggs.webp', color: '#E08A2E', tint: '#FDF1DF' },
   { id: 'เครื่องดื่ม', label: 'เครื่องดื่ม', icon: 'assets/icons/ic07.webp', color: '#3B7FD4', tint: '#EAF2FD' },
-  { id: 'บรรจุภัณฑ์', label: 'บรรจุภัณฑ์', icon: 'assets/cats/pack.webp', color: '#8B63C9', tint: '#F4EEFB' }
+  { id: 'บรรจุภัณฑ์', label: 'บรรจุภัณฑ์', icon: 'assets/cats/pack.webp', color: '#8B63C9', tint: '#F4EEFB' },
+  { id: 'น้ำเชื่อม', label: 'น้ำเชื่อม', icon: 'assets/som/sy-pandan.webp', color: '#3F7A4F', tint: '#EDF6EB' },
+  { id: 'สติ๊กเกอร์', label: 'สติ๊กเกอร์', icon: 'assets/som/pk-sticker-roll.webp', color: '#C79A45', tint: '#FBF2E1' }
 ];
 
 // รูปสำรองประจำหมวด (ใช้เมื่อรายการนั้นยังไม่ได้จับคู่รูปไว้)
@@ -240,9 +247,12 @@ export const STOCK_PHOTO_BY_GROUP = {
   'ผัก': 'assets/stock/veg-mix.webp',
   'ซอส/เครื่องปรุง': 'assets/stock/house-sauce.webp',
   'ข้าว': 'assets/prep/rice-homali.webp',
+  'ข้าวหุง': 'assets/kitchen/rice-homali.webp',
   'ไข่': 'assets/stock/eggs.webp',
   'เครื่องดื่ม': 'assets/stock/beverage.webp',
-  'บรรจุภัณฑ์': 'assets/stock/packaging.webp'
+  'บรรจุภัณฑ์': 'assets/stock/packaging.webp',
+  'น้ำเชื่อม': 'assets/som/sy-pandan.webp',
+  'สติ๊กเกอร์': 'assets/som/pk-sticker-roll.webp'
 };
 
 // รูปประจำรายการนับ (คีย์ = id ในตาราง kk_count_item) รายการที่ไม่ได้ใส่จะใช้รูปประจำหมวด
@@ -258,18 +268,26 @@ export const STOCK_PHOTOS = {
   meat_duck_mince: 'assets/prep/meat-duck-mince.webp',
   meat_shrimp_mid: 'assets/prep/meat-shrimp-mid.webp',
   meat_shrimp_big: 'assets/prep/meat-shrimp-big.webp',
-  veg_basil: 'assets/food/basil.webp',
-  veg_garlic: 'assets/food/garlic.webp',
-  veg_birdchili: 'assets/food/chili.webp',
-  veg_spurchili: 'assets/r9/chili-dry.webp',
-  sauce_kaprao: 'assets/food/sauce-bowl.webp',
-  sauce_kaprao_boran: 'assets/food/sauce-bowl.webp',
-  sauce_glassnoodle: 'assets/prep/noodle-glass.webp',
+  veg_basil: 'assets/kitchen/veg-basil.webp',
+  veg_garlic: 'assets/kitchen/veg-garlic.webp',
+  veg_birdchili: 'assets/kitchen/veg-birdchili.webp',
+  veg_spurchili: 'assets/kitchen/veg-spurchili.webp',
+  veg_scallion: 'assets/kitchen/veg-scallion.webp',
+  veg_celery: 'assets/kitchen/veg-celery.webp',
+  veg_carrot: 'assets/kitchen/veg-carrot.webp',
+  sauce_kaprao: 'assets/kitchen/sauce-kaprao.webp',
+  sauce_multi: 'assets/kitchen/sauce-multi.webp',
+  sauce_chilisalt: 'assets/kitchen/sauce-chilisalt.webp',
+  sauce_kaprao_boran: 'assets/kitchen/sauce-kaprao-boran.webp',
+  sauce_osaka: 'assets/kitchen/sauce-osaka.webp',
+  sauce_osaka_veg: 'assets/kitchen/sauce-osaka-veg.webp',
+  sauce_osaka_mild: 'assets/kitchen/sauce-osaka-mild.webp',
+  sauce_glassnoodle: 'assets/kitchen/sauce-glassnoodle.webp',
   season_chilipaste: 'assets/stock/seasoning.webp',
-  season_kikkoman: 'assets/stock/seasoning.webp',
-  season_msg: 'assets/stock/powder.webp',
+  season_kikkoman: 'assets/kitchen/season-kikkoman.webp',
+  season_msg: 'assets/kitchen/season-msg.webp',
   season_ricebranoil: 'assets/food/oil-bottle.webp',
-  season_chinesewine: 'assets/food/sauce-bottle.webp',
+  season_chinesewine: 'assets/kitchen/season-chinesewine.webp',
   season_sake_cook: 'assets/food/sauce-bottle.webp',
   season_oyster_silver: 'assets/food/sauce-bottle.webp',
   season_oyster_maekrua: 'assets/r9/sauce-bottle.webp',
@@ -390,7 +408,8 @@ export const HOME_UI = {
     title: 'แนะนำเตรียมของพรุ่งนี้', sub: 'จัดเตรียมวัตถุดิบล่วงหน้า เพื่อการทำงานที่ราบรื่น',
     rankLabel: 'อันดับ', rankHint: 'เลือกดูครั้งละ 3 อันดับ', cols: ['#', 'วัตถุดิบ', 'ปริมาณ', 'ผู้รับผิดชอบ'],
     of: 'จาก', items: 'รายการ', closed: 'พรุ่งนี้ร้านปิด', unranked: 'รายการแนะนำที่ยังไม่จัดอันดับ',
-    basisNote: 'ปริมาณแนะนำจากระบบ • ยังไม่ระบุว่าเป็น "ต้องผลิตเพิ่ม" หรือ "เป้าสต๊อกรวม"'
+    basisNote: 'ปริมาณแนะนำจากระบบ • ยังไม่ระบุว่าเป็น "ต้องผลิตเพิ่ม" หรือ "เป้าสต๊อกรวม"',
+    liveNote: 'พยากรณ์ด้วยสูตรที่ล็อกไว้ต่อรายการ • คำนวณจากบันทึกใช้จริงถึง {d}'
   },
   rice: {
     title: 'แนะนำปริมาณหุงข้าว', sub: 'คำนวณจากยอดขายและเมนูในแต่ละสาขา ปรับตามปริมาณจริงได้',
@@ -412,6 +431,7 @@ export const HOME_UI = {
     legendCur: 'รอบนี้', legendPrev: 'ช่วงก่อนหน้า',
     topTitle: '5 เมนูที่เหลือมากสุด', topSub: 'เรียงตามค่าเฉลี่ยเหลือเก็บต่อ 7 วัน • ภาพรวมสาขา',
     cols: ['เฉลี่ย 7 วัน', 'เฉลี่ย 30 วัน', '≈ บาท/เดือน'], noEst: 'คำนวณไม่ได้',
+    empty: 'ยังไม่มีบันทึกของเหลือ — กรอกได้ที่แท็บ "บันทึกอาหารเหลือ" ของหน้าเตรียม-เหลือ',
     estNote: '≈ บาท/เดือน = ประมาณการมูลค่าของเหลือเกิดใหม่ตามต้นทุน ไม่ใช่ยอดที่ทิ้งจริงหรือยอดประหยัด • ตัวเลขจำลอง {d} วันทำการ'
   },
   save: {
@@ -1069,6 +1089,160 @@ export const R9_SETUP_UI = {
 
 // ---------- หน้าบัญชีและรหัสผ่าน ----------
 
+// ---------- หน้าแบ่งงาน (เห็นเฉพาะอาเฮียกับแม่พัน) ----------
+
+// การ์ดงาน 3 ใบที่มอบหมายได้ (source: count = รายการนับสต๊อก / prep = เนื้อสัตว์+ข้าว / menu = เมนูอาหารปรุงสุก)
+export const ASSIGN_TASKS = [
+  {
+    id: 'count', source: 'count', canEditItems: true, title: 'นับสต๊อก', sub: 'ใครนับวัตถุดิบรายการไหน',
+    icon: 'assets/icons/nav-stock.webp', accent: '#1E7A3C', accent2: '#CFE8D3'
+  },
+  {
+    id: 'prep', source: 'prep', canEditItems: false, title: 'บันทึกเตรียมอาหาร', sub: 'ใครกรอก เตรียม · เบิกเพิ่ม · ทิ้ง · คงเหลือ',
+    icon: 'assets/prep/ic3d-prep.webp', accent: '#2F63C9', accent2: '#CFDDF5'
+  },
+  {
+    id: 'cooked', source: 'menu', canEditItems: false, title: 'อาหารปรุงสำเร็จคงเหลือ', sub: 'ใครกรอกของเหลือรายเมนู',
+    icon: 'assets/prep/ic3d-left.webp', accent: '#C0651B', accent2: '#F3DCC0'
+  }
+];
+
+// หมวดที่นับเป็นงานเตรียมอาหาร (รายการมาจาก kk_count_item ชุดเดียวกับหน้าสต๊อก)
+export const ASSIGN_PREP_GROUPS = ['เนื้อสัตว์', 'ข้าว'];
+
+// หมวดเมนูของการ์ดอาหารปรุงสำเร็จคงเหลือ
+export const ASSIGN_MENU_GROUP = { id: 'เมนูอาหาร', label: 'เมนูอาหาร', icon: 'assets/r9/dish-kaprao.webp', color: '#C0651B', tint: '#FDF3E6' };
+
+// ข้อความทั้งหมดของหน้าแบ่งงาน ({n} {name} {done} {all} = ช่องเติม)
+export const ASSIGN_UI = {
+  title: 'แบ่งงาน',
+  sub: 'มอบหมาย ปรับเปลี่ยน เพิ่ม-ลดงานของทุกคน',
+  count: '{n} กลุ่มงาน',
+  deny: 'หน้านี้เห็นเฉพาะอาเฮียกับแม่พัน',
+  loading: 'กำลังโหลดรายการจากฐาน...',
+  error: 'ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง',
+  retry: 'ลองใหม่',
+  back: 'กลับการ์ดงาน',
+  taskMeta: 'มีคนรับผิดชอบ {done} จาก {all} รายการ',
+  none: 'ยังไม่มีคนรับ',
+  pickTitle: 'ใครรับผิดชอบ “{name}”',
+  pickGroupTitle: 'ใครรับผิดชอบทั้งหมวด “{name}”',
+  pickHint: 'แตะชื่อเพื่อเลือก/เอาออก เลือกหลายคนก็ได้',
+  pickDone: 'เสร็จ',
+  groupAll: 'มอบทั้งหมวด',
+  groupNote: 'เลือกทั้งหมวด = ทุกรายการในหมวดนี้เป็นงานของคนนั้นทั้งหมด',
+  frozenTag: 'พักงาน',
+  saved: 'บันทึกคนรับผิดชอบของ “{name}” แล้ว',
+  saveErr: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',
+  search: 'ค้นหารายการ...',
+  empty: 'ไม่พบรายการที่ค้นหา',
+  onlyFree: 'เฉพาะที่ยังไม่มีคนรับ',
+  showAll: 'ดูทั้งหมด',
+  tools: 'จัดการรายการ',
+  toolsOff: 'เลิกจัดการ',
+  photoUpload: 'อัพโหลดรูปจากเครื่อง (แปลงเป็น WebP ย่อขนาดให้อัตโนมัติ)',
+  photoClear: 'ลบรูปนี้ (กลับไปใช้รูปประจำหมวด)',
+  photoTitle: 'รูป “{name}”',
+  photoSaved: 'เปลี่ยนรูปแล้ว ทุกหน้าเห็นรูปใหม่เหมือนกัน',
+  photoCleared: 'ลบรูปแล้ว',
+  moveUp: 'ขึ้น',
+  moveDown: 'ลง'
+};
+
+// ---------- หน้าตั้งค่า (ปุ่มฟันเฟืองมุมขวาบน) ----------
+
+export const SETTINGS_UI = {
+  title: 'ตั้งค่า',
+  sub: 'ของที่แก้ได้ทั้งร้าน รวมไว้ที่นี่',
+  count: '{n} คนทำงาน',
+  staffTitle: 'พนักงาน',
+  staffSub: 'เพิ่ม แก้ชื่อ พักงานชั่วคราว หรือลบออก — ส่งผลกับหน้าแบ่งงานทันที',
+  loading: 'กำลังโหลดรายชื่อจากฐาน...',
+  error: 'ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง',
+  add: 'เพิ่มพนักงาน',
+  edit: 'แก้ชื่อ',
+  freeze: 'พักงาน',
+  unfreeze: 'เรียกกลับ',
+  remove: 'ลบ',
+  frozenTag: 'พักงานชั่วคราว',
+  roleName: { owner: 'เจ้าของร้าน', admin: 'แอดมิน', lead: 'หัวหน้า', staff: 'พนักงาน' },
+  roles: [{ value: 'staff', label: 'พนักงาน' }, { value: 'lead', label: 'หัวหน้า' }, { value: 'owner', label: 'เจ้าของร้าน' }],
+  addAsk: { title: 'เพิ่มพนักงานใหม่', name: 'ชื่อที่แสดง', code: 'รหัสพนักงาน (อังกฤษตัวเล็ก เช่น nong)', role: 'ตำแหน่ง', avatar: 'รูปตัวละคร', ok: 'เพิ่มพนักงาน' },
+  editAsk: { title: 'แก้ข้อมูล {name}', name: 'ชื่อที่แสดง', role: 'ตำแหน่ง', ok: 'บันทึก' },
+  freezeAsk: { title: 'พักงาน {name} ชั่วคราว?', text: 'งานที่เค้ารับผิดชอบอยู่จะถูกล้างทั้งหมด กลายเป็นงานที่ยังไม่มีคนรับ รอเค้ากลับมาค่อยกดเรียกกลับ', ok: 'พักงาน' },
+  delAsk: { title: 'ลบ {name} ออกจากระบบ?', text: 'งานที่เค้ารับผิดชอบจะถูกล้าง ต้อง assign ใหม่ — ประวัติงานเก่ายังเก็บไว้', ok: 'ลบพนักงาน' },
+  done: {
+    add: 'เพิ่ม {name} เข้าระบบแล้ว เลือกงานให้เค้าได้ทันที',
+    edit: 'แก้ข้อมูล {name} แล้ว',
+    freeze: 'พักงาน {name} แล้ว งานของเค้าถูกล้างเรียบร้อย',
+    unfreeze: 'เรียก {name} กลับมาทำงานแล้ว',
+    del: 'ลบ {name} ออกจากระบบแล้ว'
+  },
+  err: {
+    name: 'ใส่ชื่อที่แสดงด้วยนะ',
+    code: 'รหัสพนักงานต้องเป็นอังกฤษตัวเล็ก 2-16 ตัว',
+    dup: 'รหัสนี้มีอยู่แล้ว',
+    save: 'บันทึกลงฐานไม่สำเร็จ เช็กอินเทอร์เน็ตแล้วลองใหม่'
+  }
+};
+
+// ---------- หน้าเพลง (เพลย์ลิสต์) ----------
+
+export const MUSIC_UI = {
+  title: 'เพลง',
+  sub: 'เพลย์ลิสต์ของทีม',
+  loading: 'กำลังโหลดเพลง...',
+  error: 'ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง',
+  retry: 'ลองใหม่',
+  allTracks: 'เพลงทั้งหมด',
+  newList: 'สร้างเพลย์ลิสต์',
+  manage: 'จัดการ',
+  manageOff: 'เลิกจัดการ',
+  importBtn: 'นำเข้าเพลง',
+  importHint: 'ไฟล์ที่ไม่ใช่ MP3 ระบบแปลงเป็น MP3 ให้เอง',
+  addFrom: 'เพิ่มเพลงจากคลัง',
+  addFromTitle: 'เพิ่มเพลงเข้า “{name}”',
+  addFromEmpty: 'เพลงทุกเพลงในคลังอยู่ในเพลย์ลิสต์นี้หมดแล้ว',
+  removeFrom: 'เอาออกจากเพลย์ลิสต์',
+  deleteTrack: 'ลบเพลงทิ้ง',
+  empty: 'เพลย์ลิสต์นี้ยังไม่มีเพลง — กดนำเข้าเพลง หรือเพิ่มจากคลัง',
+  nowPlaying: 'กำลังเล่น',
+  noTrack: 'เลือกเพลงเพื่อเริ่มเล่น',
+  unknownArtist: 'ไม่ระบุคนร้อง',
+  newListAsk: { title: 'สร้างเพลย์ลิสต์ใหม่', name: 'ชื่อเพลย์ลิสต์', ok: 'สร้าง' },
+  renameAsk: { title: 'เปลี่ยนชื่อเพลย์ลิสต์', name: 'ชื่อใหม่', ok: 'บันทึก' },
+  delListAsk: { title: 'ลบเพลย์ลิสต์ {name}?', text: 'เพลงทั้งหมดยังอยู่ในคลัง ลบเพียงรายการชุดนี้', ok: 'ลบเพลย์ลิสต์' },
+  delTrackAsk: { title: 'ลบ {name} ออกจากคลัง?', text: 'ไฟล์เพลงจะถูกลบจริง และหายจากทุกเพลย์ลิสต์', ok: 'ลบเพลง' },
+  done: {
+    newList: 'สร้างเพลย์ลิสต์ {name} แล้ว',
+    rename: 'เปลี่ยนชื่อเป็น {name} แล้ว',
+    delList: 'ลบเพลย์ลิสต์ {name} แล้ว',
+    add: 'เพิ่ม {n} เพลงเข้าเพลย์ลิสต์แล้ว',
+    removeFrom: 'เอา {name} ออกจากเพลย์ลิสต์แล้ว',
+    delTrack: 'ลบ {name} ออกจากคลังแล้ว',
+    imported: 'นำเข้า {n} เพลงเรียบร้อย'
+  },
+  err: {
+    name: 'ใส่ชื่อเพลย์ลิสต์ด้วยนะ',
+    needList: 'สร้างเพลย์ลิสต์ก่อน แล้วค่อยนำเข้าเพลง',
+    save: 'บันทึกลงฐานไม่สำเร็จ ลองใหม่อีกครั้ง',
+    convert: 'แปลงไฟล์ {name} ไม่สำเร็จ ข้ามไปก่อน',
+    audio: '{name} ไม่ใช่ไฟล์เสียง'
+  },
+  converting: 'แปลงเป็น MP3: {name}',
+  uploading: 'กำลังอัพโหลด: {name}'
+};
+
+// คนที่รับผิดชอบงานเตรียม (สี/รูปประจำตัวในหน้าเตรียม-เหลือ · ชื่อมาจาก kk_staff)
+export const PREP_PEOPLE_LOOK = {
+  fah:  { color: '#3B8BE0', tint: '#EAF3FD', half: 'assets/prep/fah-half.webp', round: 'assets/prep/fah-round.webp' },
+  emmy: { color: '#E0A020', tint: '#FEF4DE', half: 'assets/prep/emmy-chef.webp', round: 'assets/prep/emmy-face.webp' },
+  ad:   { color: '#2E8B4F', tint: '#E9F6EC', half: 'assets/prep/ad-half.webp', round: 'assets/prep/ad-round.webp' }
+};
+
+// ข้อความบนกราฟที่ใช้ร่วมทุกหน้า
+export const CHART_UI = { noData: 'ยังไม่มีข้อมูล' };
+
 // ตำแหน่งสิทธิ์ที่เลือกได้ตอนเพิ่ม/แก้บัญชี
 export const ACCOUNT_ROLES = [
   { value: 'admin', label: 'แอดมิน (แก้ได้ทุกคน)' },
@@ -1111,4 +1285,358 @@ export const ACCOUNT_UI = {
     missing: 'ไม่พบบัญชีนี้',
     save: 'บันทึกลงฐานไม่สำเร็จ เช็กอินเทอร์เน็ตแล้วลองใหม่'
   }
+};
+
+// ---------- หน้า "งานของฉัน" และหน้างานรายวันของพนักงาน ----------
+
+// ข้อความกลางที่ทุกหน้างานใช้ร่วมกัน
+export const WORK_UI = {
+  back: 'งานของฉัน',
+  backStaff: 'พนักงาน',
+  loading: 'กำลังโหลดข้อมูลจากฐาน...',
+  loadError: 'ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง',
+  retry: 'ลองใหม่',
+  saveError: 'บันทึกไม่สำเร็จ ข้อมูลเดิมยังอยู่ ลองใหม่อีกครั้ง',
+  saving: 'กำลังบันทึก...',
+  nothing: 'ยังไม่ได้กรอกอะไรเลย',
+  history: 'ดูประวัติ',
+  historyNone: 'ยังไม่มีรายการย้อนหลัง',
+  close: 'ปิด',
+  none: '-',
+  dateLabel: 'วันที่ทำงาน'
+};
+
+// หน้างานของฟ้า: ชื่อหน้า ไอคอน ตัวการ์ตูน (ใช้คนละท่าไม่ซ้ำกัน) และสีประจำหน้า
+export const WORK_PAGES = {
+  'fah-pack': {
+    title: 'นับกล่องและช้อนส้อม', sub: 'นับจำนวนอุปกรณ์ในครัวกลาง ให้ถูกต้อง ครบถ้วน',
+    icon: 'assets/fah/ic-packaging.webp', char: 'assets/fah/fah-scan.webp',
+    script: 'ใส่ใจ\nในทุกความสะอาด', accent: '#2E86D8', save: 'บันทึกผลนับ',
+    tip: 'นับให้ครบทุกใบนะคะ กล่องขาดกลางวันลำบากเลย'
+  },
+  'fah-chicken': {
+    title: 'เตรียมอกไก่นุ่ม', sub: 'บันทึกปริมาณการเตรียมวัตถุดิบ ให้ถูกต้อง ครบถ้วน',
+    icon: 'assets/fah/ic-chicken.webp', char: 'assets/fah/fah-apron.webp',
+    script: 'ใส่ใจ\nในทุกความสะอาด', accent: '#1F8FBF', save: 'บันทึกข้อมูล',
+    tip: 'ชั่งตอนเตรียมเสร็จทันที ตัวเลขจะตรงที่สุดค่ะ'
+  },
+  'fah-cooked': {
+    title: 'อาหารปรุงสำเร็จเหลือ', sub: 'บันทึกอาหารปรุงสำเร็จที่เหลือจากการจำหน่าย',
+    icon: 'assets/fah/ic-cooked.webp', char: 'assets/fah/fah-chibi-adult.webp',
+    script: 'ใส่ใจ ไม่ทิ้งอาหาร\nเพื่อโลกที่ดีกว่า', accent: '#2E86D8', save: 'บันทึกของเหลือ',
+    tip: 'ของเหลือทุกกรัม ระบบแปลงกลับเป็นวัตถุดิบให้อัตโนมัติ'
+  },
+  'fah-income': {
+    title: 'รายได้ประจำวัน', sub: 'บันทึกยอดขายของแต่ละร้านให้ถูกต้อง ครบถ้วน',
+    icon: 'assets/fah/ic-income.webp', char: 'assets/fah/fah-office.webp',
+    script: 'ใส่ใจ\nในทุกตัวเลข', accent: '#1F6FC4', save: 'บันทึกรายได้',
+    tip: 'กรอกให้ครบทั้ง 3 ร้าน ก่อนปิดร้านนะคะ'
+  },
+  'fah-leave': {
+    title: 'บันทึกวันลาทีม', sub: 'บันทึกวันลาของพนักงานในทีม ให้ถูกต้อง ครบถ้วน',
+    icon: 'assets/fah/ic-leave.webp', char: 'assets/fah/fah-chibi-senior.webp',
+    script: 'ดูแลกัน\nให้ทุกวันดีขึ้น', accent: '#2E86D8', save: 'บันทึกวันลา', hist: 'ดูรายการลา',
+    tip: 'บันทึกวันลาให้ครบ ทีมจะจัดคนได้ง่ายขึ้น'
+  }
+};
+
+// พนักงานที่กดการ์ดแล้วเข้าหน้างานจริงตรงๆ (คนที่ไม่ได้อยู่ในนี้จะเข้าหน้า "งานของฉัน" ตามปกติ)
+export const STAFF_DIRECT_PAGE = { som: 'som-drink', emmy: 'emmy-count', ad: 'ad-count' };
+
+// หน้านับของครัว (เอมมี่ + อัด) — ข้อความและรูปทั้งหมดของทุกแท็บอยู่ที่นี่ที่เดียว
+export const KITCHEN_UI = {
+  back: 'งานของฉัน',
+  dateLabel: 'วันที่ทำงาน',
+  colItem: 'รายการ',
+  colQty: 'นับได้ในครัวกลาง',
+  colUnit: 'หน่วย',
+  add: 'เพิ่มรายการ',
+  manage: 'จัดการรายการ',
+  save: 'บันทึกผลนับ',
+  savePrep: 'บันทึกข้อมูล',
+  waiting: 'ยังไม่กรอก',
+  notSaved: 'ยังไม่บันทึก',
+  notSavedHint: 'กรุณาตรวจสอบข้อมูลก่อนบันทึก',
+  dirty: 'มี {n} รายการรอบันทึก',
+  progress: 'กรอกครบ {a} จาก {b} รายการ',
+  saved: 'บันทึกผลนับ {n} รายการแล้ว',
+  savedOne: 'บันทึกแล้ว',
+  nothing: 'ยังไม่มีรายการที่กรอกใหม่',
+  loading: 'กำลังโหลดข้อมูล...',
+  loadError: 'โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง',
+  saveError: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',
+  empty: 'ยังไม่มีรายการในหมวดนี้',
+  emptyFind: 'ไม่พบรายการที่ค้นหา',
+  moreTitle: 'จัดการรายการนี้',
+  moreActions: [
+    { value: 'edit', label: 'แก้ไขรายการ' },
+    { value: 'up', label: 'เลื่อนขึ้น' },
+    { value: 'down', label: 'เลื่อนลง' },
+    { value: 'remove', label: 'ลบรายการ' }
+  ],
+  // ตารางแท็บเตรียมอาหาร (ใช้ข้อมูลชุดเดียวกับหน้าเตรียม-เหลือ)
+  prep: {
+    meatTitle: 'ตารางเตรียมวัตถุดิบวันนี้',
+    riceTitle: 'ตารางบันทึกการหุงข้าว',
+    meatCols: ['รายการ', 'พยากรณ์', 'เตรียม', 'เบิกเพิ่ม', 'ทิ้ง/เสีย', 'คงเหลือสด', 'ใช้ไป'],
+    riceCols: ['หุงข้าว', 'รอบที่ 1', 'รอบที่ 2', 'รอบที่ 3', 'หุงรวม'],
+    unit: 'กก.',
+    none: '—',
+    useNote: 'ใช้ไป = เตรียม + เบิกเพิ่ม − ทิ้ง/เสีย − คงเหลือสด − อาหารปรุงสุกเหลือ',
+    riceQuote: 'ข้าวดี อาหารอร่อย\nพลังดีทั้งวัน',
+    noRows: 'ยังไม่มีรายการในตารางนี้',
+    editTitle: 'แก้ไขรายการนี้',
+    fName: 'ชื่อรายการ',
+    fPhoto: 'รูปภาพประจำรายการ',
+    edited: 'แก้ไข {name} แล้ว (เปลี่ยนทุกหน้าที่ใช้รายการนี้)',
+    // รูปที่เลือกได้ตอนแก้รายการ (บันทึกลงช่อง photo ของ kk_count_item ทุกหน้าจึงเปลี่ยนตาม)
+    photos: [
+      { value: 'assets/kitchen/rice-homali.webp', label: 'ข้าวหอมมะลิ' },
+      { value: 'assets/kitchen/rice-riceberry.webp', label: 'ข้าวไรซ์เบอรี่' },
+      { value: 'assets/kitchen/rice-fried.webp', label: 'ข้าวผัด' },
+      { value: 'assets/kitchen/rice-chicken5.webp', label: 'ข้าวมันไก่ 5%' },
+      { value: 'assets/kitchen/rice-chicken9.webp', label: 'ข้าวมันไก่ 9%' },
+      { value: 'assets/kitchen/rice-chicken12.webp', label: 'ข้าวมันไก่ 12%' },
+      { value: 'assets/prep/meat-beef-mince.webp', label: 'เนื้อวัวบด' },
+      { value: 'assets/prep/meat-chicken-mince.webp', label: 'อกไก่บด' },
+      { value: 'assets/prep/meat-chicken-breast.webp', label: 'อกไก่' },
+      { value: 'assets/prep/meat-chicken-tender.webp', label: 'สันในไก่' },
+      { value: 'assets/prep/meat-pork-slice.webp', label: 'หมูสไลซ์' },
+      { value: 'assets/food/pork-mince.webp', label: 'หมูบด' },
+      { value: 'assets/prep/meat-duck-mince.webp', label: 'เป็ดบด' },
+      { value: 'assets/prep/meat-salmon.webp', label: 'แซลมอน' },
+      { value: 'assets/prep/meat-hokke.webp', label: 'ฮอกเกะ' },
+      { value: 'assets/prep/meat-shrimp-mid.webp', label: 'กุ้งกลาง' },
+      { value: 'assets/prep/meat-shrimp-big.webp', label: 'กุ้งใหญ่' }
+    ]
+  },
+  // แท็บทั้งหมด (id ต้องไม่ซ้ำ) — grp/pick = ตัวกรองรายการจากตาราง kk_count_item ชุดเดียวกับหน้าสต๊อก
+  tabs: {
+    veg: {
+      id: 'veg', kind: 'count', grp: 'ผัก', tab: 'นับผัก', icon: 'assets/kitchen/veg-basil.webp',
+      accent: '#1B7A3E', tint: 'rgba(120, 205, 140, .40)',
+      title: 'นับผัก', sub: 'นับอย่างใส่ใจ เพื่อครัวที่สดใหม่และอร่อยเสมอ',
+      bubble: 'นับผัก\nกันเลยค่ะ', hero: 'assets/kitchen/hero-emmy-veg.webp',
+      chibi: 'assets/kitchen/chibi-emmy-basket.webp',
+      quote: 'ทุกผักมีคุณค่า\nที่เราดูแล', script: 'ผักสด\nสร้างรอยยิ้ม\nให้ทุกมื้อ',
+      search: 'ค้นหาชื่อผัก...', col: 'รายการผัก', addRow: 'เพิ่มรายการผัก'
+    },
+    season: {
+      id: 'season', kind: 'count', grp: 'ซอส/เครื่องปรุง', pick: 'season_', tab: 'นับเครื่องปรุง',
+      icon: 'assets/kitchen/season-msg.webp', accent: '#A8761A', tint: 'rgba(247, 195, 70, .40)',
+      title: 'นับเครื่องปรุง', sub: 'เช็กเครื่องปรุง ให้ครบ ถูกต้อง พร้อมใช้งานในทุกเมนู',
+      bubble: 'เครื่องปรุงครบครัว\nอร่อยทุกเมนู', hero: 'assets/kitchen/hero-emmy-season.webp',
+      chibi: 'assets/kitchen/chibi-emmy-jar.webp',
+      quote: 'เครื่องปรุงครบ\nครัวก็พร้อม เมนูก็อร่อย', script: 'ของดี\nต้องนับให้ครบ\nนะคะ',
+      search: 'ค้นหาชื่อตัวปรุง...', col: 'รายการเครื่องปรุง', addRow: 'เพิ่มรายการเครื่องปรุง'
+    },
+    sauce: {
+      id: 'sauce', kind: 'count', grp: 'ซอส/เครื่องปรุง', pick: 'sauce_', tab: 'นับซอส',
+      icon: 'assets/kitchen/sauce-kaprao.webp', accent: '#B0452F', tint: 'rgba(254, 155, 150, .38)',
+      title: 'นับซอส', sub: 'นับอย่างใส่ใจ เพื่อครัวที่ดีที่สุดและรสชาติที่อร่อยเสมอ',
+      bubble: 'เช็กซอสให้ครบ\nอร่อยทุกเมนูแน่นอน', hero: 'assets/kitchen/hero-emmy-sauce.webp',
+      chibi: 'assets/kitchen/chibi-emmy-sauce.webp',
+      quote: 'ซอสครบ รสชาติดี\nครัวเรามีเสน่ห์แน่นอน', script: 'เล็กน้อย\nแต่มีความอร่อย\nที่ยิ่งใหญ่',
+      search: 'ค้นหาชื่อซอส...', col: 'รายการซอส', addRow: 'เพิ่มรายการซอส'
+    },
+    meat: {
+      id: 'meat', kind: 'count', grp: 'เนื้อสัตว์', tab: 'นับเนื้อสัตว์',
+      icon: 'assets/prep/meat-beef-mince.webp', accent: '#14532B', tint: 'rgba(30, 122, 60, .38)',
+      title: 'นับเนื้อสัตว์', sub: 'นับอย่างใส่ใจ เพื่อครัวที่สดใหม่และอร่อยเสมอ',
+      bubble: 'นับให้ครบ\nของสดต้องเป๊ะ!', hero: 'assets/kitchen/hero-ad-meat.webp',
+      chibi: 'assets/kitchen/chibi-ad-tray.webp',
+      quote: 'ของสดคุณภาพดี\nเริ่มจากการนับที่ถูกต้อง', script: 'เล็กน้อย\nแต่สำคัญ\nต่อความอร่อย',
+      search: 'ค้นหาชื่อสินค้า...', col: 'รายการเนื้อสัตว์', addRow: 'เพิ่มรายการเนื้อสัตว์'
+    },
+    prep: {
+      id: 'prep', kind: 'prep', tab: 'เตรียมอาหาร', icon: 'assets/prep/ic3d-prep.webp',
+      accent: '#4E7C1C', tint: 'rgba(245, 226, 130, .55)',
+      title: 'เตรียมอาหาร', sub: 'งานร่วมกันของเอมมี่ + อัด',
+      bubble: 'อร่อยทุกมื้อ\nเริ่มจากวัตถุดิบที่ดี\nไปด้วยกันนะ!', hero: 'assets/kitchen/hero-pair-prep.webp',
+      chibi: 'assets/kitchen/chibi-pair.webp',
+      quote: 'ทีมเวิร์กดี\nอร่อยได้ทุกวัน', script: 'เตรียมพร้อม\nทุกวัน',
+      search: 'ค้นหาวัตถุดิบ...', col: 'รายการ', addRow: ''
+    }
+  },
+  // หน้าจอของแต่ละคน: ใครเป็นเจ้าของ · มีแท็บอะไรบ้าง (แท็บเตรียมอาหารใช้ร่วมกัน)
+  pages: {
+    'emmy-count': { owner: 'emmy', name: 'เอมมี่', avatar: 'assets/kitchen/av-emmy.webp', tabs: ['veg', 'season', 'sauce', 'prep'] },
+    'ad-count': { owner: 'ad', name: 'อัด', avatar: 'assets/kitchen/av-ad.webp', tabs: ['meat', 'prep'] }
+  },
+  pairName: 'เอมมี่ + อัด',
+  pairAvatar: 'assets/kitchen/av-pair.webp'
+};
+
+// หน้านับสต๊อกเครื่องดื่มของส้ม — 4 แท็บใช้โครงเดียวกัน เปลี่ยนแค่หมวดและข้อความ
+export const SOM_UI = {
+  job: 'นับเครื่องดื่มและบรรจุภัณฑ์น้ำ',
+  dateLabel: 'วันที่นับสต๊อก',
+  colNo: '#',
+  colQty: 'จำนวน',
+  colUnit: 'หน่วย',
+  colStatus: 'สถานะ',
+  add: 'เพิ่มรายการ',
+  manage: 'จัดการรายการ',
+  save: 'บันทึกสต๊อก',
+  waiting: 'ยังไม่นับ',
+  empty: 'ยังไม่มีรายการในหมวดนี้',
+  emptyFind: 'ไม่พบรายการที่ค้นหา',
+  saved: 'บันทึกสต๊อก {n} รายการแล้ว',
+  moreTitle: 'จัดการรายการนี้',
+  moreActions: [
+    { value: 'edit', label: 'แก้ไขรายการ' },
+    { value: 'up', label: 'เลื่อนขึ้น' },
+    { value: 'down', label: 'เลื่อนลง' },
+    { value: 'remove', label: 'ลบรายการ' }
+  ],
+  tabs: [
+    {
+      id: 'drink', grp: 'เครื่องดื่ม', tab: 'เครื่องดื่ม\nพร้อมขาย', icon: 'assets/som/dr-matcha-ococo.webp',
+      title: 'นับสต๊อก\nเครื่องดื่มพร้อมขาย',
+      sub: 'ตรวจนับจำนวนเครื่องดื่มบรรจุขวดที่พร้อมขาย เพื่อให้สต๊อกของร้านเป็นปัจจุบัน',
+      char: 'assets/som/som-barista.webp', bubble: 'นับให้ครบ\nขายได้ต่อเนื่อง\nกันนะคะ! ♡',
+      script: 'Good Drinks · Brighter Days ♡', search: 'ค้นหาเครื่องดื่ม...',
+      col: 'รายการเครื่องดื่ม', ok: 'พร้อมขาย', out: 'สินค้าหมด',
+      totalLabel: 'รวมรายการที่ใช้งาน', qtyLabel: 'จำนวนรวม'
+    },
+    {
+      id: 'syrup', grp: 'น้ำเชื่อม', tab: 'น้ำเชื่อม\nและอื่นๆ', icon: 'assets/som/sy-pandan.webp',
+      title: 'นับสต๊อก\n(น้ำเชื่อมและอื่นๆ)',
+      sub: 'ตรวจนับวัตถุดิบสำหรับเครื่องดื่ม น้ำเชื่อม ผงต่างๆ ใบชา และวัตถุดิบเข้มข้น',
+      char: 'assets/som/som-kimono.webp', bubble: 'วัตถุดิบดี\nคือจุดเริ่มต้นของ\nเครื่องดื่มอร่อย ♡',
+      script: 'Good Ingredients · Brighter Drinks ♡', search: 'ค้นหาวัตถุดิบ...',
+      col: 'รายการวัตถุดิบ', ok: 'พร้อมขาย', out: 'สินค้าหมด',
+      totalLabel: 'รวมรายการวัตถุดิบ', qtyLabel: 'จำนวนรวม'
+    },
+    {
+      id: 'sticker', grp: 'สติ๊กเกอร์', tab: 'สติ๊กเกอร์\nเครื่องดื่ม', icon: 'assets/som/pk-sticker-roll.webp',
+      title: 'นับสต๊อก\nสติ๊กเกอร์เครื่องดื่ม',
+      sub: 'ตรวจนับจำนวนสติ๊กเกอร์ฉลากที่ใช้ติดขวดเครื่องดื่ม เพื่อให้เพียงพอต่อการผลิตและจำหน่าย',
+      char: 'assets/som/som-child.webp', bubble: 'สติ๊กเกอร์เล็ก ๆ\nเติมความสดใส\nให้ทุกขวด ♡',
+      script: 'Good Stickers · Brighter Bottles ♡', search: 'ค้นหาสติ๊กเกอร์...',
+      col: 'สติ๊กเกอร์ฉลาก', ok: 'พร้อมใช้', out: 'สินค้าหมด',
+      totalLabel: 'รายการสติ๊กเกอร์ทั้งหมด', qtyLabel: 'จำนวนรวม'
+    },
+    {
+      id: 'pack', grp: 'บรรจุภัณฑ์', tab: 'บรรจุภัณฑ์\nเครื่องดื่ม', icon: 'assets/som/pk-cup12.webp',
+      title: 'นับสต๊อก\nบรรจุภัณฑ์เครื่องดื่ม',
+      sub: 'ตรวจนับจำนวนบรรจุภัณฑ์และอุปกรณ์เสิร์ฟ เพื่อให้พร้อมใช้งานเสมอ',
+      char: 'assets/som/som-elderly.webp', bubble: 'นับให้ครบ ของพร้อม\nร้านพร้อมเสิร์ฟ\nนะจ๊ะ! ♡',
+      script: 'Good Supplies · Brighter Days ♡', search: 'ค้นหาบรรจุภัณฑ์...',
+      col: 'รายการบรรจุภัณฑ์', ok: 'พร้อมใช้', out: 'สินค้าหมด',
+      totalLabel: 'รายการทั้งหมด', qtyLabel: 'จำนวนรวม'
+    }
+  ]
+};
+
+// หน้ารวมงานของฉัน
+export const MYWORK_UI = {
+  title: 'งานของฉัน',
+  sub: 'ศูนย์รวมงานประจำวันของ{name}\nเลือกเมนูเพื่อเริ่มทำงานได้เลย',
+  hero: 'assets/fah/fah-point.webp',
+  script: 'สู้ๆ\nไปด้วยกันนะ\n– {name}',
+  bubble: 'เก่งมาก\nที่มาทำงานวันนี้ ♡',
+  done: 'บันทึกแล้ววันนี้',
+  todo: 'รอทำวันนี้',
+  ready: 'พร้อมใช้งาน',
+  noteTitle: 'หน้านี้เชื่อมโยงไปยังหน้าการทำงานจริงของ{name}',
+  noteText: 'ไม่ใช่รายการเช็กลิสต์ แต่เป็นระบบบันทึกข้อมูลจริงในการทำงาน',
+  noteScript: 'งานเล็ก ๆ\nสร้างผลลัพธ์ใหญ่ได้ ♡',
+  noteChar: 'assets/fah/fah-chibi-kid.webp',
+  empty: 'ยังไม่มีงานในระบบของคนนี้',
+  emptyHint: 'เพิ่มการ์ดงานได้ที่ตาราง kk_my_task'
+};
+
+// หน้านับกล่องและช้อนส้อม
+export const PACK_UI = {
+  condoTitle: 'สรุปสต็อกคอนโด',
+  condoSub: 'ดูจำนวนคงเหลือล่าสุด (อ่านอย่างเดียว)',
+  condoNone: 'ยังไม่มีผลนับคอนโดของวันนี้',
+  saved: 'บันทึกผลนับ {n} รายการแล้ว',
+  histTitle: 'ผลนับย้อนหลัง 7 วัน'
+};
+
+// หน้าเตรียมอกไก่นุ่ม
+export const CHICKEN_UI = {
+  item: 'meat_chicken_soft',
+  fields: [
+    { f: 'prep', label: 'เตรียม', icon: 'assets/prep/ic3d-prep.webp' },
+    { f: 'extra', label: 'เบิกเพิ่ม', icon: 'assets/prep/ic3d-extra.webp' },
+    { f: 'waste', label: 'ทิ้ง/เสีย', icon: 'assets/prep/ic3d-waste.webp' },
+    { f: 'left', label: 'คงเหลือสด', icon: 'assets/prep/ic3d-left.webp' }
+  ],
+  statTitle: 'สรุปสถิติการใช้งาน',
+  statSub: 'ดูข้อมูลภาพรวมของวันนี้',
+  stats: [
+    { k: 'cooked', label: 'อาหารสุกเหลือเทียบเนื้อ' },
+    { k: 'useBase', label: 'ใช้ไปเบื้องต้น' },
+    { k: 'use', label: 'ใช้จริงหลังหักของเหลือ' }
+  ],
+  waitData: 'รอข้อมูลครบ',
+  saved: 'บันทึกข้อมูลอกไก่นุ่มแล้ว',
+  note: 'เบิกเพิ่ม = ยอดสะสมของวันนี้ · ใช้จริง = เตรียม + เบิกเพิ่ม − ทิ้ง/เสีย − คงเหลือสด − อาหารสุกเหลือ',
+  missing: 'ยังไม่มีรายการอกไก่นุ่มในตารางนับสต๊อก'
+};
+
+// หน้าอาหารปรุงสำเร็จเหลือ
+export const COOKED_UI = {
+  search: 'ค้นหาเมนูอาหาร...',
+  cols: [
+    { f: 'left', label: 'เหลือ' },
+    { f: 'waste', label: 'ทิ้ง / เสีย' },
+    { f: 'self', label: 'กินเอง' },
+    { f: 'home', label: 'ห่อกลับบ้าน' }
+  ],
+  keep: 'คงเหลือใช้ต่อ',
+  unit: '(ก.)',
+  menuCol: 'เมนู',
+  noneTitle: 'วันนี้ไม่มีอาหารเหลือ',
+  noneSub: 'หากไม่มีอาหารปรุงสำเร็จเหลือในวันนี้ กรุณาเลือก',
+  noneAsk: { title: 'บันทึกว่าวันนี้ไม่มีอาหารเหลือ?', text: 'ระบบจะบันทึกช่อง “เหลือ” ของทุกเมนูเป็น 0', ok: 'บันทึก 0 ทุกเมนู' },
+  convTitle: 'แปลงเป็นวัตถุดิบ (1:1)',
+  convSub: 'คงเหลือใช้ต่อของทุกเมนู แปลงเป็นน้ำหนักวัตถุดิบ แล้วหักออกจากยอดใช้ไปเบื้องต้นของวันนั้น',
+  convNone: 'ยังไม่ได้กรอกของเหลือของวันนี้',
+  convUnbound: 'เมนูที่ยังไม่ผูกวัตถุดิบ: {names}',
+  saved: 'บันทึกของเหลือแล้ว'
+};
+
+// หน้ารายได้ประจำวัน
+export const INCOME_UI = {
+  fill: 'กรอกยอดขายประจำวันนี้',
+  placeholder: 'ยังไม่กรอก',
+  unit: 'บาท',
+  noteLabel: 'หมายเหตุ',
+  notePlaceholder: 'เพิ่มหมายเหตุ (ถ้ามี)',
+  total: 'รวมยอดขายร้านนี้',
+  empty: 'ยังไม่กรอก',
+  info: 'ฟ้าและแม่พันใช้ข้อมูลชุดเดียวกัน',
+  saved: 'บันทึกรายได้ของ{name}แล้ว',
+  histTitle: 'ยอดขายย้อนหลัง 14 วัน'
+};
+
+// หน้าบันทึกวันลาทีม
+export const LEAVE_UI = {
+  who: 'ผู้บันทึก : {name}',
+  script: 'บันทึกด้วยความใส่ใจ\nเพื่อทีมที่แข็งแกร่ง ♡',
+  staffLabel: 'พนักงานที่ลา',
+  staffPick: 'เลือกพนักงานที่ลา',
+  fromLabel: 'วันที่เริ่มลา',
+  toLabel: 'วันที่สิ้นสุดลา',
+  typeLabel: 'ประเภทการลา',
+  typePick: 'เลือกประเภทการลา',
+  noteLabel: 'หมายเหตุ',
+  notePlaceholder: 'ระบุหมายเหตุ (ถ้ามี)...',
+  sumTitle: 'สรุปรายละเอียดวันลา',
+  sumSub: 'ตรวจสอบข้อมูลก่อนบันทึก',
+  sumNone: 'ยังไม่ได้ระบุข้อมูลการลา\nกรุณากรอกข้อมูลด้านบน',
+  sumText: '{names} ลา {type} {range} รวม {n} วัน',
+  list: 'ดูรายการลา',
+  listTitle: 'รายการลาเดือนนี้',
+  save: 'บันทึกวันลา',
+  saved: 'บันทึกวันลา {n} รายการแล้ว',
+  needStaff: 'เลือกพนักงานที่ลาก่อนนะ',
+  needType: 'เลือกประเภทการลาก่อนนะ',
+  needDate: 'เลือกวันที่เริ่มลาก่อนนะ',
+  weekDays: ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'],
+  months: ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 };

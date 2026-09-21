@@ -1,12 +1,13 @@
 // หน้านับสต๊อก — ต่อรายการและผลนับกับฐานข้อมูลจริง (ชิ้นส่วนบนอยู่ที่ stock-list.js / แถวรายการที่ stock-rows.js / แผงกรอกที่ stock-form.js)
-import { get, save, todayIso, getCountItems, getStockToday, getResponsibilities, saveStockCounts } from '../shared/data.js';
+import { todayIso, getCountItems, getStockToday, getResponsibilities, getAssigns, saveStockCounts, saveCountItem } from '../shared/data.js';
 import { STOCK_COUNT_UI as T, STOCK_ITEM_ACTIONS, FOOD_PHOTOS } from '../shared/config.js';
 import { fillGlyphs, toast, pickerSheet } from '../shared/ui.js';
 import { dayLongTh, fillText } from '../shared/format.js';
 import { countTotal, condoFromTotal, sumPlaces } from '../shared/calc.js';
 import { currentUser, staffCode } from '../shared/auth.js';
+import { isMine } from '../shared/assign.js';
 import { whoHtml, tabsHtml, sumHtml, progressHtml, formulaHtml, filtersHtml, itemActionsHtml, catsHtml } from './stock-list.js';
-import { setPhotos, photoOf, qtyHtml, resultHtml, isBothPlaces, isBadSplit, groupsHtml } from './stock-rows.js';
+import { photoOf, qtyHtml, resultHtml, isBothPlaces, isBadSplit, groupsHtml } from './stock-rows.js';
 import { itemActions } from './stock-form.js';
 
 // สิ่งที่ผู้ใช้เลือกอยู่บนหน้านี้ (ไม่แชร์ข้ามหน้า)
@@ -19,7 +20,7 @@ export async function mountStockPage(root) {
   const date = todayIso();
   const box = id => root.querySelector(id);
   const draft = {};        // ตัวเลขที่กรอกใหม่รอบนี้ รอกดบันทึก
-  let rows = [], jobs = [], allJobs = [];
+  let rows = [], jobs = [], allJobs = [], assigns = [], resp = [];
 
   box('#stk-head').textContent = T.title;
   box('#stk-date').textContent = dayLongTh(date);
@@ -29,11 +30,14 @@ export async function mountStockPage(root) {
   box('#stk-empty').textContent = T.loading;
   box('#stk-empty').hidden = false;
   box('#stk-formula').innerHTML = formulaHtml();
-  setPhotos(get('stockPhotos'));
+
+  // รายการนี้เป็นงานของฉันไหม — ดูจากหน้าแบ่งงานก่อน (ยังไม่เคยแบ่ง = ใช้ตารางหน้าที่เดิม)
+  const mineOf = item => isMine(assigns, 'count', item, staffCode(),
+    resp.filter(r => r.responsibility === item.responsibility).map(r => r.staff_code));
 
   // กรองรายการตามตัวกรองที่เปิดอยู่
   const visible = () => rows.filter(item => {
-    if (view.mine && jobs.length && !jobs.includes(item.responsibility)) return false;
+    if (view.mine && !mineOf(item)) return false;
     if (view.grp !== 'all' && item.grp !== view.grp) return false;
     if (view.left && countTotal(item) !== null) return false;
     if (view.tab === 'kitchen' && item.location === 'คอนโด') return false;
@@ -74,16 +78,18 @@ export async function mountStockPage(root) {
   // โหลดรายการที่ต้องนับ + ตัวเลขของวันนี้ + งานที่แต่ละคนรับผิดชอบ
   const load = async () => {
     try {
-      const [items, today, res] = await Promise.all([getCountItems(), getStockToday(), getResponsibilities()]);
+      const [items, today, res, asg] = await Promise.all([getCountItems(), getStockToday(), getResponsibilities(), getAssigns()]);
       rows = items.map(item => {
         const found = today.find(t => t.id === item.id) || {};
         const row = { ...item, kitchen: found.kitchen_qty, condo: found.condo_qty, by: found.counted_by };
         row.total = sumPlaces(row);
         return row;
       });
+      resp = res;
+      assigns = asg;
       allJobs = [...new Set(res.map(r => r.responsibility))];
       jobs = res.filter(r => r.staff_code === staffCode()).map(r => r.responsibility);
-      if (jobs.length === 0) view.mine = false;
+      if (!rows.some(mineOf)) view.mine = false;   // ไม่มีรายการของตัวเองเลย = เปิดดูทั้งหมดแทน
       draw();
     } catch {
       box('#stk-empty').textContent = T.error;
@@ -92,15 +98,17 @@ export async function mountStockPage(root) {
   };
   await load();
 
-  // เปลี่ยนรูปสินค้าของรายการหนึ่ง (จำไว้ในเครื่อง ไม่แตะข้อมูลในฐาน)
+  // เปลี่ยนรูปสินค้าของรายการหนึ่ง (บันทึกลงช่อง photo ของ kk_count_item — ทุกเครื่องเห็นรูปเดียวกัน)
   const changePhoto = async id => {
     const item = rows.find(r => r.id === id);
     const chosen = await pickerSheet({ title: T.photoPick, options: FOOD_PHOTOS });
     if (!chosen) return;
-    const list = get('stockPhotos').filter(p => p.id !== id).concat([{ id, photo: chosen }]);
-    setPhotos(save('stockPhotos', list));
-    box(`.stk-row[data-id="${id}"] .stk-row__thumb img`).src = photoOf(item);
-    toast(T.photoDone);
+    try {
+      await saveCountItem(id, { photo: chosen });
+      item.photo = chosen;
+      box(`.stk-row[data-id="${id}"] .stk-row__thumb img`).src = photoOf(item);
+      toast(T.photoDone);
+    } catch { toast(T.error); }
   };
 
   // เพิ่ม/แก้/ลบ/สลับตำแหน่งรายการ (โค้ดอยู่ที่ stock-form.js)

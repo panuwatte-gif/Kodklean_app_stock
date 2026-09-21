@@ -2,7 +2,7 @@
 import { HOME_UI, HOME_COLORS } from '../shared/config.js';
 import { dropdownHtml, axisBarChart, niceTicks } from '../shared/ui.js';
 import { meanOpenDays, rankByMean, leftoverSeries, leftoverMonthly } from '../shared/calc.js';
-import { dayShort, weight, weightBig, baht, fillText } from '../shared/format.js';
+import { dayShort, weight, weightBig, weightOrDash, baht, fillText } from '../shared/format.js';
 import { cardHead } from './home-top.js';
 
 // การ์ดใช้ไปเท่าไหร่: dropdown ซ้ายเปลี่ยนเฉพาะ KPI/กราฟ ส่วน Top 5 เป็นภาพรวมทุกวัตถุดิบ (ไม่นับวันปัจจุบัน)
@@ -53,7 +53,9 @@ export function leftoverCard(lo, meta, ui) {
     labels: lo.dates.map(dayShort), ticks: niceTicks(Math.max(...known, 0), 5), unit: lo.unit, fmt: weight,
     series: [{ name: t.legendCur, color: HOME_COLORS.rose, values: s.cur }, { name: t.legendPrev, color: HOME_COLORS.prior, values: s.prev }], h: 120
   });
-  const top = [...lo.ranking].sort((a, b) => b.avg7 - a.avg7 || String(a.id).localeCompare(String(b.id))).slice(0, 5);
+  // จัดอันดับเฉพาะเมนูที่มีตัวเลขจริง (ยังไม่มีบันทึก = ไม่ติดอันดับ ห้ามนับเป็น 0)
+  const top = lo.ranking.filter(r => r.avg7 !== null && r.avg7 !== undefined)
+    .sort((a, b) => b.avg7 - a.avg7 || String(a.id).localeCompare(String(b.id))).slice(0, 5);
   const rows = top.map((r, i) => {
     const est = leftoverMonthly(r, meta.openDaysFixture);
     return `
@@ -62,13 +64,16 @@ export function leftoverCard(lo, meta, ui) {
       <img src="${r.photo}" alt="" loading="lazy" decoding="async">
       <span class="htop__name">${r.name}</span>
       <div class="hleft__stats">
-        <span><small>${t.cols[0]}</small><b>${weight(r.avg7)} <i>${r.unit || lo.unit}</i></b></span>
-        <span><small>${t.cols[1]}</small><b>${weight(r.avg30)} <i>${r.unit || lo.unit}</i></b></span>
+        <span><small>${t.cols[0]}</small><b>${weightOrDash(r.avg7)} <i>${r.unit || lo.unit}</i></b></span>
+        <span><small>${t.cols[1]}</small><b>${weightOrDash(r.avg30)} <i>${r.unit || lo.unit}</i></b></span>
         <span><small>${t.cols[2]}</small><b>${est === null ? `<i class="is-none">${t.noEst}</i>` : baht(est)}</b></span>
       </div>
     </div>`;
   }).join('');
-  const tableHead = `<div class="hleft__row hleft__row--head"><span>#</span><span></span><span class="htop__name">${t.menuLabel}</span><div class="hleft__stats"><span>${t.cols[0]}</span><span>${t.cols[1]}</span><span>${t.cols[2]}</span></div></div>`;
+  // ตารางทั้งบล็อกขึ้น "ยังไม่มีบันทึก" เมื่อไม่มีแถวของเหลือเลย (ไม่แสดงเมนูเป็น 0)
+  const table = lo.hasData === false || !rows
+    ? `<p class="hc__empty">${t.empty}</p>`
+    : `<div class="hleft__row hleft__row--head"><span>#</span><span></span><span class="htop__name">${t.menuLabel}</span><div class="hleft__stats"><span>${t.cols[0]}</span><span>${t.cols[1]}</span><span>${t.cols[2]}</span></div></div>${rows}`;
   return `<section class="hc hc--rose hleft">
     ${cardHead({ tone: 'rose', title: t.title, sub: t.sub, char: 'kid-04', tools: dd + seg })}
     <div class="hc__body">
@@ -77,7 +82,7 @@ export function leftoverCard(lo, meta, ui) {
     </div>
     <div class="hc__panel">
       <div class="hc__subhead"><b>${t.topTitle}</b><small>${t.topSub}</small></div>
-      ${tableHead}${rows}
+      ${table}
       <p class="hc__note">${fillText(t.estNote, { d: meta.openDaysFixture })}</p>
     </div></section>`;
 }

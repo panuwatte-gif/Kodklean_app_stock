@@ -131,6 +131,12 @@ export function pct1(value) {
   return (Math.round(Number(value) * 10) / 10).toFixed(1) + '%';
 }
 
+// เวลาเพลงจากวินาที เช่น 263 → 4:23
+export function mmss(seconds) {
+  const s = Math.max(0, Math.round(Number(seconds) || 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
 // เติมค่าลงข้อความแม่แบบ เช่น fillText('เฉลี่ยจาก {n} วัน', { n: 6 })
 export function fillText(template, values) {
   return String(template).replace(/\{(\w+)\}/g, (_, k) => (values[k] === undefined ? '' : values[k]));

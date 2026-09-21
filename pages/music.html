@@ -1,0 +1,26 @@
+<!-- โครงหน้าเพลง (เพลย์ลิสต์และรายการเพลงถูกเติมโดย js/pages/music.js) -->
+<section class="mus" data-screen-label="เพลง">
+  <div class="mus__blobs" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+  <header class="mus__head">
+    <div class="mus__headText">
+      <h1 class="mus__h1" id="mus-title"></h1>
+      <p class="mus__h2" id="mus-sub"></p>
+    </div>
+    <button class="mus__ghost" type="button" id="mus-manage"></button>
+  </header>
+
+  <div class="mus__rail" id="mus-rail"></div>
+
+  <div id="mus-playerhost"></div>
+
+  <div class="mus__list" id="mus-list"></div>
+
+  <div class="mus__foot">
+    <button class="mus__cta" type="button" id="mus-import"></button>
+    <button class="mus__cta mus__cta--ghost" type="button" id="mus-addfrom"></button>
+  </div>
+  <p class="mus__hint" id="mus-hint"></p>
+
+  <audio id="mus-audio" preload="metadata"></audio>
+</section>

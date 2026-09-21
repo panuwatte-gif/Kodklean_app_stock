@@ -1,10 +1,10 @@
 // ชิ้นส่วนหน้าจอที่ใช้ซ้ำทั้งแอป — เมนูล่าง 7 ปุ่ม + การ์ดกระจก + แผงถาม + ชุดไอคอนเส้น
-import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, DATE_UI } from './config.js';
+import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, DATE_UI, CHART_UI } from './config.js';
 import { fillText, dayLongTh, shiftIso } from './format.js';
 import { todayIso } from './data.js';
 
 // รูปประจำรายการวัตถุดิบ (ชุดเดียวกันทุกหน้า)
-export const itemPhoto = item => STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
+export const itemPhoto = item => (item && item.photo) || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
 
 // รูปของรายการส่งของ — ลบรูปแล้วให้ใช้รูปกล่องแทน (ไม่ปล่อยให้รูปเสีย)
 export const r9Photo = item => (item && item.photo) || 'assets/r9/boxes.webp';
@@ -94,7 +94,15 @@ const GLYPHS = {
   music: '<circle cx="7" cy="18" r="2.6"/><circle cx="18" cy="16" r="2.6"/><path d="M9.6 18V7l11-2v11"/>',
   out: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h9"/>',
   eye: '<path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
-  eyeOff: '<path d="M4 4l16 16"/><path d="M9.6 5.9A9.6 9.6 0 0 1 12 5.6c6 0 9.5 5.5 9.5 5.5a17 17 0 0 1-2.6 3.2"/><path d="M6.3 7.7A17 17 0 0 0 2.5 11.1s3.5 5.5 9.5 5.5a9.7 9.7 0 0 0 3.2-.53"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'
+  eyeOff: '<path d="M4 4l16 16"/><path d="M9.6 5.9A9.6 9.6 0 0 1 12 5.6c6 0 9.5 5.5 9.5 5.5a17 17 0 0 1-2.6 3.2"/><path d="M6.3 7.7A17 17 0 0 0 2.5 11.1s3.5 5.5 9.5 5.5a9.7 9.7 0 0 0 3.2-.53"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  play: '<path d="M8 5l11 7-11 7z"/>',
+  pause: '<path d="M9 5v14M15 5v14"/>',
+  skipBack: '<path d="M18 5v14L7 12z"/><path d="M5 5v14"/>',
+  skipFwd: '<path d="M6 5v14l11-7z"/><path d="M19 5v14"/>',
+  upload: '<path d="M12 17V4"/><path d="M7 9l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+  snow: '<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6.1M17.5 20a5.6 5.6 0 0 0-2-4.3"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>'
 };
 
 // สร้างโค้ดไอคอนเส้นหนึ่งอัน (สีตามตัวอักษรที่ครอบ)
@@ -241,6 +249,52 @@ export function pickerSheet({ title, options }) {
     <div class="ask__title">${title}</div>
     <div class="ask__rows">${rows}</div>
     <div class="ask__go"><button class="ask__btn ask__btn--off" type="button" data-pick="">ปิด</button></div>`);
+}
+
+// แผงเลือกหลายคน/หลายอย่างพร้อมกัน — คืนรายการที่ติ๊กไว้ (null = กดปิด/ยกเลิก)
+export function multiPickSheet({ title, hint = '', options, selected = [], okLabel = 'เสร็จ' }) {
+  return new Promise(resolve => {
+    const on = new Set(selected);
+    const host = appHost();
+    const wrap = document.createElement('div');
+    wrap.className = 'ask';
+    const row = o => `
+      <button class="ask__row ask__row--pick${on.has(o.value) ? ' is-on' : ''}" type="button" data-multi="${o.value}" aria-pressed="${on.has(o.value)}">
+        ${o.image ? `<img src="${o.image}" alt="" width="36" height="36" loading="lazy" decoding="async">` : ''}
+        <span>${o.label}${o.tag ? `<em>${o.tag}</em>` : ''}</span>
+        <i class="ask__tick" aria-hidden="true">${glyph('check', 16)}</i>
+      </button>`;
+    wrap.innerHTML = `<div class="ask__scrim" data-close="1"></div><div class="ask__box">
+      <div class="ask__title">${title}</div>
+      ${hint ? `<div class="ask__text">${hint}</div>` : ''}
+      <div class="ask__rows">${options.map(row).join('')}</div>
+      <div class="ask__go">
+        <button class="ask__btn ask__btn--off" type="button" data-close="1">ยกเลิก</button>
+        <button class="ask__btn" type="button" data-ok="1">${okLabel}</button>
+      </div></div>`;
+    host.appendChild(wrap);
+    requestAnimationFrame(() => wrap.classList.add('is-on'));
+    const shut = value => { wrap.classList.remove('is-on'); setTimeout(() => wrap.remove(), 240); resolve(value); };
+    wrap.addEventListener('click', event => {
+      const pick = event.target.closest('[data-multi]');
+      if (pick) {
+        const v = pick.dataset.multi;
+        if (on.has(v)) on.delete(v); else on.add(v);
+        pick.classList.toggle('is-on', on.has(v));
+        pick.setAttribute('aria-pressed', on.has(v));
+        return;
+      }
+      if (event.target.closest('[data-ok]')) return shut([...on]);
+      if (event.target.closest('[data-close]')) return shut(null);
+    });
+  });
+}
+
+// กองรูปหน้าคนที่รับผิดชอบงานนั้น (ว่าง = ยังไม่มีคนรับ)
+export function facePile(people, noneText = 'ยังไม่มีคนรับ') {
+  if (!people.length) return `<span class="pile__none">${noneText}</span>`;
+  return `<span class="pile">${people.map(p => `
+    <img class="pile__face" src="assets/login/avatar-${p.avatar || p.code}.webp" alt="${p.name}" title="${p.name}" width="26" height="26" loading="lazy" decoding="async">`).join('')}</span>`;
 }
 
 // ช่องกรอกตัวเลขพร้อมปุ่มลด/เพิ่ม (ใช้ได้ทุกหน้า)
@@ -409,6 +463,10 @@ export function axisBarChart({ labels, series, ticks, unit = '', mean = null, me
 
 // กราฟเส้นสะสมมีแกน Y (SVG): labels = แกน X, series = [{ name, color, values }], ticks = ค่าแกน Y, fmt = แปลงตัวเลขบนป้าย
 export function axisLineChart({ labels, series, ticks, unit = '', fmt = v => String(v) }) {
+  // ยังไม่มีข้อมูลสักจุด = ไม่วาดกราฟ (บอกตรงๆ ว่ายังไม่มี ห้ามวาดเส้นศูนย์)
+  if (!labels || !labels.length || !(series || []).some(s => (s.values || []).some(v => v !== null && v !== undefined))) {
+    return `<div class="ch ch--empty">${CHART_UI.noData}</div>`;
+  }
   const W = 320, H = 140, L = 44, R = 56, T = 16, B = 24, n = labels.length;
   const top = ticks[ticks.length - 1] || 1;
   const x = i => L + (n > 1 ? (W - L - R) * i / (n - 1) : 0);

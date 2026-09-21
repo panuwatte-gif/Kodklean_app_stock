@@ -1,0 +1,150 @@
+/* หน้าเพลง — กระจกฝ้าบนพื้นม่วง/ชมพู/ฟ้า ตามภาพตัวอย่างที่เจ้าของส่งมา */
+.mus {
+  position: relative;
+  min-height: 100%;
+  padding: 14px 14px 26px;
+  background: #17093a;
+  overflow: hidden;
+  color: #fff;
+  font-family: var(--font-core, 'Mitr', system-ui, sans-serif);
+}
+
+/* ก้อนสีเบลอที่เป็นพื้นหลัง */
+.mus__blobs { position: absolute; inset: -60px -40px; pointer-events: none; }
+.mus__blobs i { position: absolute; border-radius: 50%; filter: blur(46px); opacity: .85; }
+.mus__blobs i:nth-child(1) { width: 230px; height: 230px; left: -50px; top: 10px; background: #ff4fd8; }
+.mus__blobs i:nth-child(2) { width: 210px; height: 210px; right: -60px; top: 120px; background: #17d1f2; }
+.mus__blobs i:nth-child(3) { width: 260px; height: 260px; left: 20px; bottom: 40px; background: #6a3ff5; }
+.mus__blobs i:nth-child(4) { width: 170px; height: 170px; right: -30px; bottom: -20px; background: #2ee6a8; opacity: .6; }
+
+.mus > *:not(.mus__blobs) { position: relative; z-index: 1; }
+
+/* หัวหน้า */
+.mus__head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+.mus__headText { flex: 1; min-width: 0; }
+.mus__h1 { margin: 0; font-size: 27px; font-weight: 600; letter-spacing: .01em; text-shadow: 0 2px 14px rgba(0, 0, 0, .3); }
+.mus__h2 { margin: 2px 0 0; font-size: 13px; color: rgba(255, 255, 255, .78); }
+.mus__ghost {
+  flex: none; padding: 8px 14px; border-radius: 999px; font: inherit; font-size: 12.5px; color: #fff;
+  background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .34);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+
+/* แถบเพลย์ลิสต์ */
+.mus__rail {
+  display: flex; gap: 9px; overflow-x: auto; padding: 2px 2px 10px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.mus__rail::-webkit-scrollbar { display: none; }
+.mus__chip {
+  position: relative; flex: none; min-width: 108px; padding: 11px 13px; text-align: left; font: inherit; color: #fff;
+  border-radius: 18px; border: 1px solid rgba(255, 255, 255, .3);
+  background: linear-gradient(150deg, rgba(255, 255, 255, .24), rgba(255, 255, 255, .08));
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 22px rgba(23, 9, 58, .28);
+}
+.mus__chip.is-on { border-color: rgba(255, 255, 255, .85); background: linear-gradient(150deg, rgba(255, 105, 220, .5), rgba(70, 200, 245, .35)); }
+.mus__chipName { display: block; font-size: 14px; font-weight: 500; }
+.mus__chipN { display: block; margin-top: 2px; font-size: 11px; color: rgba(255, 255, 255, .8); }
+.mus__chipX {
+  position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; display: grid; place-items: center;
+  border-radius: 50%; background: rgba(0, 0, 0, .38); color: #fff;
+}
+.mus__chip--new { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+
+/* การ์ดเครื่องเล่น */
+.mus__player {
+  margin: 4px 0 14px; padding: 18px 16px 16px; text-align: center; border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, .38);
+  background: linear-gradient(160deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .1));
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 40px rgba(23, 9, 58, .36);
+}
+.mus__player--off { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 22px 16px; color: rgba(255, 255, 255, .84); font-size: 14px; }
+.mus__now { margin: 0; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 255, 255, .72); }
+.mus__song { margin: 4px 0 0; font-size: 21px; font-weight: 600; line-height: 1.25; text-wrap: pretty; }
+.mus__artist { margin: 2px 0 0; font-size: 12.5px; color: rgba(255, 255, 255, .8); }
+
+.mus__disc { position: relative; width: 132px; height: 132px; margin: 14px auto 6px; display: grid; place-items: center; background: none; border: 0; }
+.mus__disc-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 210deg, #ff4fd8, #7a4ff5, #17d1f2, #ff4fd8);
+  filter: blur(1px); opacity: .9;
+}
+.mus__player.is-on .mus__disc-ring { animation: mus-spin 7s linear infinite; }
+.mus__disc-core {
+  position: relative; width: 92px; height: 92px; display: grid; place-items: center; border-radius: 50%; color: #fff;
+  background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, .55), rgba(120, 60, 220, .62));
+  border: 1px solid rgba(255, 255, 255, .6); box-shadow: inset 0 2px 14px rgba(255, 255, 255, .34);
+}
+@keyframes mus-spin { to { transform: rotate(360deg); } }
+
+/* คลื่นเสียง */
+.mus__wave { display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 62px; margin: 6px 0 12px; }
+.mus__wave i {
+  width: 4px; border-radius: 3px;
+  background: linear-gradient(180deg, #ff5fdd, #6ad9ff);
+  opacity: .82;
+}
+.mus__player.is-on .mus__wave i { animation: mus-bar 1.05s ease-in-out infinite alternate; transform-origin: bottom; }
+@keyframes mus-bar { from { transform: scaleY(.45); } to { transform: scaleY(1); } }
+
+/* แถบเลื่อนเวลา */
+.mus__seek { position: relative; height: 22px; display: flex; align-items: center; }
+.mus__fill {
+  position: absolute; left: 0; top: 9px; height: 5px; border-radius: 4px; pointer-events: none;
+  background: linear-gradient(90deg, #ff4fd8, #17d1f2);
+}
+.mus__range {
+  position: relative; z-index: 1; width: 100%; height: 22px; margin: 0; -webkit-appearance: none; appearance: none; background: none;
+}
+.mus__range::-webkit-slider-runnable-track { height: 5px; border-radius: 4px; background: rgba(255, 255, 255, .28); }
+.mus__range::-moz-range-track { height: 5px; border-radius: 4px; background: rgba(255, 255, 255, .28); }
+.mus__range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%;
+  background: #fff; border: 2px solid #ff4fd8; box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
+}
+.mus__range::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid #ff4fd8; }
+.mus__times { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255, 255, 255, .8); }
+
+.mus__ctrls { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 12px; }
+.mus__round {
+  width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%; color: #fff;
+  background: rgba(255, 255, 255, .2); border: 1px solid rgba(255, 255, 255, .42);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.mus__round--main { width: 60px; height: 60px; background: linear-gradient(150deg, rgba(255, 105, 220, .7), rgba(70, 200, 245, .55)); }
+.mus__round:active { transform: scale(.96); }
+
+/* รายการเพลง */
+.mus__list { display: flex; flex-direction: column; gap: 8px; }
+.mus__row {
+  display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 4px; border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .12);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.mus__row.is-on { border-color: rgba(255, 255, 255, .7); background: rgba(255, 255, 255, .22); }
+.mus__rowMain { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px; text-align: left; font: inherit; color: #fff; background: none; border: 0; }
+.mus__no { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px; font-size: 12px; background: rgba(0, 0, 0, .22); }
+.mus__meta { flex: 1; min-width: 0; }
+.mus__meta b { display: block; font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mus__meta em { display: block; font-size: 11.5px; font-style: normal; color: rgba(255, 255, 255, .74); }
+.mus__dur { flex: none; font-size: 12px; color: rgba(255, 255, 255, .8); }
+.mus__rowTools { display: flex; gap: 6px; }
+.mus__tool { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 11px; color: #fff; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .3); }
+.mus__tool--del { color: #ffd7d3; background: rgba(229, 67, 59, .34); border-color: rgba(255, 160, 150, .5); }
+.mus__empty { margin: 16px 4px; font-size: 13.5px; color: rgba(255, 255, 255, .82); text-wrap: pretty; }
+
+/* ปุ่มล่าง */
+.mus__foot { display: flex; gap: 9px; margin-top: 16px; }
+.mus__cta {
+  flex: 1; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px;
+  font: inherit; font-size: 14.5px; color: #fff; border-radius: 18px;
+  background: linear-gradient(150deg, rgba(255, 105, 220, .72), rgba(112, 80, 245, .6));
+  border: 1px solid rgba(255, 255, 255, .45); box-shadow: 0 10px 26px rgba(23, 9, 58, .34);
+}
+.mus__cta--ghost { background: rgba(255, 255, 255, .16); }
+.mus__cta:active { transform: scale(.98); }
+.mus__hint { margin: 9px 2px 0; font-size: 11.5px; color: rgba(255, 255, 255, .72); text-wrap: pretty; }
+
+#mus-audio { display: none; }

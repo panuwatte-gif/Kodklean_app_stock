@@ -69,6 +69,7 @@ export function salesCard(sales, ui) {
 export function r9Card(r9) {
   const t = HOME_UI.r9;
   const c = r9Cumulative(r9.shipments);
+  const none = r9.hasData === false || !c.rounds;   // ยังไม่มีรอบส่งเลย = ขีด ไม่ใช่ ฿0
   const chart = axisLineChart({
     labels: c.points.map(p => dayShort(p.date)), ticks: niceTicks(c.total, 3), unit: t.unit, fmt: money,
     series: [{ color: HOME_COLORS.green, values: c.points.map(p => p.value) }]
@@ -79,8 +80,8 @@ export function r9Card(r9) {
       <div class="hr9__top">
         <img class="hr9__truck" src="assets/home/truck-green.webp" alt="รถส่งของ KodKlean" loading="lazy" decoding="async">
         <div class="hr9__stats">
-          <div class="hr9__stat hr9__stat--main"><small>${t.month}</small><b>${baht(c.total)}</b><em>${r9.basis}</em></div>
-          <div class="hr9__stat"><small>${t.roundsLabel}</small><b>${c.rounds} <i>${t.rounds}</i></b></div>
+          <div class="hr9__stat hr9__stat--main"><small>${t.month}</small><b>${none ? HOME_UI.noData : baht(c.total)}</b><em>${r9.basis}</em></div>
+          <div class="hr9__stat"><small>${t.roundsLabel}</small><b>${none ? '–' : c.rounds} <i>${t.rounds}</i></b></div>
           <div class="hr9__stat"><small>${t.typesLabel}</small><b class="is-text">${r9.types}</b></div>
         </div>
       </div>

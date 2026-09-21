@@ -55,7 +55,7 @@ function predict(model, hist, dateIso) {
 // พยากรณ์ 1 รายการ ณ วันที่เลือก: ค่ากลาง + กรอบตามกฎใน kk_forecast_config + วัดผลแบบ walk-forward เท่านั้น (cfg = กฎจากฐาน ห้าม hardcode)
 export function forecastItem(item, logs, dateIso, cfg) {
   const bandV = Number(cfg.band_value), sdWin = Number(cfg.sd_window), sdMin = Number(cfg.sd_min_obs), minDays = Number(cfg.min_days_to_judge);
-  const model = FORECAST_MODELS[item.id] || (item.grp === 'ข้าว' ? { kind: 'ratio_theo', label: 'ratio_theo6 (รอข้อมูลยอดขาย)' } : { kind: 'none', label: 'ยังไม่กำหนดสูตร' });
+  const model = FORECAST_MODELS[item.id] || (item.grp === 'ข้าวหุง' ? { kind: 'ratio_theo', label: 'ratio_theo6 (รอข้อมูลยอดขาย)' } : { kind: 'none', label: 'ยังไม่กำหนดสูตร' });
   const series = useSeries(logs, item.id, dateIso, cfg);
   const out = {
     id: item.id, name: item.name, grp: item.grp, model, n: series.length,
@@ -104,7 +104,7 @@ export function forecastItem(item, logs, dateIso, cfg) {
 
 // พยากรณ์ทุกรายการ + ความแม่นยำรวม (เฉลี่ย hit rate เฉพาะรายการที่วัดผลได้ครบตามกฎ min_days_to_judge)
 export function buildForecast(items, logs, dateIso, cfg) {
-  const rows = (items || []).filter(i => i.grp === 'เนื้อสัตว์' || i.grp === 'ข้าว').map(i => forecastItem(i, logs, dateIso, cfg));
+  const rows = (items || []).filter(i => i.grp === 'เนื้อสัตว์' || i.grp === 'ข้าวหุง').map(i => forecastItem(i, logs, dateIso, cfg));
   const ok = rows.filter(r => r.hitRate !== null);
   const accuracy = ok.length
     ? { status: 'ok', rate: Math.round(ok.reduce((s, r) => s + r.hitRate, 0) / ok.length * 10) / 10, n: ok.length }

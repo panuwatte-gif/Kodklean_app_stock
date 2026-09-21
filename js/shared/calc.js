@@ -1,5 +1,6 @@
 // สูตรคำนวณที่ใช้ร่วมหลายหน้า — คำนวณที่ไฟล์นี้ที่เดียว หน้าจอห้ามคำนวณเอง
 import { shiftIso } from './format.js';
+import { ownersOf } from './assign.js';
 
 // ยอดคงเหลือรวมของวัตถุดิบ 1 รายการ = ครัวกลาง + คอนโด
 export function stockTotal(item) {
@@ -284,6 +285,8 @@ export function stockAfterPrep(counts, itemId, date, useBase) {
 
 // ค่าจากแถวบันทึก (ไม่มีแถว/ค่าว่าง = null ห้ามเติม 0)
 const qtyOf = log => (log ? (log.qty === null || log.qty === undefined ? null : Number(log.qty)) : null);
+// ค่าจากแถวบันทึกอาหารเหลือ (ตาราง kk_cooked_leftover เก็บจำนวนไว้ในช่อง qty_box)
+const boxOf = log => (log ? (log.qty_box === null || log.qty_box === undefined ? null : Number(log.qty_box)) : null);
 // ข้อมูลการแก้: เคยแก้ (rev_no > 1) ถึงจะมีจุดประวัติ
 const revOf = log => (log && log.rev_no > 1 ? { n: log.rev_no, by: log.edited_by || log.logged_by } : null);
 
@@ -293,6 +296,8 @@ export function buildPrepModel(b) {
   const cookedToRaw = asum.cooked_to_raw ?? 1;
   const respMap = {};
   (b.resp || []).forEach(r => (respMap[r.responsibility] = respMap[r.responsibility] || []).push(r.staff_code));
+  // ใครรับผิดชอบรายการไหน ถามหน้าแบ่งงานก่อน (ยังไม่เคยแบ่ง = ใช้ตารางหน้าที่เดิม)
+  const whoOf = i => ownersOf(b.assigns, 'prep', i, respMap[i.responsibility] || []);
   const logMap = {};
   (b.logs || []).forEach(l => { (logMap[l.count_item_id] = logMap[l.count_item_id] || {})[l.entry_type + ':' + l.seq] = l; });
   const leftMap = {};
@@ -303,7 +308,7 @@ export function buildPrepModel(b) {
     const rec = leftMap[m.id] || {};
     const row = {
       ...m,
-      left: qtyOf(rec['เหลือ']), waste: qtyOf(rec['ทิ้ง']), self: qtyOf(rec['กินเอง']), home: qtyOf(rec['ห่อกลับบ้าน']),
+      left: boxOf(rec['เหลือ']), waste: boxOf(rec['ทิ้ง']), self: boxOf(rec['กินเอง']), home: boxOf(rec['ห่อกลับบ้าน']),
       revs: { left: revOf(rec['เหลือ']), waste: revOf(rec['ทิ้ง']), self: revOf(rec['กินเอง']), home: revOf(rec['ห่อกลับบ้าน']) }
     };
     row.keep = fahKeepOrNull(row);
@@ -316,7 +321,7 @@ export function buildPrepModel(b) {
   const meatRows = meatItems.map(i => {
     const lg = logMap[i.id] || {};
     const row = {
-      ...i, owners: respMap[i.responsibility] || [],
+      ...i, owners: whoOf(i),
       prep: qtyOf(lg['เตรียม:1']), extra: qtyOf(lg['เบิกเพิ่ม:1']), waste: qtyOf(lg['ทิ้ง:1']), left: qtyOf(lg['คงเหลือ:1']),
       revs: { prep: revOf(lg['เตรียม:1']), extra: revOf(lg['เบิกเพิ่ม:1']), waste: revOf(lg['ทิ้ง:1']), left: revOf(lg['คงเหลือ:1']) },
       cooked: conv.kg[i.id] || 0
@@ -329,12 +334,12 @@ export function buildPrepModel(b) {
     return row;
   });
 
-  // แถวแท็บเตรียมข้าว
-  const riceItems = (b.items || []).filter(i => i.grp === 'ข้าว');
+  // แถวแท็บเตรียมข้าว (รายการข้าวที่หุงประจำวัน — คนละชุดกับข้าวสารในสต๊อก)
+  const riceItems = (b.items || []).filter(i => i.grp === 'ข้าวหุง');
   const riceRows = riceItems.map(i => {
     const lg = logMap[i.id] || {};
     return {
-      ...i, owners: respMap[i.responsibility] || [], ratio: i.cook_ratio === null || i.cook_ratio === undefined ? null : Number(i.cook_ratio),
+      ...i, owners: whoOf(i), ratio: i.cook_ratio === null || i.cook_ratio === undefined ? null : Number(i.cook_ratio),
       cook: qtyOf(lg['หุง:1']), rounds: [qtyOf(lg['หุงเพิ่ม:1']), qtyOf(lg['หุงเพิ่ม:2']), qtyOf(lg['หุงเพิ่ม:3'])],
       left: qtyOf(lg['คงเหลือสุก:1']), waste: qtyOf(lg['ทิ้ง:1']), home: qtyOf(lg['ห่อกลับบ้าน:1']), give: qtyOf(lg['แจก:1']),
       revs: {

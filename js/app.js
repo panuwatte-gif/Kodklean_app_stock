@@ -10,6 +10,17 @@ import { mountOtherPage } from './pages/other.js';
 import { mountSpecialPage } from './pages/special.js';
 import { mountAccountsPage } from './pages/accounts.js';
 import { mountEquationPage } from './pages/equation.js';
+import { mountMusicPage } from './pages/music.js';
+import { mountAssignPage } from './pages/assign.js';
+import { mountSettingsPage } from './pages/settings.js';
+import { mountMyWorkPage } from './pages/mywork.js';
+import { mountPackPage } from './pages/fah-pack.js';
+import { mountChickenPage } from './pages/fah-chicken.js';
+import { mountCookedPage } from './pages/fah-cooked.js';
+import { mountIncomePage } from './pages/fah-income.js';
+import { mountLeavePage } from './pages/fah-leave.js';
+import { mountSomDrinkPage } from './pages/som-drink.js';
+import { mountEmmyCountPage, mountAdCountPage } from './pages/kitchen-count.js';
 import { mountNav, fillGlyphs, confirmSheet, toast } from './shared/ui.js';
 import { currentUser, signOut, loadAccounts } from './shared/auth.js';
 import { APP_UI } from './shared/config.js';
@@ -24,7 +35,19 @@ const PAGES = {
   other: { file: 'pages/other.html', mount: mountOtherPage },
   special: { file: 'pages/special.html', mount: mountSpecialPage },
   accounts: { file: 'pages/accounts.html', mount: mountAccountsPage },
-  equation: { file: 'pages/equation.html', mount: mountEquationPage }
+  equation: { file: 'pages/equation.html', mount: mountEquationPage },
+  music: { file: 'pages/music.html', mount: mountMusicPage },
+  assign: { file: 'pages/assign.html', mount: mountAssignPage },
+  settings: { file: 'pages/settings.html', mount: mountSettingsPage },
+  mywork: { file: 'pages/mywork.html', mount: mountMyWorkPage },
+  'fah-pack': { file: 'pages/work.html', mount: mountPackPage },
+  'fah-chicken': { file: 'pages/work.html', mount: mountChickenPage },
+  'fah-cooked': { file: 'pages/work.html', mount: mountCookedPage },
+  'fah-income': { file: 'pages/work.html', mount: mountIncomePage },
+  'fah-leave': { file: 'pages/work.html', mount: mountLeavePage },
+  'som-drink': { file: 'pages/som.html', mount: mountSomDrinkPage },
+  'emmy-count': { file: 'pages/kitchen.html', mount: mountEmmyCountPage },
+  'ad-count': { file: 'pages/kitchen.html', mount: mountAdCountPage }
 };
 
 const app = document.querySelector('.app');
@@ -75,6 +98,10 @@ const logoutBtn = document.getElementById('btn-logout');
 logoutBtn.setAttribute('aria-label', APP_UI.logout);
 logoutBtn.title = APP_UI.logout;
 fillGlyphs(document.querySelector('.app-bar'), 23);
+
+// ปุ่มฟันเฟืองบนแถบบน: เข้าหน้าตั้งค่า (มีการ์ดพนักงานอยู่ข้างใน)
+const gearBtn = document.querySelector('.app-bar .icon-btn[aria-label="ตั้งค่า"]');
+if (gearBtn) gearBtn.onclick = () => { if (currentUser()) showPage('settings'); };
 logoutBtn.onclick = async () => {
   if (!await confirmSheet({ ...APP_UI.logoutAsk, okLabel: APP_UI.logoutAsk.ok, danger: true })) return;
   signOut();

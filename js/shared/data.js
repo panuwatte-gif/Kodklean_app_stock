@@ -1,9 +1,10 @@
 // ประตูข้อมูลบานเดียวของแอป — ทุกหน้าต้องเรียกผ่านไฟล์นี้เท่านั้น
 // รอบนี้อ่านจาก mock_data.js ถ้าจะเปลี่ยนไปต่อฐานจริง แก้เฉพาะไฟล์นี้ หน้าจอไม่ต้องแก้
 import { MOCK_DATA } from './mock_data.js';
-import { dbGet, dbPost, dbPatch, dbUpsert, dbDelete } from './db.js';
+import { dbGet, dbPost, dbPatch, dbUpsert, dbUpsertBack, dbDelete, dbUpload, dbRemoveFile } from './db.js';
 import { parseCfg } from './fclab.js';
 import { shiftIso } from './format.js';
+import { buildHome } from './home-model.js';
 
 const STORE_KEY = 'kodklean.store.v1';
 
@@ -69,7 +70,7 @@ export function todayIso() {
 
 // รายการที่ต้องนับ เฉพาะที่ยังเปิดใช้ (ปิดแล้วไม่ส่งมา) เรียงตามลำดับในฐาน
 export const getCountItems = () =>
-  dbGet('kk_count_item?active=eq.true&select=id,name,grp,unit,location,responsibility,ingredient_id,sort_order&order=sort_order,id');
+  dbGet('kk_count_item?active=eq.true&select=id,name,grp,unit,location,responsibility,ingredient_id,photo,sort_order&order=sort_order,id');
 
 // ตัวเลขที่นับไว้ของวันนี้ + ธงยังไม่ได้นับ (ดึงจากวิวทีเดียวได้ครบ)
 export const getStockToday = () =>
@@ -130,7 +131,7 @@ const idemKey = (t, id, date, type, seq) => `${t}:${id}:${date}:${type}:${seq}:$
 
 // รายการของหน้าเตรียม (รวมอัตราหุงข้าว)
 export const getPrepItems = () =>
-  dbGet('kk_count_item?active=eq.true&select=id,name,grp,unit,responsibility,cook_ratio,sort_order&order=sort_order,id');
+  dbGet('kk_count_item?active=eq.true&select=id,name,grp,unit,responsibility,cook_ratio,photo,sort_order&order=sort_order,id');
 
 // บันทึกเตรียม/ข้าวของวันที่เลือก (เฉพาะค่าล่าสุด)
 export const getPrepLogs = date =>
@@ -159,12 +160,12 @@ export const getStocksNear = date =>
 
 // โหลดข้อมูลทั้งหน้าของวันเดียวในครั้งเดียว (รวมกฎการทดสอบ เพื่อให้การคำนวณใช้ค่าล่าสุดจากฐานเสมอ)
 export async function getPrepBundle(date) {
-  const [items, logs, logs7, logsFc, leftovers, left7, menus, assumptions, resp, stocks, cfg] = await Promise.all([
+  const [items, logs, logs7, logsFc, leftovers, left7, menus, assumptions, resp, stocks, cfg, staff, assigns] = await Promise.all([
     getPrepItems(), getPrepLogs(date), getPrepLogRange(shiftIso(date, -6), date), getPrepLogRange(shiftIso(date, -84), shiftIso(date, -1)),
     getLeftovers(date), getLeftoverRange(shiftIso(date, -6), date),
-    getMenus(), getAssumptions(), getResponsibilities(), getStocksNear(date), getFcRules()
+    getMenus(), getAssumptions(), getResponsibilities(), getStocksNear(date), getFcRules(), getStaff(), getAssigns()
   ]);
-  return { date, items, logs, logs7, logsFc, leftovers, left7, menus, assumptions, resp, stocks, cfg };
+  return { date, items, logs, logs7, logsFc, leftovers, left7, menus, assumptions, resp, stocks, cfg, staff, assigns };
 }
 
 // วันล่าสุดก่อนวันที่เลือกที่มีการกรอกช่องนั้น (ใช้กับปุ่มคัดลอกจากวันก่อนหน้า)
@@ -312,12 +313,19 @@ export const addR9Cat = row => dbPost('kk_rama9_cat', [{ active: true, ...row }]
 
 // ---------- บัญชีพนักงาน: PIN เก็บที่ฐานเดียวกับเกม ทุกเครื่องจึงเห็นรหัสตรงกัน ----------
 
-// รายชื่อบัญชีพร้อม PIN ล่าสุดจากฐาน
-export const getAccounts = () => dbGet('game_users?select=emp_code,pin,name_th,role&order=emp_code');
+// รายชื่อบัญชีพร้อม PIN ล่าสุดจากฐาน (staff_code = รหัสพนักงานใน kk_staff ของบัญชีนั้น)
+export const getAccounts = () =>
+  dbGet('game_users?select=emp_code,pin,name_th,role,staff_code,asset_folder&order=emp_code');
 
 // เปลี่ยน PIN ของบัญชีหนึ่งลงฐาน (ทุกเครื่องเห็นผลทันทีที่เปิดแอปรอบถัดไป)
 export const saveAccountPin = (code, pin) =>
   dbPatch(`game_users?emp_code=eq.${enc(code)}`, { pin: String(pin) });
+
+// เพิ่มบัญชีใหม่ลงฐาน (ทุกเครื่องและเกมหมู่บ้านเห็นบัญชีเดียวกัน)
+export const addAccount = row => dbPost('game_users', [row]);
+
+// ลบบัญชีออกจากฐาน
+export const removeAccount = code => dbDelete(`game_users?emp_code=eq.${enc(code)}`);
 
 // ร่างที่กำลังกรอกของรอบนี้ (เก็บในเครื่อง ยังไม่ขึ้นฐานจนกดบันทึก)
 export function getR9Draft() {
@@ -330,3 +338,231 @@ export function saveR9Draft(draft) {
   writeStore(store);
   return getR9Draft();
 }
+
+// ---------- พนักงาน (ตาราง kk_staff — ใช้ร่วมกันทุกหน้าที่มีรายชื่อคน) ----------
+
+// รายชื่อพนักงานทั้งหมดที่ยังไม่ถูกลบ (frozen = พักงานชั่วคราว ยังอยู่ในระบบ)
+export const getStaff = () =>
+  dbGet('kk_staff?active=eq.true&select=code,name,role,avatar,sort_order,frozen&order=sort_order,code');
+
+// เพิ่มพนักงานใหม่ต่อท้ายรายชื่อ
+export const addStaff = row => dbPost('kk_staff', [{ ...row, active: true, frozen: false }]);
+
+// แก้ชื่อ/สิทธิ์/รูป หรือสั่งพักงาน-เลิกพักงาน
+export const saveStaff = (code, changes) =>
+  dbPatch(`kk_staff?code=eq.${enc(code)}`, { ...changes, updated_at: new Date().toISOString() });
+
+// ลบพนักงาน = ปิดการใช้งาน (ประวัติงานเก่ายังอยู่ในฐาน)
+export const removeStaff = code => saveStaff(code, { active: false });
+
+// งานประจำของแต่ละคน (ตาราง kk_staff_responsibility — ใช้ในหน้าหลักและหน้าเตรียม)
+export const getStaffDuties = () =>
+  dbGet('kk_staff_responsibility?active=eq.true&select=staff_code,responsibility,sort_order&order=sort_order');
+
+// ---------- แบ่งงาน (ตาราง kk_task_assign — ใครรับผิดชอบงานอะไร) ----------
+
+// งานที่มอบหมายไว้ทั้งหมด (1 เป้าหมายมีหลายคนได้)
+export const getAssigns = () =>
+  dbGet('kk_task_assign?active=eq.true&select=task,target_type,target_id,staff_code');
+
+// ติ๊กเลือก/ยกเลิกคนรับผิดชอบ 1 เป้าหมาย (เป้าหมาย = รายการเดียว หรือทั้งหมวด)
+export function setAssign({ task, targetType, targetId, staffCode, on, by }) {
+  const q = `kk_task_assign?task=eq.${enc(task)}&target_type=eq.${enc(targetType)}&target_id=eq.${enc(targetId)}&staff_code=eq.${enc(staffCode)}`;
+  if (!on) return dbDelete(q);
+  return dbUpsert('kk_task_assign?on_conflict=task,target_type,target_id,staff_code',
+    [{ task, target_type: targetType, target_id: targetId, staff_code: staffCode, active: true, assigned_by: by || null }]);
+}
+
+// ล้างงานที่คนนี้รับผิดชอบทั้งหมด (ใช้เมื่อลาออกหรือถูกพักงาน — งานจะกลายเป็นยังไม่มีคนรับ)
+export const clearAssignsOf = code => dbDelete(`kk_task_assign?staff_code=eq.${enc(code)}`);
+
+// ปิดหน้าที่เดิมของคนนี้ในตารางหน้าที่ประจำ (ลาออก/พักงานแล้ว ชื่อจะไม่โผล่เป็นผู้รับผิดชอบที่ไหนอีก)
+export const clearDutiesOf = code =>
+  dbPatch(`kk_staff_responsibility?staff_code=eq.${enc(code)}`, { active: false });
+
+// ---------- ข้อมูลจริงจากฐาน: หน้าหลัก (Dashboard) ----------
+
+// ประกาศบนหน้าหลัก (ตาราง kk_home_notice — แก้ข้อความได้ที่ฐาน ไม่ต้องแก้โค้ด)
+export const getHomeNotices = () =>
+  dbGet('kk_home_notice?active=eq.true&select=id,text,tone,character,icon,sort_order&order=sort_order');
+
+// บันทึกใช้จริงย้อนหลังตั้งแต่วันที่กำหนด (ใช้ทั้งกราฟใช้ไปและการพยากรณ์)
+export const getUseHistoryFrom = from =>
+  dbGet(`kk_forecast_history?use_date=gte.${from}&select=use_date,item_id,used_kg,theo_kg,dow_num,flag&order=use_date`);
+
+// ของเหลือ/ของทิ้งรายเมนูในช่วงวัน (ทุกประเภทแถว ไม่เฉพาะ "เหลือ")
+export const getLeftoverAll = (from, to) =>
+  dbGet(`kk_cooked_leftover?left_date=gte.${from}&left_date=lte.${to}&is_current=is.true&select=menu_id,left_date,entry_type,qty_box`);
+
+// โหลดข้อมูลหน้าหลักทั้งหน้าในครั้งเดียว แล้วแปลงเป็นข้อมูลการ์ดด้วย home-model.js
+export async function getHomeBundle(date) {
+  const d = date || todayIso();
+  const [notices, history, items, menus, left, rounds, r9items, map, formulas, cfg, staff, duties, assigns] = await Promise.all([
+    getHomeNotices(), getUseHistoryFrom(shiftIso(d, -180)), getPrepItems(), getMenus(),
+    getLeftoverAll(shiftIso(d, -37), d), getR9Rounds(), getR9Items(),
+    getFcModelMap(), getFcFormulas(), getFcRules(), getStaff(), getStaffDuties(), getAssigns()
+  ]);
+  return buildHome({ date: d, notices, history, items, menus, left, rounds: rounds.map(toR9Round), r9items, map, formulas, cfg, staff, duties, assigns });
+}
+
+// ---------- รูปของรายการนับสต๊อก (เก็บที่ฐาน+ที่เก็บไฟล์ ทุกหน้าเห็นรูปเดียวกัน) ----------
+// อัพรูป WebP ขึ้นที่เก็บไฟล์ แล้วจำลิงก์ไว้ในตารางรายการ
+export async function saveCountPhoto(id, blob) {
+  const path = `count-item/${id}-${Date.now()}.webp`;
+  const url = await dbUpload('item-images', path, blob, 'image/webp');
+  await saveCountItem(id, { photo: url });
+  return url;
+}
+
+// ลบรูปของรายการ (กลับไปใช้รูปประจำหมวด)
+export const clearCountPhoto = id => saveCountItem(id, { photo: null });
+
+// ---------- เพลง (ตาราง music_tracks + เพลย์ลิสต์ kk_music_playlist) ----------
+
+// เพลงทั้งหมดในคลัง
+export const getTracks = () =>
+  dbGet('music_tracks?active=eq.true&select=id,title,artist,url,storage_path,duration_seconds,sort_order&order=sort_order,id');
+
+// เพลย์ลิสต์ทั้งหมด
+export const getPlaylists = () =>
+  dbGet('kk_music_playlist?active=eq.true&select=id,name,cover,sort_order&order=sort_order,id');
+
+// เพลงที่อยู่ในเพลย์ลิสต์แต่ละอัน
+export const getPlaylistTracks = () =>
+  dbGet('kk_music_playlist_track?select=playlist_id,track_id,sort_order&order=sort_order,id');
+
+// สร้างเพลย์ลิสต์ใหม่
+export const addPlaylist = (name, by) =>
+  dbPost('kk_music_playlist', [{ id: 'pl_' + Date.now(), name, sort_order: Date.now() % 100000, created_by: by || null }]);
+
+// แก้ชื่อเพลย์ลิสต์
+export const savePlaylist = (id, changes) => dbPatch(`kk_music_playlist?id=eq.${enc(id)}`, changes);
+
+// ลบเพลย์ลิสต์ (เพลงในคลังยังอยู่)
+export const removePlaylist = id => dbDelete(`kk_music_playlist?id=eq.${enc(id)}`);
+
+// ใส่เพลงเข้าเพลย์ลิสต์ / เอาเพลงออกจากเพลย์ลิสต์
+export const addTrackToPlaylist = (playlistId, trackId, order) =>
+  dbUpsert('kk_music_playlist_track?on_conflict=playlist_id,track_id', [{ playlist_id: playlistId, track_id: trackId, sort_order: order || 0 }]);
+export const removeTrackFromPlaylist = (playlistId, trackId) =>
+  dbDelete(`kk_music_playlist_track?playlist_id=eq.${enc(playlistId)}&track_id=eq.${enc(trackId)}`);
+
+// อัพไฟล์เพลงขึ้นที่เก็บไฟล์ แล้วเพิ่มเข้าคลังเพลง (ไฟล์ที่ส่งมาต้องเป็น MP3 แล้ว)
+export async function addTrack({ title, artist, blob, seconds, by }) {
+  const id = 'mt_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+  const path = `tracks/${id}.mp3`;
+  const url = await dbUpload('music', path, blob, 'audio/mpeg');
+  const rows = await dbPost('music_tracks', [{
+    id, title, artist: artist || by || null, url, storage_path: path,
+    duration_seconds: Math.round(seconds || 0), sort_order: Date.now() % 100000, active: true
+  }]);
+  return (rows && rows[0]) || { id, title, artist, url, storage_path: path, duration_seconds: Math.round(seconds || 0) };
+}
+
+// ลบเพลงออกจากคลัง (ลบไฟล์เสียงด้วย)
+export async function removeTrack(track) {
+  await dbDelete(`kk_music_playlist_track?track_id=eq.${enc(track.id)}`);
+  await dbDelete(`music_tracks?id=eq.${enc(track.id)}`);
+  if (track.storage_path) await dbRemoveFile('music', track.storage_path);
+}
+
+// ---------- งานของฉัน: การ์ดงานรายคน (ตาราง kk_my_task) ----------
+
+// การ์ดงานของพนักงานคนนั้น เรียงตามลำดับในฐาน
+export const getMyTasks = code =>
+  dbGet(`kk_my_task?active=eq.true&staff_code=eq.${enc(code)}&select=id,title,subtitle,detail,icon,page,responsibility,sort_order&order=sort_order,id`);
+
+// วันนี้บันทึกงานไหนไปแล้วบ้าง (ใช้ติดป้ายสถานะบนการ์ด — ไม่มีแถว = ยังไม่ได้ทำ)
+export async function getMyWorkDone(date) {
+  const one = q => dbGet(q).then(r => r.length > 0).catch(() => false);
+  const packIds = (await getPackItems()).map(i => i.id);
+  const [pack, chicken, cooked, income] = await Promise.all([
+    packIds.length ? one(`kk_stock_count?count_date=eq.${date}&is_current=is.true&count_item_id=in.(${packIds.map(enc).join(',')})&kitchen_qty=not.is.null&select=id&limit=1`) : false,
+    one(`kk_prep_log?log_date=eq.${date}&is_current=is.true&count_item_id=eq.meat_chicken_soft&qty=not.is.null&select=id&limit=1`),
+    one(`kk_cooked_leftover?left_date=eq.${date}&is_current=is.true&qty_box=not.is.null&select=id&limit=1`),
+    one(`kk_daily_income?income_date=eq.${date}&select=id&limit=1`)
+  ]);
+  return { 'fah-pack': pack, 'fah-chicken': chicken, 'fah-cooked': cooked, 'fah-income': income };
+}
+
+// ---------- นับกล่องและช้อนส้อม (ใช้ตารางเดียวกับหน้านับสต๊อก) ----------
+
+// รายการที่หน้านับกล่องต้องนับ (กรองด้วยงานที่รับผิดชอบ เรียงลำดับเดียวกับหน้านับสต๊อก)
+export const getPackItems = (resp = 'นับบรรจุภัณฑ์อาหาร') =>
+  dbGet(`kk_count_item?active=eq.true&responsibility=eq.${enc(resp)}&select=id,name,grp,unit,location,photo,sort_order&order=sort_order,id`);
+
+// รายการที่หน้านับสต๊อกเครื่องดื่มของส้มต้องนับ (ทีละหมวดตามแท็บ — ชุดเดียวกับหน้านับสต๊อก)
+export const getSomStockItems = grp =>
+  dbGet(`kk_count_item?active=eq.true&grp=eq.${enc(grp)}&responsibility=eq.${enc('นับเครื่องดื่มและบรรจุภัณฑ์น้ำ')}&select=id,name,grp,unit,location,responsibility,photo,sort_order&order=sort_order,id`);
+
+// รายการนับทั้งหมดของหมวดหนึ่ง (หน้านับผัก/ซอส/เครื่องปรุง/เนื้อสัตว์ — ชุดเดียวกับหน้านับสต๊อก)
+export const getCountItemsByGroup = grp =>
+  dbGet(`kk_count_item?active=eq.true&grp=eq.${enc(grp)}&select=id,name,grp,unit,location,responsibility,photo,sort_order&order=sort_order,id`);
+
+// ผลนับย้อนหลังของรายการที่ระบุ (ใช้ในแผงดูประวัติ)
+export const getCountHistory = (ids, from, to) =>
+  dbGet(`kk_stock_count?is_current=is.true&count_date=gte.${from}&count_date=lte.${to}&count_item_id=in.(${ids.map(enc).join(',')})&select=count_item_id,count_date,kitchen_qty,condo_qty,counted_by&order=count_date.desc`);
+
+// ---------- รายได้ประจำวัน (ตาราง kk_income_brand / kk_income_channel / kk_daily_income) ----------
+
+// ร้านและช่องทางขายที่เปิดใช้อยู่
+export const getIncomeBrands = () =>
+  dbGet('kk_income_brand?active=eq.true&select=id,name,logo,sort_order&order=sort_order,id');
+export const getIncomeChannels = () =>
+  dbGet('kk_income_channel?active=eq.true&select=id,name,icon,sort_order&order=sort_order,id');
+
+// ยอดขายของวันที่เลือก (หัวบันทึก + ยอดแต่ละช่องทาง)
+export async function getIncomeDay(date) {
+  const [brands, channels, heads] = await Promise.all([
+    getIncomeBrands(), getIncomeChannels(),
+    dbGet(`kk_daily_income?income_date=eq.${date}&select=id,brand_id,note,recorded_by`)
+  ]);
+  const ids = heads.map(h => h.id);
+  const lines = ids.length
+    ? await dbGet(`kk_daily_income_line?income_id=in.(${ids.join(',')})&select=income_id,channel_id,amount`)
+    : [];
+  return { brands, channels, heads, lines };
+}
+
+// บันทึกยอดขาย 1 ร้านของวันนั้น (หัวบันทึกทับของเดิม แล้วทับยอดรายช่องทาง)
+export async function saveIncomeDay({ date, brand, note, by, amounts }) {
+  const rows = await dbUpsertBack('kk_daily_income?on_conflict=income_date,brand_id',
+    [{ income_date: date, brand_id: brand, note: note || null, recorded_by: by || null, updated_at: new Date().toISOString() }]);
+  const id = (rows && rows[0] || {}).id;
+  if (!id) throw new Error('no income id');
+  const lines = Object.keys(amounts).map(ch => ({ income_id: id, channel_id: ch, amount: amounts[ch] }));
+  if (lines.length) await dbUpsert('kk_daily_income_line?on_conflict=income_id,channel_id', lines);
+  return id;
+}
+
+// ยอดขายย้อนหลัง (ใช้ในแผงดูประวัติ)
+export const getIncomeRange = (from, to) =>
+  dbGet(`kk_daily_income?income_date=gte.${from}&income_date=lte.${to}&select=id,income_date,brand_id,note&order=income_date.desc`);
+
+// ยอดขายย้อนหลังพร้อมยอดรวมต่อวันต่อร้าน (รวมยอดให้เรียบร้อยก่อนส่งให้หน้าจอ)
+export async function getIncomeHistory(from, to) {
+  const heads = await getIncomeRange(from, to);
+  if (!heads.length) return [];
+  const lines = await dbGet(`kk_daily_income_line?income_id=in.(${heads.map(h => h.id).join(',')})&select=income_id,amount`);
+  return heads.map(h => ({
+    date: h.income_date,
+    brand: h.brand_id,
+    total: lines.filter(l => l.income_id === h.id).reduce((s, l) => s + (Number(l.amount) || 0), 0)
+  }));
+}
+
+// ---------- วันลาทีม (ตาราง kk_staff_leave + kk_leave_type) ----------
+
+export const getLeaveTypes = () =>
+  dbGet('kk_leave_type?active=eq.true&select=id,name_th,color,sort_order&order=sort_order,id');
+
+// วันลาในช่วงวัน (ใช้ทั้งปฏิทินและรายการลา)
+export const getLeaves = (from, to) =>
+  dbGet(`kk_staff_leave?leave_date=gte.${from}&leave_date=lte.${to}&select=id,staff_code,leave_date,leave_type,note,recorded_by&order=leave_date`);
+
+// บันทึกวันลา: 1 แถวต่อคนต่อวัน (คนเดิมวันเดิมบันทึกซ้ำ = ทับของเดิม)
+export const saveLeaves = rows =>
+  dbUpsert('kk_staff_leave?on_conflict=staff_code,leave_date', rows);
+
+// ยกเลิกวันลา 1 แถว
+export const removeLeave = id => dbDelete(`kk_staff_leave?id=eq.${id}`);

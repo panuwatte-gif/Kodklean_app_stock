@@ -1,5 +1,5 @@
 // S2 แผนที่หมู่บ้าน: บ้านพนักงานเรียงตามลำดับเข้าร่วม + อาคารกลางแทรก แตะแล้วไปหน้านั้น
-import { t } from '../core/i18n.js';
+import { t, getLang } from '../core/i18n.js';
 import { topBar, wireLang, toast } from '../core/ui.js';
 import { charSprite, petSprite } from '../core/sprites.js';
 import { S, stageOf } from '../core/state.js';
@@ -8,7 +8,8 @@ import { ASSETS } from '../sprite_config.js';
 import { PETS } from '../config.js';
 
 const HOUSE = { baby:'house1', kid:'house1', student:'house2', teen:'house2', work:'house2', middle:'house3', elder:'house3' };
-const PLACES = { board:{ img:'board', go:null }, tent:{ img:'tent', go:'tent' }, school:{ img:'school', go:'school' }, wheel:{ img:'wheel', go:'wheel' } };
+const PLACES = { board:{ img:'board', go:null }, tent:{ img:'tent', go:'tent' }, school:{ img:'school', go:'school' }, wheel:{ img:'wheel', go:'wheel' },
+  merge:{ src:'merge/assets/items/m10_coin_k.webp', go:null } };   // เกมรวมร่าง (โฟลเดอร์ merge/)
 const STEP = 250, PAD = 44;
 
 export async function mountVillage(root, go) {
@@ -22,7 +23,7 @@ export async function mountVillage(root, go) {
   const slots = [];
   order.forEach((u, i) => {
     slots.push({ kind: 'user', u });
-    if (i === 0) slots.push({ kind: 'place', id: 'board' });
+    if (i === 0) slots.push({ kind: 'place', id: 'board' }, { kind: 'place', id: 'merge' });
     if (i === 1) slots.push({ kind: 'place', id: 'tent' });
     if (i === 3) slots.push({ kind: 'place', id: 'school' });
     if (i === 4) slots.push({ kind: 'place', id: 'wheel' });
@@ -33,7 +34,7 @@ export async function mountVillage(root, go) {
     if (s.kind === 'place') {
       const p = PLACES[s.id];
       return `<button class="spot" style="left:${x}px" data-place="${s.id}">
-        <img src="${ASSETS.village}${p.img}.webp" alt="" width="146" height="146" style="object-fit:contain">
+        <img src="${p.src || ASSETS.village + p.img + '.webp'}" alt="" width="146" height="146" style="object-fit:contain">
         <span class="plate" style="margin-bottom:10px">${label(s.id)}</span></button>`;
     }
     const c = byUser(s.u.id), st = stageOf(c.wp), pet = petOf(s.u.id);
@@ -45,7 +46,8 @@ export async function mountVillage(root, go) {
       </span>
       <span class="plate" style="margin-bottom:10px">${s.u.name_th} · ${t('gen')} ${c.generation}</span></button>`;
   };
-  const label = id => ({ board: t('noticeNew'), tent: t('navTent'), school: t('navSchool'), wheel: t('navWheel') })[id];
+  const label = id => ({ board: t('noticeNew'), tent: t('navTent'), school: t('navSchool'), wheel: t('navWheel'),
+    merge: getLang() === 'my' ? 'ပေါင်းစပ်ဂိမ်း' : 'รวมร่าง' })[id];
 
   const width = PAD * 2 + slots.length * STEP;
   root.innerHTML = topBar() + `<div class="map" id="map"><div class="map__in" style="width:${width}px;background-image:url(${ASSETS.village}bg.webp)">
@@ -55,6 +57,10 @@ export async function mountVillage(root, go) {
 
   root.onclick = e => {
     const pl = e.target.closest('[data-place]');
+    if (pl && pl.dataset.place === 'merge') {   // ไปเกมรวมร่าง พร้อมส่งรหัสพนักงานกับภาษาไปด้วย
+      location.href = 'merge/index.html?from=village&emp=' + encodeURIComponent(S.user.emp_code) + '&lang=' + getLang();
+      return;
+    }
     if (pl) { const g = PLACES[pl.dataset.place].go; return g ? go(g) : showNotices(notices); }
     const us = e.target.closest('[data-user]');
     if (!us) return;

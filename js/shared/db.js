@@ -21,6 +21,27 @@ async function req(path, method, body, prefer) {
 // อ่านข้อมูล
 export const dbGet = query => req(query, 'GET');
 
+// อัพไฟล์ขึ้นที่เก็บไฟล์ของฐาน แล้วคืนลิงก์ถาวรของไฟล์นั้น (ทับไฟล์ชื่อเดิมได้)
+export async function dbUpload(bucket, path, blob, type) {
+  const c = await link();
+  const res = await fetch(`${c.url}/storage/v1/object/${bucket}/${path}`, {
+    method: 'POST',
+    headers: { apikey: c.key, Authorization: c.scheme + ' ' + c.key, 'Content-Type': type || blob.type || 'application/octet-stream', 'x-upsert': 'true' },
+    body: blob
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return `${c.url}/storage/v1/object/public/${bucket}/${path}`;
+}
+
+// ลบไฟล์ออกจากที่เก็บไฟล์ (ไม่มีไฟล์อยู่ก็ไม่เป็นไร)
+export async function dbRemoveFile(bucket, path) {
+  const c = await link();
+  await fetch(`${c.url}/storage/v1/object/${bucket}/${path}`, {
+    method: 'DELETE',
+    headers: { apikey: c.key, Authorization: c.scheme + ' ' + c.key }
+  }).catch(() => {});
+}
+
 // เพิ่มแถวใหม่ (คืนแถวที่เพิ่งเพิ่ม)
 export const dbPost = (table, rows) => req(table, 'POST', rows, 'return=representation');
 
@@ -29,6 +50,9 @@ export const dbPatch = (query, body) => req(query, 'PATCH', body, 'return=minima
 
 // เพิ่มแถว ถ้าชนกุญแจเดิมให้ทับแถวนั้น (ต้องใส่ ?on_conflict=คอลัมน์ ในชื่อตาราง)
 export const dbUpsert = (query, rows) => req(query, 'POST', rows, 'resolution=merge-duplicates,return=minimal');
+
+// เหมือน dbUpsert แต่ขอแถวผลลัพธ์กลับมาด้วย (ใช้ตอนต้องการ id ของแถวที่เพิ่งบันทึก)
+export const dbUpsertBack = (query, rows) => req(query, 'POST', rows, 'resolution=merge-duplicates,return=representation');
 
 // ลบแถวจริงตามเงื่อนไข (ใช้เฉพาะของที่ยังไม่มีประวัติใช้งาน เช่น รายการสินค้าที่ไม่เคยถูกส่ง)
 export const dbDelete = query => req(query, 'DELETE', undefined, 'return=minimal');

@@ -70,7 +70,7 @@ async function askAdd(root) {
     okLabel: T.addAsk.ok
   });
   if (!out) return;
-  const err = addUser(out);
+  const err = await addUser(out);
   if (err) return toast(T.err[err]);
   draw(root);
   toast(fillText(T.done.add, { name: out.name }));
@@ -83,7 +83,7 @@ async function askDel(root, user) {
     text: T.delAsk.text, okLabel: T.delAsk.ok, danger: true
   });
   if (!ok) return;
-  const err = removeUser(user.code);
+  const err = await removeUser(user.code);
   if (err) return toast(T.err[err]);
   draw(root);
   toast(fillText(T.done.del, { name: user.name }));

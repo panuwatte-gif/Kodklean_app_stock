@@ -2,7 +2,7 @@
 import { HOME_UI, HOME_CHARS } from '../shared/config.js';
 import { glyph, dropdownHtml } from '../shared/ui.js';
 import { pageOf, ricePotCount } from '../shared/calc.js';
-import { dayLongTh, weight } from '../shared/format.js';
+import { dayLongTh, weight, fillText } from '../shared/format.js';
 
 // หัวการ์ดที่ทุกการ์ดใช้ร่วมกัน: แถบสีอ่อนประจำส่วน + ตัวละคร (ซ้าย/ขวา) + ชื่อ/ตัวเลขเด่น/คำอธิบาย + เครื่องมือด้านขวา
 export function cardHead({ tone, title, big = '', sub = '', char = '', side = 'left', tools = '' }) {
@@ -70,7 +70,7 @@ export function prepCard(prep, meta, ui) {
           <button type="button" data-prep-page="${pg.index + 1}" aria-label="อันดับถัดไป"${pg.index >= last ? ' disabled' : ''}>›</button>
         </span>
       </div>
-      <p class="hc__note">${prep.basis || t.basisNote}</p>
+      <p class="hc__note">${prep.lastDay ? fillText(t.liveNote, { d: dayLongTh(prep.lastDay) }) : prep.basis || t.basisNote}</p>
     </div></section>`;
 }
 

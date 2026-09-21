@@ -5,14 +5,9 @@ import { qtyOrDash } from '../shared/format.js';
 import { glyph } from '../shared/ui.js';
 import { groupOf } from './stock-list.js';
 
-// รูปที่ผู้ใช้เลือกเองทับรูปตั้งต้น (ตั้งค่าจาก stock.js ทุกครั้งที่เปลี่ยนรูป)
-let picked = [];
-export function setPhotos(list) { picked = list || []; }
-
-// รูปของรายการ: ที่ผู้ใช้เลือกไว้เอง > ที่จับคู่ไว้ > รูปประจำหมวด
+// รูปของรายการ: รูปที่บันทึกไว้ในฐาน > ที่จับคู่ไว้ > รูปประจำหมวด
 export function photoOf(item) {
-  const own = picked.find(p => p.id === item.id);
-  return (own && own.photo) || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || groupOf(item.grp).icon;
+  return item.photo || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || groupOf(item.grp).icon;
 }
 
 // รายการนี้เก็บของไว้สองที่ จึงกรอกสต๊อกรวมกับครัวกลาง แล้วให้คิดคอนโดให้เอง

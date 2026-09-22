@@ -1,10 +1,10 @@
-// เพลงพื้นหลัง 3 โหมด: มีเนื้อ / บรรเลง / ปิด — สุ่มเพลง ไม่ซ้ำเพลงที่เพิ่งเล่น เล่นจบแล้วต่อเพลงใหม่
+// เพลงพื้นหลัง 4 โหมด: สุ่มทุกเพลง / มีเนื้อ / บรรเลง / ปิด — สุ่มเพลง ไม่ซ้ำเพลงที่เพิ่งเล่น เล่นจบแล้วต่อเพลงใหม่
 // แหล่งเพลง: (1) เพลย์ลิสต์ในหน้า "เพลง" ของแอป  (2) ไฟล์ในโฟลเดอร์ assets/music ที่ระบุใน config.js
 import { MUSIC } from '../config.js';
 import * as db from './db.js';
 
-const KEY = 'kk.merge.music';
-const MODES = ['vocal', 'inst', 'off'];
+const KEY = 'kk.merge.music2';   // เปลี่ยนชื่อที่เก็บ ให้ทุกเครื่องเริ่มที่โหมดสุ่มทุกเพลง
+const MODES = ['mix', 'vocal', 'inst', 'off'];
 const lists = { vocal: [], inst: [] };
 let mode = read();
 let audio = null, lastUrl = '', started = false, loaded = false;
@@ -15,7 +15,8 @@ function read() {
 }
 
 export const getMode = () => mode;
-export const hasSongs = m => (lists[m] || []).length > 0;
+const pool = m => m === 'mix' ? [...new Set([...lists.vocal, ...lists.inst])] : (lists[m] || []);
+export const hasSongs = m => pool(m).length > 0;
 
 // โหลดรายชื่อเพลง (ไม่โหลดไฟล์เพลงจริง — ไฟล์จะโหลดเฉพาะเพลงที่สุ่มได้)
 export async function load() {
@@ -54,10 +55,10 @@ function ensure() {
 
 function playNext() {
   if (!audio || mode === 'off' || !loaded) return;
-  const pool = lists[mode] || [];
-  if (!pool.length) { audio.pause(); return; }
-  let pick = pool[Math.floor(Math.random() * pool.length)];
-  if (pool.length > 1) while (pick === lastUrl) pick = pool[Math.floor(Math.random() * pool.length)];
+  const list = pool(mode);
+  if (!list.length) { audio.pause(); return; }
+  let pick = list[Math.floor(Math.random() * list.length)];
+  if (list.length > 1) while (pick === lastUrl) pick = list[Math.floor(Math.random() * list.length)];
   lastUrl = pick;
   audio.src = pick;
   audio.play().catch(() => {});
@@ -71,7 +72,7 @@ export function start() {
   playNext();
 }
 
-// สลับโหมดวนไป มีเนื้อ → บรรเลง → ปิด (คืนค่าโหมดใหม่)
+// สลับโหมดวนไป สุ่มทุกเพลง → มีเนื้อ → บรรเลง → ปิด (คืนค่าโหมดใหม่)
 export function cycle() {
   mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
   try { localStorage.setItem(KEY, mode); } catch { /* ใช้ค่าในรอบนี้ */ }

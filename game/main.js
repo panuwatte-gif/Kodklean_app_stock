@@ -25,6 +25,7 @@ router.register('school', mountSchool);
 router.register('quiz', (root, go) => mountQuiz(root, go, 'quiz'));
 router.register('quiz-menu', (root, go) => mountQuiz(root, go, 'quiz-menu'));
 router.register('quiz-vocab', (root, go) => mountQuiz(root, go, 'quiz-vocab'));
+router.register('quiz-menumy', (root, go) => mountQuiz(root, go, 'quiz-menumy'));
 router.register('math', mountMath);
 router.register('wheel', mountWheel);
 router.register('exam', mountExam);
@@ -36,12 +37,18 @@ router.register('admin', mountAdmin);
 router.init(document.getElementById('screen'), document.getElementById('nav'), (host, id, go) => {
   if (id === 'onboarding' || id === 'nouser') { host.innerHTML = ''; return; }
   // หน้ากิจกรรมย่อยให้แถบล่างชี้ที่หน้าแม่ของมัน
-  const parent = { quiz:'school', 'quiz-menu':'school', 'quiz-vocab':'school', math:'school', exam:'school', wheel:'village' }[id];
+  const parent = { quiz:'school', 'quiz-menu':'school', 'quiz-vocab':'school', 'quiz-menumy':'school', math:'school', exam:'school', wheel:'village' }[id];
   if (parent) return bottomNav(host, parent, go);
   bottomNav(host, id, go);
 });
 
 router.register('nouser', mountNoUser);
+
+// ปุ่มย้อนกลับของเครื่องส่งมาจากแอปแม่: ถอยหน้าในเกมก่อน ถ้าไม่มีที่ถอยแล้วค่อยออกไปแอปหลัก
+window.addEventListener('message', e => {
+  if (!e.data || e.data.type !== 'imjai:back') return;
+  if (!router.back()) window.parent.postMessage({ type: 'imjai:exit' }, '*');
+});
 
 (async () => {
   await loadSpriteMap();

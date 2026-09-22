@@ -32,6 +32,7 @@ export async function mountSchool(root, go) {
     card(ASSETS.icons + 'wp.webp', t('actMath'),
       LEVEL_NAMES[P.math.level] + ' · ' + t(P.daily.math_sets_done ? 'setDone' : 'setOpen'), 'math', t('actStart')) +
     card(ASSETS.icons + 'food.webp', t('actMenu'), t('actMenuSub'), 'quiz-menu', t('actStart')) +
+    card(ASSETS.village + 'board.webp', t('actMenuMy'), t('actMenuMySub'), 'quiz-menumy', t('actStart')) +
     card(ASSETS.icons + 'bell.webp', t('actVocab'), t('actVocabSub'), 'quiz-vocab', t('actStart')) +
     card(ASSETS.icons + 'trophy.webp', t('actExam'),
       exam ? exam.title + ' · ' + exam.start_date + ' → ' + exam.end_date : t('noExam'), 'exam',

@@ -75,7 +75,7 @@ export const MUSIC = {
   bundledVocal: [],                       // เช่น ['song1.mp3', 'song2.mp3']
   bundledInst: ['inst_village.mp3'],
   volume: 0.35,
-  defaultMode: 'inst'                     // 'vocal' | 'inst' | 'off'
+  defaultMode: 'mix'                      // 'mix' (สุ่มทุกเพลง) | 'vocal' | 'inst' | 'off'
 };
 
 // ── ข้อความ 2 ภาษา ──
@@ -85,7 +85,7 @@ export const TEXT = {
     board: 'อันดับ', back: 'หมู่บ้าน', newBest: 'สถิติใหม่!', guest: 'โหมดทดลอง · ไม่บันทึกคะแนน',
     you: 'คุณ', empty: 'ยังไม่มีใครทำคะแนน', close: 'ปิด', loading: 'กำลังโหลด…',
     tapStart: 'แตะเพื่อเริ่ม', howTo: 'ลากซ้าย-ขวาแล้วปล่อย · ชิ้นเหมือนกันชนกันจะรวมร่าง',
-    mVocal: 'เพลงมีเนื้อ', mInst: 'เพลงบรรเลง', mOff: 'ปิดเพลง', sfxOn: 'เปิดเสียงเอฟเฟกต์', sfxOff: 'ปิดเสียงเอฟเฟกต์',
+    mMix: 'สุ่มทุกเพลง', mVocal: 'เพลงมีเนื้อ', mInst: 'เพลงบรรเลง', mOff: 'ปิดเพลง', sfxOn: 'เปิดเสียงเอฟเฟกต์', sfxOff: 'ปิดเสียงเอฟเฟกต์',
     noSongs: 'ยังไม่มีเพลงในโหมดนี้', saved: 'บันทึกคะแนนแล้ว', saveFail: 'บันทึกคะแนนไม่สำเร็จ',
     combo: 'คอมโบ', reached: 'ไปถึงขั้น'
   },
@@ -94,7 +94,7 @@ export const TEXT = {
     board: 'အဆင့်', back: 'ရွာ', newBest: 'စံချိန်သစ်!', guest: 'စမ်းသပ်မုဒ် · ရမှတ်မသိမ်းပါ',
     you: 'သင်', empty: 'ရမှတ်မရှိသေးပါ', close: 'ပိတ်', loading: 'ဖွင့်နေသည်…',
     tapStart: 'စရန်နှိပ်ပါ', howTo: 'ဘယ်ညာဆွဲပြီး လွှတ်ပါ · တူတာနှစ်ခုထိရင် ပေါင်းသွားမည်',
-    mVocal: 'သီချင်း', mInst: 'တီးလုံး', mOff: 'ဂီတပိတ်', sfxOn: 'အသံဖွင့်', sfxOff: 'အသံပိတ်',
+    mMix: 'အားလုံး', mVocal: 'သီချင်း', mInst: 'တီးလုံး', mOff: 'ဂီတပိတ်', sfxOn: 'အသံဖွင့်', sfxOff: 'အသံပိတ်',
     noSongs: 'ဤမုဒ်တွင် သီချင်းမရှိသေးပါ', saved: 'ရမှတ်သိမ်းပြီး', saveFail: 'ရမှတ်မသိမ်းနိုင်ပါ',
     combo: 'ကွန်ဘို', reached: 'ရောက်ခဲ့သည့်အဆင့်'
   }

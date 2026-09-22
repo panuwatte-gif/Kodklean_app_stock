@@ -35,6 +35,38 @@ export function menuQuestions(item, all) {
   return list.map(q => ({ ...q, options: mixOrder(q.options), menu_id: item.id }));
 }
 
+// แบบที่ 1 ของฝึกอ่านเมนู: ชื่อเมนูไทย → เลือกรูป (ตัวหลอกต้องมีรูปเท่านั้น กลุ่มสับสนเดียวกันก่อน)
+export function menuPicQuestion(item, all) {
+  const pool = all.filter(x => x.active && x.image_url && x.id !== item.id);
+  const same = pool.filter(x => x.confuse_group && x.confuse_group === item.confuse_group);
+  const rest = pool.filter(x => same.indexOf(x) === -1);
+  const wrong = mixOrder(same).concat(mixOrder(rest)).slice(0, 3);
+  if (!wrong.length) return null;
+  const four = mixOrder([item].concat(wrong));
+  return { text: item.name_th, speak: item.name_th, big: true, picOptions: true,
+    options: four.map(x => x.image_url), optionNames: four.map(x => x.name_th),
+    answer: item.image_url, explain: null };
+}
+
+// แบบที่ 2 ของฝึกอ่านเมนู: ชื่อเมนูไทย → เลือกคำภาษาพม่า (ใช้ choices_my เสมอ ไม่สลับตามปุ่มภาษา)
+export function menuMyQuestion(q) {
+  const ch = (q.choices_my || []).filter(Boolean).length ? q.choices_my : (q.choices_th || []);
+  return { id: q.id, pic: q.image_url, text: q.q_th, big: true,
+    options: ch, answer: ch[q.answer_index], explain: q.explain_th };
+}
+
+// ปนคำถาม 2 กองให้สลับกันในชุดเดียว แล้วตัดเหลือ n ข้อ (กองไหนหมดก็ใช้กองที่เหลือต่อ)
+export function mixTwoKinds(a, b, n) {
+  let x = mixOrder(a), y = mixOrder(b);
+  if (Math.random() < 0.5) { const swap = x; x = y; y = swap; }
+  const out = [];
+  while (out.length < n && (x.length || y.length)) {
+    if (x.length) out.push(x.shift());
+    if (out.length < n && y.length) out.push(y.shift());
+  }
+  return out;
+}
+
 // คำศัพท์: ความสำคัญสูง = วนถามถี่ 2 เท่า
 export function vocabQueue(rows) {
   const queue = [];

@@ -647,6 +647,17 @@ export async function handleDateClick(event, state) {
 // เลือกวันที่จากปฏิทิน
 export const handleDatePick = (iso, state) => applyDate(iso, state);
 
+// บันทึกข้อความเป็นไฟล์ลงเครื่อง (ใช้ดาวน์โหลดรายงาน · ใส่ BOM ให้ Excel อ่านภาษาไทยถูก)
+export function downloadText(filename, text, mime = 'text/csv;charset=utf-8') {
+  const url = URL.createObjectURL(new Blob(['\ufeff' + text], { type: mime }));
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // สั่งพิมพ์เฉพาะกล่องที่ระบุ (ใช้กับรายงาน)
 export function printArea(selector) {
   const app = document.querySelector('.app') || document.body;

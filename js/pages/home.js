@@ -19,8 +19,8 @@ function fitHomeWidth(root) {
 }
 
 // เอาโครงหน้าที่โหลดมาแล้ว มาเติมข้อมูลหน้าหลัก (onGo = พาไปหน้าอื่นเมื่อกดดูรายละเอียด)
-// การ์ดที่ต่อฐานแล้ว: ประกาศ / ใช้ไปเท่าไหร่ / ยอดคงเหลือ / แนะนำเตรียมพรุ่งนี้ / พระราม 9
-// การ์ดที่ยังไม่มีตารางในฐาน (หุงข้าว / ยอดขาย / ลดของเหลือ) ใช้ข้อมูลตั้งต้นไปก่อน
+// การ์ดที่ต่อฐานแล้ว: ประกาศ / ใช้ไปเท่าไหร่ / ยอดคงเหลือ / แนะนำเตรียมพรุ่งนี้ / ยอดขายรายร้าน / พระราม 9
+// การ์ดที่ยังไม่มีตารางในฐาน (หุงข้าว / ลดของเหลือ) ใช้ข้อมูลตั้งต้นไปก่อน
 export async function mountHomePage(root, onGo) {
   fitHomeWidth(root);   // ย่อทั้งหน้าให้พอดีจอมือถือ (เลย์เอาต์วางไว้ที่ 794 ตามแบบอ้างอิง)
   const ui = get('homeUi');   // ค่าที่เลือกไว้ครั้งก่อน (คงอยู่หลัง refresh)
@@ -31,7 +31,7 @@ export async function mountHomePage(root, onGo) {
   const data = {
     prep: live ? live.prep : get('homePrep'), rice: get('homeRice'),
     usage: live ? live.usage : get('homeUsage'), left: live ? live.left : get('homeLeftovers'),
-    save: get('homeSavings'), sales: get('homeSales'), r9: live ? live.r9 : get('homeR9'),
+    save: get('homeSavings'), sales: live ? live.sales : get('homeSales'), r9: live ? live.r9 : get('homeR9'),
     notices: live ? live.notices : get('homeNotices')
   };
 

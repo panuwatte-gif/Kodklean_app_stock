@@ -2,7 +2,7 @@
 import { STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, MENU_PHOTOS, PREP_ENTRY } from './config.js';
 import { buildSeries, predictorOf } from './fclab.js';
 import { namesOf } from './assign.js';
-import { shiftIso } from './format.js';
+import { shiftIso, dayLongTh } from './format.js';
 
 const U = PREP_ENTRY.fah.left;    // ประเภทแถว "เหลือ" ในตาราง kk_cooked_leftover
 const W = PREP_ENTRY.fah.waste;   // ประเภทแถว "ทิ้ง"
@@ -121,7 +121,25 @@ function r9Of(rounds, r9items) {
   return { basis: 'มูลค่าของในรอบ + ค่าส่ง (จากตาราง kk_r9_round)', types: 'วัตถุดิบ + ซอส', hasData: shipments.length > 0, shipments };
 }
 
-// รวมทุกการ์ดที่ต่อฐานได้แล้ว (การ์ดข้าว / ยอดขาย ยังไม่มีตารางในฐาน — หน้าจอใช้ข้อมูลตั้งต้นต่อไป)
+// ยอดขายเทียบเป้า: ยอดจริงจากตารางรายได้ประจำวัน (kk_daily_income ที่ฟ้า/แม่พันบันทึก) เทียบเป้ารายร้าน
+// ยังไม่มีบันทึกของร้านไหน = null (แสดง "ยังไม่มีข้อมูล") ห้ามเดาเป็น 0 · ไม่ได้ตั้งเป้า = null เช่นกัน
+function salesOf(brands, income, date) {
+  const month = date.slice(0, 7);
+  const sum = rows => (rows.length ? Math.round(rows.reduce((s, r) => s + (Number(r.total) || 0), 0)) : null);
+  const stores = (brands || []).map(b => {
+    const mine = (income || []).filter(r => r.brand === b.id);
+    return {
+      id: b.id, name: b.name, logo: b.logo, color: b.color || '#125B2A',
+      month: sum(mine.filter(r => r.date.slice(0, 7) === month)),
+      today: sum(mine.filter(r => r.date === date)),
+      target: b.monthly_target === null || b.monthly_target === undefined ? null : Number(b.monthly_target)
+    };
+  });
+  const dates = (income || []).map(r => r.date).sort();
+  return { through: dates.length ? dates[dates.length - 1] : date, updatedAt: dayLongTh(date), stores };
+}
+
+// รวมทุกการ์ดที่ต่อฐานได้แล้ว (การ์ดข้าว / ลดของเหลือ ยังไม่มีตารางในฐาน — หน้าจอใช้ข้อมูลตั้งต้นต่อไป)
 export function buildHome(src) {
   const dates = openDates(src.history, 7);
   const last = dates[dates.length - 1] || src.date;
@@ -135,6 +153,7 @@ export function buildHome(src) {
     usage: usageOf(src.history, src.items, dates),
     left: leftOf(src.left, src.menus, dates),
     prep: prepOf({ ...src, date: src.date }),
+    sales: salesOf(src.brands, src.income, src.date),
     r9: r9Of(src.rounds, src.r9items)
   };
 }

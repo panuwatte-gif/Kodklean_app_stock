@@ -177,6 +177,9 @@
   padding: 0 8px;
 }
 
+/* กรอกอย่างเดียว ไม่มีปุ่มแก้รายการ (ใช้ในหน้าของแม่พัน) */
+.r9-row--slim { grid-template-columns: minmax(0, 1fr) 58px 58px 62px; }
+
 .r9-thead {
   background: #1F4FB0;
   color: #fff;

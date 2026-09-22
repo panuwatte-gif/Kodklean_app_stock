@@ -1,0 +1,323 @@
+/* หน้างานของแม่พัน (รายได้ประจำวัน + บันทึกส่งพระราม 9) — โทนชมพูของแม่พัน บนกระดาษครีมเดิมของแอป */
+.mp {
+  position: relative;
+  isolation: isolate;
+  min-height: 100%;
+  padding: 12px 14px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  --a: #D63C78;
+  --ink: #4A2230;
+  --soft: #8B6371;
+  --line: #F5DCE6;
+}
+
+.mp__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, #FFF1F6 0%, #FDF8F0 42%, #FDF8F0 100%);
+}
+
+.mp > *:not(.mp__bg) { position: relative; z-index: 1; }
+
+/* ---------- การ์ดหัวเรื่อง ---------- */
+.mp-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 118px;
+  padding: 12px 104px 12px 12px;
+  border-radius: 20px;
+  border: 1px solid #FBDDE8;
+  background: linear-gradient(140deg, #FFE8F0, #FFF6F0 62%, #FFFDF8);
+  box-shadow: 0 8px 18px rgba(150, 70, 100, .12);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mp-hero__ic {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 10px rgba(150, 70, 100, .16);
+}
+
+.mp-hero__ic img { width: 34px; height: 34px; object-fit: contain; }
+.mp-hero__text { display: flex; flex-direction: column; gap: 2px; }
+.mp-hero__text b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 20px; line-height: 1.2; color: var(--a); }
+.mp-hero__text em { font-style: normal; font-size: 11px; line-height: 1.4; color: var(--soft); text-wrap: pretty; }
+.mp-hero__script { font-size: 10.5px; line-height: 1.45; font-style: italic; color: #B4668A; }
+
+.mp-hero__char {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  height: 128px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 14px rgba(150, 70, 100, .22));
+}
+
+/* ---------- แท็บสลับ 2 หน้างาน ---------- */
+.mp-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+.mp-tab {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: #96707D;
+  font-family: Mitr, sans-serif;
+  font-weight: 500;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.mp-tab:active { transform: scale(.97); }
+.mp-tab.is-on { border-color: #E9538B; background: linear-gradient(170deg, #F2588F, var(--a)); color: #fff; box-shadow: 0 7px 16px rgba(190, 60, 110, .26); }
+
+/* ---------- การ์ดพื้นฐาน ---------- */
+.mp-card {
+  padding: 12px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 6px 14px rgba(150, 70, 100, .09);
+}
+
+.mp-card--brand { background: linear-gradient(180deg, #FFF6FA, #fff 34%); }
+
+.mp-sec { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; }
+.mp-sec--sub { padding-top: 4px; }
+.mp-sec img { flex: none; object-fit: contain; }
+.mp-sec__t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mp-sec__t b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: var(--a); }
+.mp-sec__t em { font-style: normal; font-size: 10.5px; line-height: 1.35; color: var(--soft); }
+
+/* ---------- เลือกร้าน ---------- */
+.mp-stores { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+.mp-store {
+  position: relative;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 15px;
+  border: 1.5px solid #F3E4E9;
+  background: #FFFCFA;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.mp-store:active { transform: scale(.97); }
+.mp-store img { flex: none; width: 40px; height: 40px; object-fit: contain; }
+.mp-store__t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; text-align: left; }
+.mp-store__t b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 12px; line-height: 1.25; color: var(--ink); }
+.mp-store__t em { font-style: normal; font-size: 9.5px; line-height: 1.3; color: var(--soft); }
+.mp-store.is-on { border-color: #EE6497; background: #FFF1F6; box-shadow: 0 6px 14px rgba(190, 60, 110, .18); }
+
+.mp-store__on {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--a);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 3px 7px rgba(190, 60, 110, .3);
+}
+
+/* ---------- เปิด-ปิดช่องทางขาย ---------- */
+.mp-sws { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 4px; }
+
+.mp-sw {
+  flex: 1 1 46%;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+}
+
+.mp-sw__name { flex: 1; display: flex; flex-direction: column; text-align: left; font-family: Mitr, sans-serif; font-weight: 500; font-size: 12.5px; color: var(--ink); }
+.mp-sw__name em { font-style: normal; font-family: Anuphan, sans-serif; font-size: 9.5px; color: var(--soft); }
+
+.mp-sw__track {
+  flex: none;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: #E3DAD2;
+  position: relative;
+  transition: background 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.mp-sw__track i { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left 140ms cubic-bezier(.2, .8, .3, 1); }
+.mp-sw.is-on .mp-sw__track { background: #1F8A56; }
+.mp-sw.is-on .mp-sw__track i { left: 21px; }
+.mp-sw--add { border-style: dashed; border-color: #F1B9CE; color: var(--a); }
+
+/* ---------- ช่องกรอก ---------- */
+.mp-field { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+.mp-field__lab { font-size: 12px; color: var(--soft); }
+
+.mp-field__box {
+  display: flex;
+  align-items: center;
+  height: 46px;
+  border-radius: 13px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  overflow: hidden;
+}
+
+.mp-in {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  font-family: Mitr, sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--ink);
+  text-align: right;
+}
+
+.mp-in::placeholder { font-family: Anuphan, sans-serif; font-size: 13px; color: #C5A7B2; }
+.mp-in:focus, .mp-area:focus { outline: 2px solid #A6BE40; outline-offset: 1px; }
+.mp-field__unit { flex: none; padding: 0 11px; border-left: 1.5px solid var(--line); font-size: 12.5px; color: var(--soft); align-self: stretch; display: grid; place-items: center; }
+
+.mp-area {
+  width: 100%;
+  min-height: 66px;
+  padding: 9px 11px;
+  border-radius: 13px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  font-family: Anuphan, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.mp-total {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 11px;
+  padding: 10px 12px;
+  border-radius: 15px;
+  background: #FFEDF3;
+}
+
+.mp-total img { width: 26px; height: 26px; object-fit: contain; }
+.mp-total span { flex: 1; font-size: 13px; color: #9B3A62; }
+.mp-total b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 20px; color: var(--a); }
+.mp-total em { font-style: normal; font-size: 12px; color: #9B3A62; }
+
+/* ---------- แถวร้านที่ยังไม่เปิดกรอก ---------- */
+.mp-row {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: #fff;
+  box-shadow: 0 5px 12px rgba(150, 70, 100, .07);
+  cursor: pointer;
+}
+
+.mp-row img { flex: none; width: 32px; height: 32px; object-fit: contain; }
+.mp-row__t { flex: 1; min-width: 0; display: flex; flex-direction: column; text-align: left; }
+.mp-row__t b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 13.5px; color: var(--ink); }
+.mp-row__t em { font-style: normal; font-size: 10px; color: var(--soft); }
+.mp-row__val { flex: none; padding: 4px 11px; border-radius: 999px; background: #FDF0F4; font-size: 11.5px; color: #A2717F; }
+.mp-row__val.is-filled { background: rgba(31, 138, 86, .12); color: #15653F; }
+.mp-row__go { flex: none; font-size: 19px; color: #D8AFBD; }
+
+/* ---------- การ์ดสร้างรายงาน ---------- */
+.mp-dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mp-datefield { display: flex; flex-direction: column; gap: 5px; }
+.mp-datefield span { font-size: 11.5px; color: var(--soft); }
+
+.mp-datefield input {
+  height: 46px;
+  padding: 0 10px;
+  border-radius: 13px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  font-family: Anuphan, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.mp-btn {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 15px;
+  border: 1.5px solid #F7C9DA;
+  background: #fff;
+  color: var(--a);
+  font-family: Mitr, sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(.2, .8, .3, 1);
+}
+
+.mp-btn:active { transform: scale(.97); }
+.mp-btn--go { border-color: #E9538B; background: linear-gradient(170deg, #F2588F, var(--a)); color: #fff; box-shadow: 0 8px 16px rgba(190, 60, 110, .24); }
+.mp-exports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.mp-exports .mp-btn { margin-top: 0; }
+.mp-empty { margin: 16px 0; font-size: 12.5px; color: var(--soft); text-align: center; }
+
+/* ---------- ปรับชิ้นส่วนที่ยืมมาจากหน้างานของฟ้า ให้เป็นโทนชมพู ---------- */
+.mp .wtop__back { color: var(--a); }
+.mp .wnote { color: var(--soft); }
+.mp .wnote svg { color: #E07BA4; }
+.mp .wbtn--ghost { background: #fff; color: var(--a); border-color: #F7C9DA; box-shadow: 0 6px 14px rgba(150, 70, 100, .12); }
+.mp .wbtn--go { background: linear-gradient(170deg, #1F7A46, #14532B); border-color: rgba(255, 255, 255, .5); }
+.mp .r9-thead { background: var(--a); }
+.mp .r9-note { margin: 0; }
+
+/* ---------- ตอนสั่งพิมพ์รายงาน: เหลือเฉพาะรายงาน ---------- */
+@media print {
+  .app.printing .mp { padding: 0; background: #fff; }
+  .app.printing .mp__bg,
+  .app.printing .mp-hero,
+  .app.printing .mp-tabs,
+  .app.printing .mp-date,
+  .app.printing .mp-foot,
+  .app.printing .mp .wtop { display: none; }
+  .app.printing #mp-body > *:not(#mp-print) { display: none; }
+}

@@ -14,6 +14,7 @@ import { mountMusicPage } from './pages/music.js';
 import { mountAssignPage } from './pages/assign.js';
 import { mountSettingsPage } from './pages/settings.js';
 import { mountMyWorkPage } from './pages/mywork.js';
+import { mountMaepanPage, mountMaepanR9Page } from './pages/maepan.js';
 import { mountPackPage } from './pages/fah-pack.js';
 import { mountChickenPage } from './pages/fah-chicken.js';
 import { mountCookedPage } from './pages/fah-cooked.js';
@@ -40,6 +41,8 @@ const PAGES = {
   assign: { file: 'pages/assign.html', mount: mountAssignPage },
   settings: { file: 'pages/settings.html', mount: mountSettingsPage },
   mywork: { file: 'pages/mywork.html', mount: mountMyWorkPage },
+  maepan: { file: 'pages/maepan.html', mount: mountMaepanPage },
+  'maepan-r9': { file: 'pages/maepan.html', mount: mountMaepanR9Page },
   'fah-pack': { file: 'pages/work.html', mount: mountPackPage },
   'fah-chicken': { file: 'pages/work.html', mount: mountChickenPage },
   'fah-cooked': { file: 'pages/work.html', mount: mountCookedPage },

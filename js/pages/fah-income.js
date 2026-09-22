@@ -5,12 +5,7 @@ import { workFrame, workDateHtml, workNoteHtml, workHistorySheet } from '../shar
 import { toast, handleDateClick, handleDatePick } from '../shared/ui.js';
 import { staffCode } from '../shared/auth.js';
 import { money, dayShort, shiftIso, fillText } from '../shared/format.js';
-
-// ยอดรวมของร้านหนึ่ง (ยังไม่กรอกสักช่อง = null ห้ามแสดง 0)
-function brandTotal(values) {
-  const nums = Object.values(values || {}).filter(v => v !== null && v !== undefined && v !== '');
-  return nums.length ? nums.reduce((s, v) => s + Number(v), 0) : null;
-}
+import { incomeBrandTotal as brandTotal } from '../shared/calc.js';
 
 // แท็บเลือกร้าน
 const tabsHtml = (brands, on) => `<div class="itabs">${brands.map(b => `

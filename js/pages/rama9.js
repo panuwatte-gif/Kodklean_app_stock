@@ -1,12 +1,13 @@
 // หน้าพระราม 9 — คุมสถานะหน้า โหลดข้อมูลจริงจากฐาน และต่อทุกปุ่มเข้ากับประตูข้อมูล (การวาดอยู่ที่ rama9-view / -send / -history / -report / -setup)
-import { getR9Bundle, getR9Revisions, getR9Draft, saveR9Draft, newR9Key, saveR9Round, voidR9Round, todayIso } from '../shared/data.js';
+import { getR9Bundle, getR9Revisions, getR9Draft, saveR9Draft, voidR9Round, todayIso } from '../shared/data.js';
 import { staffCode } from '../shared/auth.js';
 import { R9_UI, R9_PLACE } from '../shared/config.js';
 import { fillGlyphs, toast, openSheet, confirmSheet, pickerSheet, printArea, glyph, handleDateClick, handleDatePick, r9Photo } from '../shared/ui.js';
-import { r9Row, r9RoundTotals } from '../shared/calc.js';
+import { r9Row, r9RoundTotals, r9DraftItems } from '../shared/calc.js';
+import { r9SendProblem, r9SendRound, r9EmptyDraft } from '../shared/r9-send.js';
 import { money, moneyFine, weight, dayLongTh, fillText } from '../shared/format.js';
 import { heroHtml, kpisHtml, tabsHtml } from './rama9-view.js';
-import { dateHtml, tableHtml, sumHtml, footHtml } from './rama9-send.js';
+import { dateHtml, tableHtml, sumHtml, footHtml, sendInput } from './rama9-send.js';
 import { filterHtml, roundsHtml, briefHtml } from './rama9-history.js';
 import { pickHtml, reportHtml } from './rama9-report.js';
 import { setupHtml, handleSetupClick, editR9Item, deleteR9Item, changeR9Photo, moveR9Item, addR9ItemTo } from './rama9-setup.js';
@@ -63,12 +64,8 @@ export function mountRama9Page(root) {
   const body = el('#r9-body');
   const inRange = rd => rd.date >= view.from && rd.date <= view.to;
 
-  // รายการที่เปิดใช้ + ค่าที่กำลังกรอกของรอบนี้ (ราคาว่าง = ยังไม่ตั้งราคา ต้องเป็น null ห้ามเป็น 0)
-  const sendItems = () => view.items.filter(i => i.active).map(i => ({
-    ...i,
-    qty: i.id in view.draft.qty ? view.draft.qty[i.id] : '',
-    price: i.id in view.draft.price ? view.draft.price[i.id] : i.price
-  }));
+  // รายการที่เปิดใช้ + ค่าที่กำลังกรอกของรอบนี้ (สูตรรวมอยู่ที่ calc.js)
+  const sendItems = () => r9DraftItems(view.items, view.draft);
 
   // โหลดข้อมูลทั้งหน้าจากฐานในครั้งเดียว
   const load = async () => {
@@ -113,7 +110,7 @@ export function mountRama9Page(root) {
 
   // ล้างปริมาณ ราคา ค่าส่ง หมายเหตุ และสถานะกำลังแก้ของรอบนี้
   const clearDraft = () => {
-    view.draft = { date: view.date, qty: {}, price: {}, fee: '', note: '', editing: null, key: null };
+    view.draft = r9EmptyDraft(view.date);
     keepDraft();
   };
 
@@ -121,19 +118,12 @@ export function mountRama9Page(root) {
   const send = async () => {
     if (view.saving) return;
     const items = sendItems();
-    const filled = items.filter(i => Number(i.qty) > 0);
-    if (!filled.length) return toast(R9_UI.noLines);
-    const noPrice = filled.filter(i => i.price === null || i.price === '' || i.price === undefined);
-    if (noPrice.length) return toast(fillText(R9_UI.noPrice, { names: noPrice.map(i => i.name).join(', ') }));
-    const lines = filled.map(i => ({ item_id: i.id, qty: Number(i.qty), price: Number(i.price) }));
-    if (!view.draft.key) { view.draft.key = newR9Key(view.date); keepDraft(); }
+    const problem = r9SendProblem(items);
+    if (problem) return toast(problem);
     const editing = view.draft.editing;
     view.saving = true; draw();
     try {
-      await saveR9Round({
-        date: view.date, fee: Number(view.draft.fee) || 0, note: view.draft.note, by: staffCode(),
-        lines, key: view.draft.key, replaces: editing ? editing.id : null
-      });
+      await r9SendRound({ date: view.date, items, draft: view.draft });
       clearDraft();
       view.saving = false;
       view.tab = 'history';
@@ -255,26 +245,9 @@ export function mountRama9Page(root) {
 
   // กรอกปริมาณ/ราคา/ค่าส่ง/หมายเหตุ → เก็บเป็นร่างของรอบนี้ (ยังไม่ขึ้นฐานจนกดบันทึก)
   root.addEventListener('input', event => {
+    if (sendInput(event, { draft: view.draft, items: view.items, root, save: keepDraft })) return;
     const elm = event.target;
-    if (elm.matches('[data-f]')) {
-      const id = elm.closest('.r9-item').dataset.id, f = elm.dataset.f;
-      view.draft[f][id] = elm.value === '' ? (f === 'price' ? null : '') : Number(elm.value);
-      keepDraft();
-      const items = sendItems(), it = items.find(r => r.id === id);
-      const sum = it.price === null ? 0 : r9Row(it);
-      const cell = elm.closest('.r9-item').querySelector('.r9-item__sum');
-      cell.textContent = sum ? moneyFine(sum) : '—';
-      cell.classList.toggle('is-zero', !sum);
-      root.querySelector('#r9-sumcard').outerHTML = sumHtml(items, view.draft.fee);
-    }
-    else if (elm.matches('[data-fee]')) {
-      view.draft.fee = elm.value === '' ? '' : Number(elm.value);
-      keepDraft();
-      // อัปเดตเฉพาะตัวเลขยอดสุทธิ เพื่อไม่ให้ช่องค่าส่งที่กำลังพิมพ์หายไป
-      const goods = sendItems().reduce((s, i) => s + (i.price === null ? 0 : r9Row(i)), 0);
-      elm.closest('.r9-sum').querySelectorAll('.r9-sum__num')[1].innerHTML = moneyFine(goods + (Number(view.draft.fee) || 0)) + '<small>บาท</small>';
-    }
-    else if (elm.matches('#r9-note')) { view.draft.note = elm.value; keepDraft(); }
+    if (elm.matches('#r9-note')) { view.draft.note = elm.value; keepDraft(); }
     else if (elm.matches('#r9-q')) { view.q = elm.value.trim(); draw(); }
   });
 

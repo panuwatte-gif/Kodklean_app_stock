@@ -137,6 +137,11 @@ export function mmss(seconds) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// ชื่อช่องทางขายแบบสั้น (ตัดคำว่า "ยอดขาย" ข้างหน้าออก) เช่น ยอดขาย Grab → Grab
+export function channelShort(name) {
+  return String(name || '').replace(/^ยอดขาย\s*/, '');
+}
+
 // เติมค่าลงข้อความแม่แบบ เช่น fillText('เฉลี่ยจาก {n} วัน', { n: 6 })
 export function fillText(template, values) {
   return String(template).replace(/\{(\w+)\}/g, (_, k) => (values[k] === undefined ? '' : values[k]));

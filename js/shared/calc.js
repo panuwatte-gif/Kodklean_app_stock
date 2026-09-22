@@ -398,6 +398,21 @@ export function leftoverWeek(rows, endDate) {
 
 const r2 = n => Math.round(n * 100) / 100;
 
+// ยอดรวมของร้านหนึ่งในหน้ารายได้ (ยังไม่กรอกสักช่อง = null ห้ามแสดง 0)
+export function incomeBrandTotal(amounts) {
+  const nums = Object.values(amounts || {}).filter(v => v !== null && v !== undefined && v !== '');
+  return nums.length ? nums.reduce((s, v) => s + Number(v), 0) : null;
+}
+
+// รายการที่เปิดใช้ + ค่าที่กำลังกรอกในร่างรอบส่ง (ราคาว่าง = ยังไม่ตั้งราคา ต้องเป็น null ห้ามเป็น 0)
+export function r9DraftItems(items, draft) {
+  return items.filter(i => i.active).map(i => ({
+    ...i,
+    qty: i.id in draft.qty ? draft.qty[i.id] : '',
+    price: i.id in draft.price ? draft.price[i.id] : i.price
+  }));
+}
+
 // รวมของ 1 แถว = ปริมาณ × ราคา
 export function r9Row(line) {
   return r2((Number(line.qty) || 0) * (Number(line.price) || 0));
@@ -430,6 +445,35 @@ export function r9RoundTotals(round) {
   const lines = round.lines || [];
   const goods = r2(lines.reduce((s, l) => s + r9Row(l), 0));
   return { items: lines.filter(l => (Number(l.qty) || 0) > 0).length, goods, fee: Number(round.fee) || 0, net: r2(goods + (Number(round.fee) || 0)) };
+}
+
+// รวมรอบส่งเป็นรายวัน: วันไหนส่งกี่รายการ ค่าส่งเท่าไหร่ รวมเท่าไหร่ (ใช้ในรายงานแยกตามวัน)
+export function r9ByDate(rounds) {
+  const map = new Map();
+  (rounds || []).forEach(rd => {
+    const t = r9RoundTotals(rd);
+    const cur = map.get(rd.date) || { date: rd.date, rounds: 0, items: 0, fee: 0, goods: 0, net: 0 };
+    cur.rounds += 1; cur.items += t.items; cur.fee += t.fee;
+    cur.goods = r2(cur.goods + t.goods); cur.net = r2(cur.net + t.net);
+    map.set(rd.date, cur);
+  });
+  return [...map.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+// รายการที่ส่งไปจริงของรอบที่เลือก: ชื่อ + ปริมาณ + ราคาต่อหน่วย + รวม (ราคาเดียวกันรวมเป็นแถวเดียว)
+export function r9SentLines(rounds, items) {
+  const map = new Map();
+  (rounds || []).forEach(rd => (rd.lines || []).forEach(l => {
+    if (!(Number(l.qty) > 0)) return;
+    const key = `${l.id}|${l.price}`;
+    const item = items.find(i => i.id === l.id) || { id: l.id, name: l.id, unit: '' };
+    const cur = map.get(key) || { item, price: l.price, qty: 0, value: 0 };
+    cur.qty = r2(cur.qty + (Number(l.qty) || 0));
+    cur.value = r9Row({ qty: cur.qty, price: cur.price });
+    map.set(key, cur);
+  }));
+  const order = id => { const i = items.findIndex(x => x.id === id); return i < 0 ? 9999 : i; };
+  return [...map.values()].sort((a, b) => order(a.item.id) - order(b.item.id));
 }
 
 // สรุปรายหมวดของรอบที่บันทึกไว้ (ใช้บนการ์ดประวัติ)

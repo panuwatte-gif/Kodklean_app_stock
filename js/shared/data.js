@@ -397,12 +397,13 @@ export const getLeftoverAll = (from, to) =>
 // โหลดข้อมูลหน้าหลักทั้งหน้าในครั้งเดียว แล้วแปลงเป็นข้อมูลการ์ดด้วย home-model.js
 export async function getHomeBundle(date) {
   const d = date || todayIso();
-  const [notices, history, items, menus, left, rounds, r9items, map, formulas, cfg, staff, duties, assigns] = await Promise.all([
+  const [notices, history, items, menus, left, rounds, r9items, map, formulas, cfg, staff, duties, assigns, brands, income] = await Promise.all([
     getHomeNotices(), getUseHistoryFrom(shiftIso(d, -180)), getPrepItems(), getMenus(),
     getLeftoverAll(shiftIso(d, -37), d), getR9Rounds(), getR9Items(),
-    getFcModelMap(), getFcFormulas(), getFcRules(), getStaff(), getStaffDuties(), getAssigns()
+    getFcModelMap(), getFcFormulas(), getFcRules(), getStaff(), getStaffDuties(), getAssigns(),
+    getIncomeBrands(), getIncomeHistory(d.slice(0, 7) + '-01', d)
   ]);
-  return buildHome({ date: d, notices, history, items, menus, left, rounds: rounds.map(toR9Round), r9items, map, formulas, cfg, staff, duties, assigns });
+  return buildHome({ date: d, notices, history, items, menus, left, rounds: rounds.map(toR9Round), r9items, map, formulas, cfg, staff, duties, assigns, brands, income });
 }
 
 // ---------- รูปของรายการนับสต๊อก (เก็บที่ฐาน+ที่เก็บไฟล์ ทุกหน้าเห็นรูปเดียวกัน) ----------
@@ -507,9 +508,20 @@ export const getCountHistory = (ids, from, to) =>
 
 // ร้านและช่องทางขายที่เปิดใช้อยู่
 export const getIncomeBrands = () =>
-  dbGet('kk_income_brand?active=eq.true&select=id,name,logo,sort_order&order=sort_order,id');
+  dbGet('kk_income_brand?active=eq.true&select=id,name,logo,color,monthly_target,sort_order&order=sort_order,id');
 export const getIncomeChannels = () =>
   dbGet('kk_income_channel?active=eq.true&select=id,name,icon,sort_order&order=sort_order,id');
+
+// ช่องทางขายทั้งหมด รวมที่ปิดไว้ (หน้าจัดการช่องทางต้องเห็นเพื่อเปิดกลับได้)
+export const getIncomeChannelsAll = () =>
+  dbGet('kk_income_channel?select=id,name,icon,sort_order,active&order=sort_order,id');
+
+// เปิด-ปิดช่องทางขาย 1 ช่องทาง (ทุกหน้าที่บันทึกรายได้ใช้ชุดเดียวกัน)
+export const setIncomeChannelActive = (id, active) =>
+  dbPatch(`kk_income_channel?id=eq.${enc(id)}`, { active });
+
+// เพิ่มช่องทางขายใหม่ต่อท้าย
+export const addIncomeChannel = row => dbPost('kk_income_channel', [{ active: true, ...row }]);
 
 // ยอดขายของวันที่เลือก (หัวบันทึก + ยอดแต่ละช่องทาง)
 export async function getIncomeDay(date) {

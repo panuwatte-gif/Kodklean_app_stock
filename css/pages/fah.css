@@ -624,3 +624,7 @@
 @media (prefers-reduced-motion: reduce) {
   .wbtn, .mytask { transition: none; }
 }
+
+/* ค่าแนะนำเตรียมใต้ชื่อวัตถุดิบ (หน้าอกไก่นุ่ม) */
+.wrow__name .ptab__rec { display: flex; width: max-content; margin-top: 4px; font-size: 11px; }
+.wrow__name .ptab__rec b { font-size: 15px; }

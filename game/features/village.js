@@ -46,8 +46,10 @@ export async function mountVillage(root, go) {
       </span>
       <span class="plate" style="margin-bottom:10px">${s.u.name_th} · ${t('gen')} ${c.generation}</span></button>`;
   };
+  // ชื่อที่ขึ้นใต้ทางเข้าเกม — อยากเปลี่ยนคำ แก้ 2 คำนี้ได้เลย (ไทย / พม่า)
+  const MERGE_LABEL = { th: 'หยอดลูกบอล', my: 'ဘောလုံးထည့်ဂိမ်း' };
   const label = id => ({ board: t('noticeNew'), tent: t('navTent'), school: t('navSchool'), wheel: t('navWheel'),
-    merge: getLang() === 'my' ? 'ပေါင်းစပ်ဂိမ်း' : 'รวมร่าง' })[id];
+    merge: MERGE_LABEL[getLang() === 'my' ? 'my' : 'th'] })[id];
 
   const width = PAD * 2 + slots.length * STEP;
   root.innerHTML = topBar() + `<div class="map" id="map"><div class="map__in" style="width:${width}px;background-image:url(${ASSETS.village}bg.webp)">

@@ -74,6 +74,10 @@
 .hnote--amber .hnote__ic { background: #ECA529; }
 .hnote__text { flex: 1; font-family: Mitr, sans-serif; font-weight: 500; font-size: 21px; line-height: 1.25; color: #9E1F3D; text-wrap: pretty; }
 .hnote--amber .hnote__text { color: #7A4E00; }
+.hnote.is-edit { cursor: pointer; padding-right: 50px; }
+.hnote.is-edit:active { transform: scale(.99); }
+.hnote__pen { position: absolute; top: 10px; right: 12px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .8); color: #9E1F3D; }
+.hnote--amber .hnote__pen { color: #7A4E00; }
 
 /* ---------- การ์ดทั่วไป ---------- */
 .hc {
@@ -357,3 +361,11 @@
 @supports not (zoom: 1) {
   .home { width: 100%; }
 }
+
+/* การ์ดยอดขาย: ยอดรวมทุกร้านเทียบเป้า (เลย์เอาต์ 794 แล้วย่อทั้งหน้า) */
+.hsales__total { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; margin: 0 18px 14px; padding: 16px 20px; border-radius: 22px; background: #fff; border: 1px solid #F1E2B8; }
+.hsales__totrow { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; font-family: Mitr, sans-serif; font-size: 20px; color: #7A5A10; }
+.hsales__set { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #E3C675; background: #FFF6DC; font-family: Mitr, sans-serif; font-size: 18px; color: #7A5A10; cursor: pointer; }
+.hsales__totval { grid-column: 1 / -1; font-family: Mitr, sans-serif; font-size: 40px; font-weight: 600; color: #3E2E05; line-height: 1.1; }
+.hsales__total small { grid-column: 1 / -1; font-size: 17px; color: #6B5A30; }
+.hsales__total .hstore__bar { grid-column: 1; }

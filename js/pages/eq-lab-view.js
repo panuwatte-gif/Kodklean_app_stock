@@ -1,5 +1,6 @@
 // หน้าจอของห้องทดสอบสูตร รายวัตถุดิบ (วาด HTML อย่างเดียว ตัวคำนวณอยู่ที่ shared/fclab.js)
-import { EQ_LAB_UI, FC_FAMILY_TH, FC_STATUS_TH, FC_REGIME_TH, PREP_FC_UI } from '../shared/config.js';
+import { EQ_LAB_UI, FC_FAMILY_TH, FC_STATUS_TH, FC_REGIME_TH, FC_VERDICT_TH, PREP_FC_UI } from '../shared/config.js';
+import { bandLabel } from '../shared/fclab.js';
 import { itemPhoto, glyph } from '../shared/ui.js';
 import { money, pct1, fillText, dayShort } from '../shared/format.js';
 
@@ -17,8 +18,16 @@ export const regimePill = r => (r && FC_REGIME_TH[r]
   ? `<span class="eql-reg" style="--c:${FC_REGIME_TH[r].color};--t:${FC_REGIME_TH[r].tint}">${FC_REGIME_TH[r].arrow} ${FC_REGIME_TH[r].label}</span>`
   : `<span class="eql-dim">ข้อมูลยังไม่พอ</span>`);
 
-// การ์ดสภาพปัจจุบัน + สูตรที่ใช้จริงอยู่
-export function stateHtml(st, reg, live, price) {
+// แถบเลือกแหล่งข้อมูลที่ใช้ทดสอบ (ข้อมูลเดิม / ข้อมูลใหม่ / รวมกัน) + หมายเหตุ + คำแนะนำเมื่อข้อมูลใหม่ครบ
+export function srcHtml(src, liveN, minDays) {
+  const chips = EQ_LAB_UI.srcOpts.map(([id, label]) => `<button class="eql-subbtn${id === src ? ' is-on' : ''}" type="button" data-src="${id}">${label}</button>`).join('');
+  const mix = src === 'all' ? `<p class="asm__note">${EQ_LAB_UI.srcMixNote}</p>` : '';
+  const advise = liveN >= minDays && src !== 'app_live' ? `<p class="asm__note" style="color:#1E7A3C;font-weight:700">${fillText(EQ_LAB_UI.srcAdvise, { n: liveN, d: minDays })}</p>` : '';
+  return `<div class="eql-sub" aria-label="${EQ_LAB_UI.srcHead}">${chips}</div>${mix}${advise}`;
+}
+
+// การ์ดสภาพปัจจุบัน + สูตรที่ใช้จริงอยู่ + กรอบที่ใช้วัดผล
+export function stateHtml(st, reg, live, price, band) {
   const cells = [
     { v: n2(st.avg6), u: EQ_LAB_UI.stats[0][1], l: EQ_LAB_UI.stats[0][0] },
     { v: n2(st.sd) + (st.cv === null ? '' : ` <em>(${st.cv}%)</em>`), u: EQ_LAB_UI.stats[1][1], l: EQ_LAB_UI.stats[1][0] },
@@ -33,8 +42,31 @@ export function stateHtml(st, reg, live, price) {
       <span>${EQ_LAB_UI.liveHead}</span>
       <b>${live ? live.label : EQ_LAB_UI.noLive}</b>
       <i>${price === null ? EQ_LAB_UI.noPrice : `${EQ_LAB_UI.priceHead} ฿${money(price)}/กก.`}</i>
+      ${band ? `<i>${EQ_LAB_UI.bandHead} ${bandLabel(band)} (${EQ_LAB_UI.bandSrc[band.src] || ''})</i>` : ''}
     </div>
   </section>`;
+}
+
+// ฟอร์มตั้งค่ารอบทดสอบ: ช่วงวันที่นับคะแนน + ชนิดกรอบ + ขนาดกรอบ + ปุ่มเริ่มทดสอบ
+export function runFormHtml(f) {
+  const inp = 'style="min-height:44px;border:1px solid #E0D9CC;border-radius:10px;padding:0 10px;font:inherit;min-width:0;width:100%;box-sizing:border-box"';
+  return `<section class="eql-card"><div class="eql-card__head"><span>${EQ_LAB_UI.runHead}</span></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+      <label style="display:grid;gap:4px;font-size:12px">${EQ_LAB_UI.fromLabel}<input type="date" data-lab="from" value="${f.from}" ${inp}></label>
+      <label style="display:grid;gap:4px;font-size:12px">${EQ_LAB_UI.toLabel}<input type="date" data-lab="to" value="${f.to}" ${inp}></label>
+      <label style="display:grid;gap:4px;font-size:12px">${EQ_LAB_UI.bandTypeLabel}<select data-lab="type" ${inp}><option value="SD"${f.type === 'SD' ? ' selected' : ''}>SD</option><option value="PCT"${f.type === 'PCT' ? ' selected' : ''}>% (PCT)</option></select></label>
+      <label style="display:grid;gap:4px;font-size:12px">${EQ_LAB_UI.bandValueLabel}<input type="text" inputmode="decimal" data-lab="value" value="${f.value}" ${inp}></label>
+    </div>
+    <div class="eql-acts"><button class="eql-btn eql-btn--main" type="button" data-run="1">${EQ_LAB_UI.runBtn}</button></div>
+    <p class="asm__note">${EQ_LAB_UI.reuseNote}</p></section>`;
+}
+
+// สรุปรอบที่รัน: จำนวนวันที่ใช้เทียบจริง + สูตรที่คำนวณไม่ได้
+export function runInfoHtml(lab, reg) {
+  return `<p class="asm__note" style="font-weight:700">${fillText(EQ_LAB_UI.commonDays, { n: lab.days, from: lab.period.from || '—', to: lab.period.to || '—' })}</p>`
+    + `<p class="asm__note">${fillText(EQ_LAB_UI.regBefore, { r: reg && reg.regime && FC_REGIME_TH[reg.regime] ? `${FC_REGIME_TH[reg.regime].label}${reg.slopePct === null ? '' : ` (${reg.slopePct > 0 ? '+' : ''}${reg.slopePct}%)`}` : 'ข้อมูลยังไม่พอ' })}</p>`
+    + (lab.limiting && lab.limiting.length ? `<p class="asm__note">ชุดวันร่วมถูกจำกัดโดยสูตรที่มีผลน้อยสุด: ${lab.limiting.join(', ')}</p>` : '')
+    + (lab.none.length ? `<p class="asm__note">${fillText(EQ_LAB_UI.noneFormulas, { codes: lab.none.join(', ') })}</p>` : '');
 }
 
 // แท็บย่อย ปริมาณ / มูลค่า / กราฟ
@@ -42,26 +74,27 @@ export const subTabsHtml = on => `<div class="eql-sub">${EQ_LAB_UI.subtabs.map((
   <button class="eql-subbtn${id === on ? ' is-on' : ''}" type="button" data-sub="${id}">${label}</button>`).join('')}</div>`;
 
 // ตารางแข่งสูตร หน่วยกิโลกรัมทั้งตาราง
-export function kgTableHtml(rows, cfg, liveCode, picked) {
+export function kgTableHtml(rows, cfg, liveCode, picked, prev = {}) {
   const head = EQ_LAB_UI.cols.map((c, i) => `<div class="eqt__th">${c}${EQ_LAB_UI.colUnits[i] ? `<em>${EQ_LAB_UI.colUnits[i]}</em>` : ''}</div>`).join('');
   const body = rows.map(r => {
     const tone = r.code === liveCode ? ' is-live' : r.status === 'control' ? ' is-ctrl' : '';
     const on = picked.includes(r.code);
-    const cells = [`${r.n}`, pct1(r.winRate), `${r.lossN}`, n2(r.lossMax), n2(r.lossAvg), n2(r.lossMin), n2(r.lossSum), n2(r.bandAvg)];
+    const cells = [`${r.n}`, `${pct1(r.winRate)}<em>${r.bandLabel}</em>`, `${r.lossN}`, n2(r.lossMax), n2(r.lossAvg), n2(r.lossMin), n2(r.lossSum), n2(r.bandAvg)];
     return `<div class="eqt__row${tone}">
       <div class="eqt__c eqt__c--pick"><label><input type="checkbox" data-pick="${r.code}"${on ? ' checked' : ''}><span></span></label></div>
       <div class="eqt__c eqt__c--code">${r.code}</div>
-      <div class="eqt__c eqt__c--name">${r.name}</div>
+      <div class="eqt__c eqt__c--name">${r.name}${prev[r.code] ? `<br><small style="color:#8A8172">${fillText(EQ_LAB_UI.prevTrial, { d: dayShort(prev[r.code].tested_at), v: FC_VERDICT_TH[prev[r.code].verdict] || prev[r.code].verdict })}</small>` : ''}${r.nowcast ? `<br><i class="eql-tag" style="background:#FDF3E2;color:#8A5A12">${EQ_LAB_UI.nowcastTag}</i>` : ''}</div>
       <div class="eqt__c">${FC_FAMILY_TH[r.family] || r.family}</div>
       ${r.enough
         ? cells.map((v, i) => `<div class="eqt__c eqt__c--num${i === 1 ? ' eqt__c--key' : ''}">${v}</div>`).join('')
         : `<div class="eqt__c eqt__c--num">${r.n}</div><div class="eqt__c eqt__c--wait" style="grid-column: span 6">${PREP_FC_UI.insufficient}</div><div class="eqt__c eqt__c--num">${n2(r.bandAvg)}</div>`}
-      <div class="eqt__c"><i class="eql-tag eql-tag--${r.status}">${FC_STATUS_TH[r.status] || r.status}</i></div>
+      <div class="eqt__c"><i class="eql-tag eql-tag--${r.status}">${FC_STATUS_TH[r.status] || r.status}</i>${r.verdict ? `<br><i class="eql-tag" title="${r.verdict.reason}">${FC_VERDICT_TH[r.verdict.verdict] || r.verdict.verdict}</i>` : ''}</div>
     </div>`;
   }).join('');
   return `<div class="eqt__scroll"><div class="eqt" style="--cols:26px 96px 132px 60px 46px 54px 50px 58px 58px 58px 62px 60px 78px">
     <div class="eqt__head">${`<div class="eqt__th"></div>` + head}</div>${body}</div></div>
-    <p class="eqt__foot">${fillText(EQ_LAB_UI.foot, { r: cfg.round_length_days, d: cfg.min_days_to_judge })}</p>`;
+    <p class="eqt__foot">${fillText(EQ_LAB_UI.foot, { r: cfg.round_length_days, d: cfg.min_days_to_judge })}</p>
+    ${rows.some(r => r.nowcast) ? `<p class="eqt__foot">${EQ_LAB_UI.nowcastNote}</p>` : ''}`;
 }
 
 // ตารางมูลค่า (คนละแท็บกับปริมาณ ห้ามรวมกัน)
@@ -72,14 +105,14 @@ export function bahtTableHtml(rows, price, cfg) {
   const body = rows.filter(r => r.enough).map(r => `
     <div class="eqt__row">
       <div class="eqt__c eqt__c--code">${r.code}</div>
-      <div class="eqt__c eqt__c--name">${r.name}</div>
+      <div class="eqt__c eqt__c--name">${r.name}${prev[r.code] ? `<br><small style="color:#8A8172">${fillText(EQ_LAB_UI.prevTrial, { d: dayShort(prev[r.code].tested_at), v: FC_VERDICT_TH[prev[r.code].verdict] || prev[r.code].verdict })}</small>` : ''}${r.nowcast ? `<br><i class="eql-tag" style="background:#FDF3E2;color:#8A5A12">${EQ_LAB_UI.nowcastTag}</i>` : ''}</div>
       <div class="eqt__c eqt__c--num">฿${money(r.lossAvg * price)}</div>
       <div class="eqt__c eqt__c--num">฿${money(r.lossSum * price)}</div>
       <div class="eqt__c eqt__c--num eqt__c--key">฿${money(perMonth(r))}</div>
     </div>`).join('');
   return `<div class="eqt__scroll"><div class="eqt" style="--cols:96px 150px 96px 104px 108px">
     <div class="eqt__head">${head}</div>${body || `<p class="ptab__none">${PREP_FC_UI.insufficient}</p>`}</div></div>
-    <p class="eqt__foot">คิดจากราคา ฿${money(price)} ต่อกิโล · แพ้รวมต่อเดือน = แพ้รวม ÷ วันทดสอบ × ${cfg.round_length_days} วันเปิด</p>`;
+    <p class="eqt__foot">${EQ_LAB_UI.priceNote} · คิดจากราคา ฿${money(price)} ต่อกิโล · แพ้รวมต่อเดือน = แพ้รวม ÷ วันทดสอบ × ${cfg.round_length_days} วันเปิด</p>`;
 }
 
 // เส้นกราฟ (ตัดเป็นช่วงๆ ถ้าวันไหนสูตรยังคำนวณไม่ได้ ห้ามลากข้าม)

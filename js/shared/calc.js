@@ -76,16 +76,34 @@ const r1 = n => Math.round(n * 10) / 10;
 
 // เบิกเพิ่มมีช่องเดียว (เบิกหลายรอบให้บวกรวมแก้ตัวเลขในช่อง)
 
-// ใช้ไปเบื้องต้น (ยังไม่หักอาหารปรุงสุก): "เตรียม" ว่าง = ยังไม่เริ่มแถวนี้ → null / ช่องอื่นว่างถือเป็น 0
+// ยอดตัดสต๊อก = เตรียม + เบิกเพิ่ม − คงเหลือสด (ของทิ้งออกจากสต๊อกไปแล้ว · ไม่หักอาหารปรุงสุก) ตรงกับ used_raw_kg ในฐาน · "เตรียม" ว่าง = null / ช่องอื่นว่างถือเป็น 0
 export function prepUseBase(row) {
   if (blank(row.prep)) return null;
-  return r1((Number(row.prep) || 0) + (Number(row.extra) || 0) - (Number(row.waste) || 0) - (Number(row.left) || 0));
+  return r1((Number(row.prep) || 0) + (Number(row.extra) || 0) - (Number(row.left) || 0));
 }
 
-// ใช้ไปจริง = เตรียม + เบิกเพิ่ม − ทิ้ง/เสีย − คงเหลือสด − คงเหลืออาหารปรุงสำเร็จ (กก.)
+// ยอดใช้จริง (ที่เดียวของสูตรนี้ ใช้ทั้งช่องใช้ต่อวันและข้อมูลพยากรณ์ — คนละเรื่องกับการตัดสต๊อก):
+// เตรียม + เบิกเพิ่ม + คงเหลือใช้ต่อของวันเปิดก่อนหน้า (carry) − ทิ้ง − (คงเหลือสด + พระราม 9 ที่ต้องบวกกลับ r9) − อาหารปรุงสำเร็จเหลือทั้งก้อนของวันนี้ (cooked)
+// คืน { use, why } — use ว่างเมื่อข้อมูลไม่ครบ why = เหตุผล (no_prep / open / conflict / cooked_open / no_carry) · negative = ผลติดลบ
+function useCore(r) {
+  if (blank(r.prep)) return { use: null, why: 'no_prep' };
+  if (blank(r.left)) return { use: null, why: 'open' };
+  if (r.conflict) return { use: null, why: 'conflict' };
+  if (r.cookedOpen) return { use: null, why: 'cooked_open' };
+  if (r.carryMissing) return { use: null, why: 'no_carry' };
+  const v = r1((Number(r.prep) || 0) + (Number(r.extra) || 0) + (Number(r.carry) || 0) - (Number(r.waste) || 0)
+    - ((Number(r.left) || 0) + (Number(r.r9) || 0)) - (Number(r.cooked) || 0));
+  return { use: v, why: v < 0 ? 'negative' : null };
+}
+
+// ใช้ไปจริง (กก.) — ข้อมูลไม่ครบ = null ห้ามเป็น 0
 export function prepUse(row) {
-  const base = prepUseBase(row);
-  return base === null ? null : r1(base - (Number(row.cooked) || 0));
+  return useCore(row).use;
+}
+
+// เหตุผลที่ใช้ไปจริงเป็นค่าว่าง/ติดลบ (null = ปกติ)
+export function prepUseWhy(row) {
+  return useCore(row).why;
 }
 
 // ตัวเลขสรุปหน้าเตรียมเนื้อสัตว์: จำนวนรายการ / เบิกเพิ่มรวม / คงเหลือรวม / ทิ้งรวม / ใช้รวม
@@ -271,6 +289,71 @@ export function leftoverByProtein(menus, recOf, cookedToRaw = 1) {
   return { kg, grams, items: Object.keys(kg).length, boundMenus, filled, unbound, unboundFilled };
 }
 
+// น้ำหนักพระราม 9 ที่ต้องบวกกลับเข้าคงเหลือ: เฉพาะรอบปัจจุบันของวันนั้น และรายการที่ deduct_from_use จริงในฐาน (qty × kg_per_unit → count_item_id)
+// รายการที่ต้องบวกกลับแต่ไม่มี kg_per_unit = ข้าม แล้วคืนชื่อไว้เตือน (ห้ามเดาหน่วย)
+export function r9AddBack(rounds, r9items, voidStatus = []) {
+  const kg = {}, noUnit = new Set();
+  const byId = {};
+  (r9items || []).forEach(i => { byId[i.id] = i; });
+  (rounds || []).filter(rd => rd.is_current !== false && !voidStatus.includes(rd.status)).forEach(rd => (rd.lines || []).forEach(l => {
+    const it = byId[l.id];
+    if (!it || it.deduct_from_use !== true || !it.count_item_id || !(Number(l.qty) > 0)) return;
+    if (it.kg_per_unit === null || it.kg_per_unit === undefined || it.kg_per_unit === '') { noUnit.add(it.name || it.id); return; }
+    kg[it.count_item_id] = r2x((kg[it.count_item_id] || 0) + Number(l.qty) * Number(it.kg_per_unit));
+  }));
+  return { kg, noUnit: [...noUnit] };
+}
+const r2x = n => Math.round(n * 100) / 100;
+
+// แถวอาหารเหลือของวันหนึ่งรายเมนู (ช่องว่าง = null)
+function leftRowsOf(list) {
+  const map = {};
+  (list || []).forEach(l => { (map[l.menu_id] = map[l.menu_id] || {})[l.entry_type] = l; });
+  const box = l => (l ? (l.qty_box === null || l.qty_box === undefined ? null : Number(l.qty_box)) : null);
+  const out = {};
+  Object.keys(map).forEach(id => {
+    const r = map[id];
+    out[id] = { left: box(r['เหลือ']), waste: box(r['ทิ้ง']), self: box(r['กินเอง']), home: box(r['ห่อกลับบ้าน']) };
+  });
+  return out;
+}
+
+// ทิ้ง + กินเอง + ห่อกลับบ้าน มากกว่าเหลือ = ข้อมูลขัดกัน
+const leftConflict = r => !!r && !blank(r.left) && (Number(r.waste) || 0) + (Number(r.self) || 0) + (Number(r.home) || 0) > Number(r.left);
+
+// แถวใช้จริงของเนื้อสัตว์ทุกตัวของวันเดียว (ใช้ทั้งหน้าเตรียมของ และตอนเติม kk_forecast_history) — b ต้องมี items, logs, leftovers, leftPrev, menus, assumptions, r9Rounds, r9Items
+export function meatUseRows(b, voidStatus = []) {
+  const asum = {}; (b.assumptions || []).forEach(a => { asum[a.key] = a.value === null ? null : Number(a.value); });
+  const cookedToRaw = asum.cooked_to_raw ?? 1;
+  const logMap = {};
+  (b.logs || []).forEach(l => { (logMap[l.count_item_id] = logMap[l.count_item_id] || {})[l.entry_type + ':' + l.seq] = l; });
+  const today = leftRowsOf(b.leftovers), prev = leftRowsOf(b.leftPrev);
+  const menus = b.menus || [];
+  // แปลงครั้งที่ 1: เหลือทั้งก้อนของวันนี้ · ครั้งที่ 2: คงเหลือใช้ต่อของวันเปิดก่อนหน้า (แยกกันเสมอ)
+  const convLeft = leftoverByProtein(menus, id => (today[id] ? { left: today[id].left } : {}), cookedToRaw);
+  const convPrev = leftoverByProtein(menus, id => prev[id] || {}, cookedToRaw);
+  const r9 = r9AddBack(b.r9Rounds, b.r9Items, voidStatus);
+  const conflicts = new Set();
+  const rows = (b.items || []).filter(i => i.grp === 'เนื้อสัตว์').map(i => {
+    const lg = logMap[i.id] || {};
+    const bound = menus.filter(m => m.protein_item_id === i.id && Number(m.protein_ratio) > 0);
+    const bad = bound.filter(m => leftConflict(today[m.id]) || leftConflict(prev[m.id]));
+    bad.forEach(m => conflicts.add(m.name));
+    const row = {
+      ...i,
+      prep: qtyOf(lg['เตรียม:1']), extra: qtyOf(lg['เบิกเพิ่ม:1']), waste: qtyOf(lg['ทิ้ง:1']), left: qtyOf(lg['คงเหลือ:1']),
+      cooked: convLeft.kg[i.id] || 0, carry: convPrev.kg[i.id] || 0, r9: r9.kg[i.id] || 0,
+      cookedOpen: bound.some(m => blank((today[m.id] || {}).left)),
+      carryMissing: bound.some(m => blank((prev[m.id] || {}).left)),
+      conflict: bad.length > 0
+    };
+    row.use = prepUse(row);
+    row.useWhy = prepUseWhy(row);
+    return { row, lg };
+  });
+  return { rows, cookedToRaw, convLeft, convPrev, r9, conflicts: [...conflicts], unbound: convLeft.unbound };
+}
+
 // สต๊อกครัวกลางของรายการ ณ วันที่เลือก: ถ้ามีนับสต๊อกหลังวันนั้น ยึดยอดนับจริง / ยังไม่มี = ยอดนับล่าสุด − ใช้ไปเบื้องต้น
 export function stockAfterPrep(counts, itemId, date, useBase) {
   const mine = (counts || []).filter(c => c.count_item_id === itemId && c.kitchen_qty !== null && c.kitchen_qty !== undefined);
@@ -316,18 +399,16 @@ export function buildPrepModel(b) {
   });
   const conv = leftoverByProtein(b.menus || [], id => fahRows.find(r => r.id === id), cookedToRaw);
 
-  // แถวแท็บเตรียมอาหาร (เนื้อสัตว์)
+  // แถวแท็บเตรียมอาหาร (เนื้อสัตว์) — ยอดใช้จริงมาจาก meatUseRows ชุดเดียวกับที่เติมข้อมูลพยากรณ์
   const meatItems = (b.items || []).filter(i => i.grp === 'เนื้อสัตว์');
-  const meatRows = meatItems.map(i => {
-    const lg = logMap[i.id] || {};
+  const use = meatUseRows(b, b.r9VoidStatus || []);
+  const meatRows = use.rows.map(({ row: u, lg }) => {
+    const i = u;
     const row = {
-      ...i, owners: whoOf(i),
-      prep: qtyOf(lg['เตรียม:1']), extra: qtyOf(lg['เบิกเพิ่ม:1']), waste: qtyOf(lg['ทิ้ง:1']), left: qtyOf(lg['คงเหลือ:1']),
-      revs: { prep: revOf(lg['เตรียม:1']), extra: revOf(lg['เบิกเพิ่ม:1']), waste: revOf(lg['ทิ้ง:1']), left: revOf(lg['คงเหลือ:1']) },
-      cooked: conv.kg[i.id] || 0
+      ...u, owners: whoOf(i),
+      revs: { prep: revOf(lg['เตรียม:1']), extra: revOf(lg['เบิกเพิ่ม:1']), waste: revOf(lg['ทิ้ง:1']), left: revOf(lg['คงเหลือ:1']) }
     };
     row.useBase = prepUseBase(row);
-    row.use = prepUse(row);
     row.stock = stockAfterPrep(b.stocks, i.id, b.date, row.useBase);
     const same = (b.stocks || []).find(c => c.count_item_id === i.id && c.count_date === b.date && c.kitchen_qty !== null);
     row.stockWarn = !!(row.left !== null && same && Number(row.left) > Number(same.kitchen_qty));
@@ -351,6 +432,7 @@ export function buildPrepModel(b) {
 
   return {
     date: b.date, cookedToRaw, meatRows, riceRows, fahRows, conv,
+    useWarn: { unbound: use.unbound, conflicts: use.conflicts, r9NoUnit: use.r9.noUnit, prevDate: b.prevDate || null },
     menus: b.menus || [], meatItems,
     riceStats: riceHistory(b.logs7 || [], riceItems, b.date),
     fahWeek: leftoverWeek(b.left7 || [], b.date)
@@ -563,4 +645,102 @@ export function r9ByMonth(rounds, months = 6) {
     const list = rounds.filter(rd => key(rd.date) === k);
     return { key: k, iso: k + '-01', rounds: list.length, net: r2(list.reduce((s, rd) => s + r9RoundTotals(rd).net, 0)), items: list.reduce((s, rd) => s + r9RoundTotals(rd).items, 0) };
   });
+}
+
+// ---------- สูตรอาหาร: แตกสูตรย่อย + คิดสัดส่วน batch (ใช้กับหน้าสูตรอาหาร) ----------
+
+// ปริมาณของบรรทัดสูตร (บรรทัดสูตรย่อยใช้ sub_recipe_qty_g ถ้ามี)
+const recipeLineQty = l => Number(l.sub_recipe_id ? (l.sub_recipe_qty_g ?? l.qty_g) : l.qty_g) || 0;
+
+// น้ำหนักที่ได้จาก 1 สูตร = ผลรวมกลุ่มที่นับน้ำหนัก × % หลังปรุง (null = สูตรยังไม่มีวัตถุดิบ)
+export function recipeOut(book, id) {
+  const r = book.recipes[id];
+  if (!r) return null;
+  const skip = (book.cards[id] || {}).exclude_groups || [];
+  const sum = (book.lines[id] || []).filter(l => !skip.includes(l.group_name)).reduce((s, l) => s + recipeLineQty(l), 0);
+  if (!(sum > 0)) return null;
+  // ใช้ขนาด batch ที่ตั้งในสูตร (base_batch_g) ถ้าต่างจากผลรวมไม่เกิน 2% (สูตรต้นทางปัดเลขกลมไว้) — ต่างมากกว่านั้น = ค่าตั้งผิด ใช้ผลรวมจริง
+  const base = Number(r.base_batch_g);
+  const size = base > 0 && Math.abs(base - sum) / sum <= 0.02 ? base : sum;
+  return size * (Number(r.yield_percent) || 100) / 100;
+}
+
+// แตกสูตรเป็นวัตถุดิบชั้นล่างสุด ปริมาณต่อ 1 สูตรแม่ (สูตรย่อยคูณสัดส่วนให้แล้ว · ติดธง cycle = วนกลับ / noSub = สูตรย่อยว่าง)
+export function recipeLeaves(book, id, scale = 1, seen = [], via = null, off = false, prefix = '') {
+  const skip = (book.cards[id] || {}).exclude_groups || [];
+  const out = [];
+  (book.lines[id] || []).forEach(l => {
+    const qty = recipeLineQty(l) * scale;
+    const excluded = off || skip.includes(l.group_name);
+    const key = prefix + l.id;
+    if (!l.sub_recipe_id) { out.push({ key, name: l.name, group: l.group_name, via, qty, excluded }); return; }
+    const sub = book.recipes[l.sub_recipe_id];
+    const subName = sub ? sub.name_th : l.name;
+    const tag = via || { id: l.sub_recipe_id, name: subName, qty, key };
+    if ([...seen, id].includes(l.sub_recipe_id)) { out.push({ key, name: subName, via, qty, excluded, error: 'cycle' }); return; }
+    const so = recipeOut(book, l.sub_recipe_id);
+    if (!so) { out.push({ key, name: subName, via, qty, excluded, error: 'noSub' }); return; }
+    out.push(...recipeLeaves(book, l.sub_recipe_id, qty / so, [...seen, id], tag, excluded, key + '/'));
+  });
+  return out;
+}
+
+// คิดปริมาณจริง: target = กรัมที่อยากได้ · have = { key: กรัมที่มีอยู่ } → ใช้ตัวคูณที่น้อยที่สุด (ของที่หมดก่อน) ของที่เกินแสดงเป็นเหลือ
+export function recipeScale(leaves, baseOut, { target = null, have = {} } = {}) {
+  const cand = [];
+  if (target !== null && target >= 0 && baseOut > 0) cand.push({ f: target / baseOut, key: null });
+  leaves.forEach(l => {
+    const h = have[l.key];
+    if (h !== null && h !== undefined && l.qty > 0 && !l.error) cand.push({ f: h / l.qty, key: l.key });
+  });
+  const pick = cand.length ? cand.reduce((a, b) => (b.f < a.f ? b : a)) : { f: 1, key: null };
+  const f = pick.f;
+  const tidy = v => (Math.abs(v) < 1e-9 ? 0 : v);
+  return {
+    factor: f, output: baseOut * f, limitKey: pick.key, given: cand.length > 0,
+    rows: leaves.map(l => ({ ...l, need: l.error ? null : l.qty * f, left: have[l.key] === null || have[l.key] === undefined ? null : tidy(have[l.key] - l.qty * f) }))
+  };
+}
+
+// ---------- การมาทำงาน (หน้าสรุปวันลา + หน้าโบนัส) ----------
+
+// น้ำหนักของแต่ละวันเปิด = เฉลี่ยยอดขายวันเดียวกันในสัปดาห์ ÷ เฉลี่ยยอดขายรวม (14 วันก่อนหน้า นับเฉพาะวันที่ยอด > 0 · ไม่มีข้อมูล = 1)
+export function dayWeights(days) {
+  const out = {};
+  const avg = list => list.reduce((s, x) => s + Number(x.sales), 0) / list.length;
+  days.forEach(d => {
+    if (!d.is_open) return;
+    const from = shiftIso(d.day, -14);
+    const win = days.filter(x => x.day >= from && x.day < d.day && Number(x.sales) > 0);
+    if (!win.length) { out[d.day] = 1; return; }
+    const same = win.filter(x => x.dow === d.dow);
+    out[d.day] = same.length ? avg(same) / avg(win) : 1;
+  });
+  return out;
+}
+
+// สรุปการมาทำงานของทุกคนในช่วงวันที่: วันต้องมา = วันเปิดตั้งแต่วันเริ่มงาน · หยุดครึ่งวัน = 0.5
+// คะแนนหลัก = 100 × (1 − น้ำหนักวันหยุด ÷ น้ำหนักรวม) · แต้มช่วยเพื่อน = 100 × ภาระที่รับแทน ÷ น้ำหนักรวม
+export function attendance({ days, leaves, people, from, to }) {
+  const w = dayWeights(days);
+  const off = {};
+  leaves.forEach(l => { (off[l.staff_code] = off[l.staff_code] || {})[l.leave_date] = Math.min(1, Number(l.days) || 1); });
+  const rows = people.map(p => ({ ...p, open: 0, off: 0, wAll: 0, wOff: 0, help: 0 }));
+  days.filter(d => d.is_open && d.day >= from && d.day <= to).forEach(({ day }) => {
+    let lost = 0;
+    const came = [];
+    rows.filter(r => day >= r.start).forEach(r => {
+      const f = (off[r.code] || {})[day] || 0;
+      r.open += 1; r.off += f; r.wAll += w[day]; r.wOff += w[day] * f; lost += w[day] * f;
+      if (!f) came.push(r);
+    });
+    if (lost > 0 && came.length) came.forEach(r => { r.help += lost / came.length; });
+  });
+  return rows.map(r => ({
+    ...r,
+    worked: r.open - r.off,
+    pct: r.open ? (r.open - r.off) / r.open * 100 : null,
+    score: r.wAll ? Math.min(100, Math.max(0, 100 * (1 - r.wOff / r.wAll))) : null,
+    helpPts: r.wAll ? 100 * r.help / r.wAll : null
+  }));
 }

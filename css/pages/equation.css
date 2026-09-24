@@ -188,3 +188,39 @@
 .eqc-pick { display: grid; gap: 5px; margin-top: 6px; }
 .eqc-pickbtn { min-height: 44px; border-radius: 14px; cursor: pointer; border: 1.5px solid #EDE2D0; background: #fff; font-family: Mitr, sans-serif; font-size: 11.5px; color: #6B6153; }
 .eqc-pickbtn.is-on { color: #125B2A; border-color: #9FDDBC; background: #EAF9F0; font-weight: 500; }
+
+/* ---------- แบบง่าย: สวิตช์โหมด + การ์ดวัตถุดิบ ---------- */
+.eqs-mode, .eqs-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 10px; border-radius: 999px; background: rgba(255, 255, 255, .7); border: 1px solid rgba(162, 126, 215, .25); }
+.eqs-mode button, .eqs-seg button { min-height: 40px; border: 0; border-radius: 999px; background: transparent; font-family: Mitr, sans-serif; font-size: 13px; color: #5E3FA8; cursor: pointer; }
+.eqs-mode button.is-on, .eqs-seg button.is-on { color: #fff; background: linear-gradient(160deg, #7C4FD0, #5E3FA8); }
+.eqs-seg { border-radius: 14px; }
+.eqs-seg button { border-radius: 10px; }
+.eqs-intro { margin: 0 0 10px; padding: 12px 14px; border-radius: 16px; background: #fff; border: 1px solid #EDE6F7; }
+.eqs-intro b { display: block; font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: #3D3468; }
+.eqs-intro p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: #4F4868; text-wrap: pretty; }
+.eqs-intro__eg { color: #6B6380 !important; }
+.eqs-card { margin: 0 0 10px; padding: 12px; border-radius: 18px; background: #fff; border: 1px solid #EDE6F7; display: flex; flex-direction: column; gap: 10px; }
+.eqs-card__head { display: flex; align-items: center; gap: 10px; }
+.eqs-card__head img { flex: none; width: 40px; height: 40px; object-fit: contain; }
+.eqs-card__head b { flex: 1; min-width: 0; font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: #23303F; }
+.eqs-pill { flex: none; padding: 4px 10px; border-radius: 999px; font-family: Mitr, sans-serif; font-size: 11.5px; }
+.eqs-pill--good { background: #E4F4E7; color: #1E6B35; }
+.eqs-pill--ok { background: #FDF0D8; color: #8A5510; }
+.eqs-pill--bad { background: #FDE4E1; color: #A82A22; }
+.eqs-pill--wait { background: #EEF0F4; color: #4E5666; }
+.eqs-now { display: flex; flex-direction: column; gap: 2px; }
+.eqs-now small { font-size: 11px; color: #6B6380; }
+.eqs-now b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 13.5px; color: #3D3468; line-height: 1.35; }
+.eqs-score { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.eqs-score__box { padding: 8px 10px; border-radius: 12px; background: #F7F4FC; display: flex; flex-direction: column; gap: 2px; }
+.eqs-score__box b { font-family: Mitr, sans-serif; font-weight: 600; font-size: 22px; color: #3D3468; line-height: 1.1; }
+.eqs-score__box small { font-size: 11px; line-height: 1.35; color: #5B5474; }
+.eqs-better small { font-size: 12px; color: #6B6380; }
+.eqs-better__ok { color: #1E6B35 !important; }
+.eqs-better__box { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 14px; background: #EAF6EC; border: 1px solid #BFE0C6; }
+.eqs-better__box small { color: #1E6B35; font-family: Mitr, sans-serif; }
+.eqs-better__box b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 13.5px; color: #174F28; }
+.eqs-better__box span { font-size: 12px; color: #2C5A38; }
+.eqs-btn { min-height: 44px; border-radius: 14px; border: 1px solid #CDB8F0; background: #fff; font-family: Mitr, sans-serif; font-size: 13px; color: #5E3FA8; cursor: pointer; }
+.eqs-btn--main { margin-top: 4px; color: #fff; border-color: transparent; background: linear-gradient(160deg, #1E7A3C, #125B2A); }
+.eqs-foot { margin: 4px 2px 12px; font-size: 11.5px; line-height: 1.5; color: #6B6380; }

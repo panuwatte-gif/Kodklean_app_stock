@@ -22,6 +22,9 @@ import { mountIncomePage } from './pages/fah-income.js';
 import { mountLeavePage } from './pages/fah-leave.js';
 import { mountSomDrinkPage } from './pages/som-drink.js';
 import { mountEmmyCountPage, mountAdCountPage } from './pages/kitchen-count.js';
+import { mountRecipePage } from './pages/recipe.js';
+import { mountLeaveSumPage } from './pages/leave-sum.js';
+import { mountBonusPage } from './pages/bonus.js';
 import { mountNav, fillGlyphs, confirmSheet, toast } from './shared/ui.js';
 import { currentUser, signOut, loadAccounts } from './shared/auth.js';
 import { APP_UI } from './shared/config.js';
@@ -50,7 +53,10 @@ const PAGES = {
   'fah-leave': { file: 'pages/work.html', mount: mountLeavePage },
   'som-drink': { file: 'pages/som.html', mount: mountSomDrinkPage },
   'emmy-count': { file: 'pages/kitchen.html', mount: mountEmmyCountPage },
-  'ad-count': { file: 'pages/kitchen.html', mount: mountAdCountPage }
+  'ad-count': { file: 'pages/kitchen.html', mount: mountAdCountPage },
+  recipe: { file: 'pages/recipe.html', mount: mountRecipePage },
+  'leave-sum': { file: 'pages/attend.html', mount: mountLeaveSumPage },
+  bonus: { file: 'pages/attend.html', mount: mountBonusPage }
 };
 
 const app = document.querySelector('.app');

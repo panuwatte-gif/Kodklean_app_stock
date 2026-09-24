@@ -32,55 +32,51 @@ export function qtyHtml(item, place, dirty) {
     <span class="stk-row__badge" style="--c:${badge.color};--t:${badge.tint}">${badge.label}</span>`;
 }
 
-// ช่องกรอกตัวเลขหนึ่งช่อง (ว่างไว้ = ยังไม่ได้นับ)
-function fieldHtml(item, field, label, color) {
+// ช่องกรอกตัวเลขหนึ่งช่อง อยู่ในแถวเดียวกับชื่อ (ว่างไว้ = ยังไม่ได้นับ · tag = ป้ายเล็กในช่อง ใช้เฉพาะรายการสองที่)
+function fieldHtml(item, field, label, color, tag = false) {
   const value = item[field];
   return `
-    <label class="stk-cnt__f" style="--c:${color}">
-      <span>${label}</span>
+    <label class="stk-cnt__f${tag ? ' has-tag' : ''}" style="--c:${color}" aria-label="${label}">
+      ${tag ? `<span>${label}</span>` : ''}
       <input type="number" inputmode="decimal" step="0.1" min="0" placeholder="–"
         data-id="${item.id}" data-f="${field}" value="${value === null || value === undefined ? '' : value}">
       <i>${item.unit}</i>
     </label>`;
 }
 
-// บรรทัดผลลัพธ์ปิดท้ายการ์ด: คอนโดที่คิดให้เอง (หรือคำเตือนเมื่อตัวเลขยังไม่ครบ)
+// บรรทัดเล็กใต้ชื่อ: คอนโดที่คิดให้เอง (หรือคำเตือนเมื่อตัวเลขยังไม่ครบ)
 export function resultHtml(item) {
   if (isBadSplit(item)) {
     const text = empty(item.total) ? T.needTotal : T.badSplit;
-    return `<div class="stk-res stk-res--bad">${glyph('warn', 14)}<span>${text}</span></div>`;
+    return `<span class="stk-res stk-res--bad">${glyph('warn', 12)}<span>${text}</span></span>`;
   }
-  return `
-    <div class="stk-res">
-      <span>${T.condoAuto}</span>
-      <b>${qtyOrDash(item.condo, item.unit)} <i>${item.unit}</i></b>
-    </div>`;
+  return `<span class="stk-res">${T.condoAuto} <b>${qtyOrDash(item.condo, item.unit)}</b> ${item.unit}</span>`;
 }
 
-// แถวรายการหนึ่งรายการ (สองที่ = กรอกรวม+ครัวกลาง, ที่เดียว = กรอกช่องเดียว)
+// แถวรายการหนึ่งรายการ = 1 บรรทัด: รูป · ชื่อ(+ที่เก็บ) · ช่องกรอก · ผลนับ (สองที่ = กรอกรวม+ครัวกลาง, ที่เดียว = กรอกช่องเดียว)
 function rowHtml(item, view, draft) {
   const both = isBothPlaces(item);
+  const condo = item.location === 'คอนโด';
   const fields = both
-    ? fieldHtml(item, 'total', T.formulaSum, '#8A5510') + fieldHtml(item, 'kitchen', T.formulaK, '#2F7A46')
-    : item.location === 'คอนโด'
+    ? fieldHtml(item, 'total', T.formulaSum, '#8A5510', true) + fieldHtml(item, 'kitchen', T.formulaK, '#2F7A46', true)
+    : condo
       ? fieldHtml(item, 'condo', T.formulaC, '#2F63C9')
       : fieldHtml(item, 'kitchen', T.formulaK, '#2F7A46');
+  const sub = both ? resultHtml(item) : `<span class="stk-row__place">${condo ? T.formulaC : T.formulaK}</span>`;
   const tools = view.mode === 'sort'
     ? `<div class="stk-row__tools">${['up', 'down'].map(dir => `
         <button class="stk-tool" type="button" aria-label="ย้าย" data-move="${dir}" style="--c:#4C8FD8;--t:#EAF3FC">${glyph(dir, 16)}</button>`).join('')}</div>`
     : '';
   return `
-    <li class="stk-row stk-row--count${view.mode && view.mode !== 'sort' ? ' is-pick' : ''}" data-id="${item.id}">
+    <li class="stk-row stk-row--count${both ? ' stk-row--both' : ''}${view.mode && view.mode !== 'sort' ? ' is-pick' : ''}" data-id="${item.id}">
       <button class="stk-row__thumb" type="button" data-photo="${item.id}" aria-label="${T.photoPick}">
         <img src="${photoOf(item)}" alt="${item.name}" width="37" height="37" loading="lazy" decoding="async">
       </button>
       <div class="stk-row__info">
-        <div class="stk-row__top">
-          <span class="stk-row__name">${item.name}</span>
-        </div>
-        <div class="stk-cnt">${fields}</div>
-        ${both ? resultHtml(item) : ''}
+        <span class="stk-row__name">${item.name}</span>
+        ${sub}
       </div>
+      <div class="stk-cnt">${fields}</div>
       <div class="stk-row__side">
         <div class="stk-row__qty">${qtyHtml(item, view.tab, !!draft[item.id])}</div>
         ${tools}

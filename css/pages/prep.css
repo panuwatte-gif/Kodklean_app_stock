@@ -971,3 +971,9 @@
 .eq-tag--live { background: #EAF6EC; color: #1E7A3C; border: 1px solid #CFE8D3; }
 .eq-tag--wait { background: #FDF3E2; color: #9A5B10; border: 1px solid #F3E0BD; }
 .eq-list { margin: 0; padding: 0 2px 0 16px; display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: #5C6470; line-height: 1.5; }
+
+/* ป้ายค่าแนะนำใต้ชื่อวัตถุดิบ (เนื้อสัตว์/ข้าว) — ต้องอ่านออกชัด ไม่ถูกตัด */
+.ptab__rec { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px; align-self: flex-start; margin-top: 3px; padding: 2px 7px; border-radius: 999px; background: #EFE8FB; color: #4A2F8F; font-family: Sarabun, sans-serif; font-size: 10px; line-height: 1.3; white-space: normal !important; overflow: visible !important; }
+.ptab__rec b { font-family: Mitr, sans-serif; font-size: 13px; font-weight: 600; color: #3B1F80; }
+.ptab__rec i { font-style: normal; font-size: 9.5px; color: #5E4A91; }
+.ptab__rec--none { background: #F1EFEA; color: #6B6153; }

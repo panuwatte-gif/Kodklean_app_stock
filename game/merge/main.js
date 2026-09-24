@@ -25,12 +25,19 @@ board.on.over = finish;
 
 // ── ปุ่มบนจอ ──
 const actions = {
-  sfx() { hud.setSfx(sound.toggle()); sound.play('tap'); },
-  music() {
-    const m = music.cycle();
-    hud.setMusic(m);
+  sfx() { const v = sound.toggle(); hud.setSfx(v); sound.play('tap'); hud.toast(tx(v ? 'sfxOn' : 'sfxOff')); },
+  order() { const o = music.cycleOrder(); hud.setOrder(o); sound.play('tap'); hud.toast(tx(hud.ORDER_LABEL[o])); },
+  type() {
+    const t = music.cycleType();
+    hud.setType(t);
     sound.play('tap');
-    if (m !== 'off' && !music.hasSongs(m)) hud.toast(tx('noSongs'));
+    hud.toast(music.hasSongs(t) || !music.isOn() ? tx(hud.TYPE_LABEL[t]) : tx(hud.TYPE_LABEL[t]) + ' · ' + tx('noSongs'));
+  },
+  mute() {
+    const v = music.toggleOn();
+    hud.setMusicOn(v);
+    sound.play('tap');
+    hud.toast(tx(v ? 'mOn' : 'mOff') + (v && !music.hasSongs() ? ' · ' + tx('noSongs') : ''));
   },
   board() { sound.play('tap'); showBoard(); },
   back() { location.href = villageUrl(); }
@@ -120,7 +127,9 @@ function loop(now) {
 
   hud.mount(stage, actions);
   hud.setSfx(sound.isOn());
-  hud.setMusic(music.getMode());
+  hud.setOrder(music.getOrder());
+  hud.setType(music.getType());
+  hud.setMusicOn(music.isOn());
   board.reset();
   await render.init(canvas);
 

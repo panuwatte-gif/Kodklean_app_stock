@@ -14,8 +14,9 @@ export function savingsCard(sv) {
   const pctTile = sum.pct === null || sum.state === 'equal' ? '' : `
     <div class="htile htile--pct${sum.state === 'worse' ? ' is-worse' : ''}"><small>${sum.state === 'worse' ? t.up : t.down}</small><b>${pct1(sum.pct)}</b></div>`;
   const month = sv.currentPeriod[0].slice(0, 8);
+  const ticks = sv.ticks || niceTicks(Math.max(...sv.priorCum.concat(sv.currentCum).map(v => Number(v) || 0), 100), 3);
   const chart = axisLineChart({
-    labels: sv.days.map(d => dayShort(month + String(d).padStart(2, '0'))), ticks: sv.ticks, unit: t.unit, fmt: money,
+    labels: sv.days.map(d => dayShort(month + String(d).padStart(2, '0'))), ticks, unit: t.unit, fmt: money,
     series: [{ name: t.prior, color: HOME_COLORS.prior, values: sv.priorCum }, { name: t.current, color: HOME_COLORS.green, values: sv.currentCum }]
   });
   return `<section class="hc hc--green hsave${sum.state === 'worse' ? ' hsave--worse' : ''}">
@@ -35,32 +36,47 @@ export function savingsCard(sv) {
         <div class="hc__subhead"><b>${t.chartTitle}</b></div>
         ${chart}
       </div>
-      <p class="hc__note hsave__note">${t.note}</p>
+      <p class="hc__note hsave__note">${t.note}${sv.noPrice ? ' • ' + fillText(t.noPrice, { n: sv.noPrice }) : ''}</p>
     </div></section>`;
 }
 
-// การ์ดยอดขาย: การ์ดร้าน 2×2 (โลโก้แบรนด์ ยอด เป้า แท่ง %) — เกิน 100% เขียนได้ แต่แท่งไม่ล้น; ไม่มีข้อมูล/ไม่มีเป้าแสดงข้อความ ไม่ใช้ 0
-export function salesCard(sales, ui) {
+// การ์ดยอดขาย: ยอดรวมทุกร้านเทียบเป้ารวม (เป้าต่อวัน × วันเปิด · เจ้าของกดตั้งเป้าได้) + การ์ดร้าน 2×2 แสดงยอดและสัดส่วนของยอดรวม
+// เกิน 100% เขียนได้ แต่แท่งไม่ล้น · ไม่มีข้อมูล/ไม่มีเป้า แสดงข้อความ ไม่ใช้ 0
+export function salesCard(sales, ui, canSet = false) {
   const t = HOME_UI.sales;
   const period = t.periods.some(p => p.id === ui.salesPeriod) ? ui.salesPeriod : 'month';
   const dd = dropdownHtml({ name: 'salesPeriod', label: t.periodLabel, value: period, options: t.periods.map(p => ({ value: p.id, label: p.label })) });
   const sub = period === 'month' ? fillText(t.subMonth, { d: dayLongTh(sales.through) }) : t.subToday;
+  const tot = sales.total || {};
+  const totVal = period === 'month' ? tot.month : tot.today;
+  const aim = tot.daily === null || tot.daily === undefined ? null : period === 'month' ? tot.daily * tot.openSoFar : tot.daily;
+  const ta = achievement(totVal, aim);
+  const totPct = totVal === null || totVal === undefined ? HOME_UI.noData : ta.pct === null ? t.noTarget : `${Math.round(ta.pct)}%`;
+  const aimText = aim === null ? t.noTarget : period === 'month'
+    ? fillText(t.monthTarget, { v: baht(aim), n: tot.openSoFar, m: baht(tot.daily * tot.openMonth) }) : fillText(t.dailyTarget, { v: baht(aim) });
+  const total = `
+    <div class="hsales__total">
+      <div class="hsales__totrow"><span>${period === 'month' ? t.totalMonth : t.totalToday}</span>${canSet ? `<button class="hsales__set" type="button" data-sales-target="1">${t.setBtn}</button>` : ''}</div>
+      <b class="hsales__totval">${totVal === null || totVal === undefined ? HOME_UI.noData : baht(totVal)}</b>
+      <small>${aimText}</small>
+      <span class="hstore__bar" role="img" aria-label="${totPct}"><i style="width:${ta.width.toFixed(1)}%"></i></span>
+      <b class="hstore__pct">${totPct}</b>
+    </div>`;
   const cards = sales.stores.map(st => {
     const value = period === 'month' ? st.month : st.today;
-    const a = achievement(value, st.target);
-    const pctText = value === null || value === undefined ? HOME_UI.noData : a.pct === null ? t.noTarget : `${Math.round(a.pct)}%`;
+    const share = value && totVal ? value / totVal * 100 : null;
     return `
       <article class="hstore" style="--brand:${st.color}">
         <img class="hstore__logo" src="${st.logo}" alt="${st.name}" loading="lazy" decoding="async">
         <span class="hstore__name">${st.name}</span>
         <b class="hstore__val">${value === null || value === undefined ? HOME_UI.noData : baht(value)}</b>
-        <small class="hstore__target">${t.target} ${st.target > 0 ? baht(st.target) : t.noTarget}</small>
-        <span class="hstore__bar" role="img" aria-label="${pctText}"><i style="width:${a.width.toFixed(1)}%"></i></span>
-        <b class="hstore__pct">${pctText}</b>
+        <small class="hstore__target">${share === null ? '' : fillText(t.share, { p: Math.round(share) })}</small>
+        <span class="hstore__bar" role="img"><i style="width:${share === null ? 0 : Math.min(100, share).toFixed(1)}%"></i></span>
       </article>`;
   }).join('');
   return `<section class="hc hc--gold">
     ${cardHead({ tone: 'gold', title: t.title, sub, tools: dd })}
+    ${total}
     <div class="hsales">${cards}</div>
     <p class="hc__note hsales__note">${t.updated} ${sales.updatedAt}</p></section>`;
 }

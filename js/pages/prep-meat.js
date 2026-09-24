@@ -1,7 +1,7 @@
 // ตารางเตรียมเนื้อสัตว์ (แท็บที่ 1) — วาดจากข้อมูลจริงของวันที่เลือก การบันทึกอยู่ที่ prep.js
 import { PREP_MEAT_COLS, PREP_GROUP_OF, PREP_UI } from '../shared/config.js';
 import { weightBig, fillText, dayShort } from '../shared/format.js';
-import { itemPhoto } from '../shared/ui.js';
+import { itemPhoto, recHtml } from '../shared/ui.js';
 import { personPill } from './prep-view.js';
 import { assumeMeatHtml } from './prep-assume.js';
 
@@ -47,9 +47,7 @@ function rowHtml(item, no, draft) {
     <div class="ptab__c${tone ? ` ptab__c--key ptab__c--${tone}` : ''}">${cellInput(item.id, f, item[f], tone)}${histDot('meat', item.id, f, item.name, item.revs[f])}</div>`;
   const dv = draft && (item.prep === null || item.prep === undefined) ? draft.values[item.id] : undefined;
   const draftBtn = dv !== undefined ? `<button class="ptab__draftbtn" type="button" data-apply-draft="1" data-id="${item.id}" data-v="${dv}">${fillText(PREP_UI.draftUse, { v: dv })}</button>` : '';
-  const rec = item.rec
-    ? `แนะ ${item.rec.t}${!item.rec.sat && item.rec.lo !== null ? ` (${item.rec.lo}–${item.rec.hi})` : ''}${item.rec.sat ? ' · เสาร์ห้ามเผื่อ' : ''}`
-    : PREP_UI.rec;
+  const rec = recHtml(item.rec, PREP_UI.recLabel);
   return `
     <div class="ptab__row" data-id="${item.id}">
       <span class="ptab__no">${no}</span>
@@ -57,7 +55,8 @@ function rowHtml(item, no, draft) {
         <span class="ptab__thumb"><img src="${photoOf(item)}" alt="" width="28" height="28" loading="lazy" decoding="async"></span>
         <span class="ptab__name">
           <span>${item.name}</span>
-          <span class="ptab__meta">${item.owners.map(personPill).join('')}<em>${rec}</em></span>
+          <span class="ptab__meta">${item.owners.map(personPill).join('')}</span>
+          ${rec}
         </span>
       </div>
       ${cell('prep', 'mint')}${cell('extra', 'cyan')}${cell('waste')}${cell('left', 'peach')}

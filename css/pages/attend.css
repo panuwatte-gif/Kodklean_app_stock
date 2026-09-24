@@ -1,0 +1,40 @@
+/* หน้าสรุปการมาทำงาน + หน้าคะแนนการมาทำงาน — ใช้โครงกระจกของหน้างาน (fah.css) */
+.atbody { display: flex; flex-direction: column; gap: 10px; }
+.atrange { margin: 0 4px; font-size: 12px; color: var(--soft); }
+
+/* แถวกราฟแท่งรายคน */
+.atrow { display: flex; align-items: center; gap: 10px; padding: 12px; }
+.atrow__av { flex: none; width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #fff; }
+.atrow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.atrow__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.atrow__top b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: var(--ink); }
+.atrow__pct { font-family: Mitr, sans-serif; font-weight: 500; font-size: 20px; color: color-mix(in srgb, var(--a) 80%, #000); }
+.atbar { height: 12px; border-radius: 999px; background: #E6EAF2; overflow: hidden; }
+.atbar i { display: block; height: 100%; border-radius: inherit; background: var(--a); }
+.atrow__meta { display: flex; flex-direction: column; gap: 1px; font-size: 12px; color: var(--ink); }
+.atrow__meta em { font-style: normal; font-size: 11px; color: var(--soft); }
+.attool { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--a) 12%, #fff); color: color-mix(in srgb, var(--a) 80%, #000); cursor: pointer; }
+.atbtn { min-height: 36px; margin-top: 8px; padding: 0 14px; border: 1.5px solid #D8DCE8; border-radius: 999px; background: #fff; font: inherit; font-size: 12.5px; cursor: pointer; }
+
+/* ตัวเลือกเดือน */
+.atmon { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px; }
+.atmon b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 16px; color: var(--ink); }
+.atmon__nav { width: 44px; height: 44px; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .85); color: var(--ink); cursor: pointer; box-shadow: 0 4px 12px rgba(40, 80, 120, .1); }
+.atmon__nav--next svg { transform: scaleX(-1); }
+.atmon__nav:disabled { opacity: .35; cursor: default; }
+
+/* ตารางคะแนน */
+.atb { padding: 8px 10px; }
+.atb__row { display: grid; grid-template-columns: minmax(0, 1fr) 40px 38px 56px 56px; gap: 4px; align-items: center; padding: 8px 0; border-bottom: 1px solid #ECEEF4; font-size: 13px; color: var(--ink); text-align: right; }
+.atb__row:last-child { border-bottom: 0; }
+.atb__row--head { padding-top: 2px; font-size: 11px; line-height: 1.25; color: var(--soft); align-items: end; }
+.atb__row--head span { display: flex; flex-direction: column; }
+.atb__row--head span:first-child { text-align: left; }
+.atb__row--head em { font-style: normal; font-size: 9.5px; }
+.atb__name { display: flex; align-items: center; gap: 6px; min-width: 0; text-align: left; }
+.atb__name img { flex: none; width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+.atb__name b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 13.5px; overflow-wrap: anywhere; }
+.atb__score { font-family: Mitr, sans-serif; font-weight: 500; font-size: 16px; color: color-mix(in srgb, var(--a) 80%, #000); }
+.atb__help { font-family: Mitr, sans-serif; font-size: 14px; color: #2B6E5E; }
+.atb__na { grid-column: 2 / -1; font-size: 12px; color: var(--soft); }
+.atb__row.is-off { opacity: .6; }

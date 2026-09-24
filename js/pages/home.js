@@ -1,8 +1,9 @@
 // หน้าหลัก (Dashboard) — ถือสถานะตัวเลือกของทุกการ์ด แล้วสั่งวาดใหม่เฉพาะการ์ดที่เปลี่ยน
 // การวาดแยกอยู่ที่ home-top (หัว/ประกาศ/เตรียม/ข้าว), home-usage (ใช้ไป/ของเหลือ), home-money (ประหยัด/ยอดขาย/พระราม 9)
-import { get, save, getHomeBundle, todayIso } from '../shared/data.js';
+import { get, save, getHomeBundle, todayIso, saveHomeNotice, saveSalesTarget } from '../shared/data.js';
 import { HOME_UI } from '../shared/config.js';
-import { toast, pickerSheet } from '../shared/ui.js';
+import { toast, pickerSheet, formSheet } from '../shared/ui.js';
+import { isAdmin, staffCode } from '../shared/auth.js';
 import { dayLongTh, shiftIso } from '../shared/format.js';
 import { heroHtml, noticesHtml, prepCard, riceCard } from './home-top.js';
 import { usageCard, leftoverCard } from './home-usage.js';
@@ -29,22 +30,22 @@ export async function mountHomePage(root, onGo) {
 
   const meta = live ? live.meta : get('homeMeta');
   const data = {
-    prep: live ? live.prep : get('homePrep'), rice: get('homeRice'),
+    prep: live ? live.prep : get('homePrep'), rice: live ? live.rice : get('homeRice'),
     usage: live ? live.usage : get('homeUsage'), left: live ? live.left : get('homeLeftovers'),
-    save: get('homeSavings'), sales: live ? live.sales : get('homeSales'), r9: live ? live.r9 : get('homeR9'),
+    save: live ? live.save : get('homeSavings'), sales: live ? live.sales : get('homeSales'), r9: live ? live.r9 : get('homeR9'),
     notices: live ? live.notices : get('homeNotices')
   };
 
   // ตัววาดของแต่ละช่อง (id ช่อง = home-<key>)
   const draw = {
     hero: () => heroHtml(meta, ui),
-    notices: () => noticesHtml(data.notices),
+    notices: () => noticesHtml(data.notices, !!live && isAdmin()),
     prep: () => prepCard(data.prep, meta, ui),
     rice: () => riceCard(data.rice, ui),
     usage: () => usageCard(data.usage, ui),
     left: () => leftoverCard(data.left, meta, ui),
     save: () => savingsCard(data.save),
-    sales: () => salesCard(data.sales, ui),
+    sales: () => salesCard(data.sales, ui, !!live && isAdmin()),
     r9: () => r9Card(data.r9)
   };
   const paint = key => { root.querySelector(`#home-${key}`).innerHTML = draw[key](); };
@@ -75,7 +76,37 @@ export async function mountHomePage(root, onGo) {
     if (picked !== meta.asOf) toast(HOME_UI.dateOnly);
   };
 
+  // แก้ข้อความประกาศ 1 ใบ (แอดมินเท่านั้น) → บันทึกลงฐาน kk_home_notice แล้ววาดประกาศใหม่
+  const editNotice = async id => {
+    const n = data.notices.find(x => x.id === id);
+    if (!n || !isAdmin()) return;
+    const res = await formSheet({ title: HOME_UI.noticeEdit, fields: [{ key: 'text', label: HOME_UI.noticeLabel, value: n.text }] });
+    if (!res) return;
+    const text = res.text.trim();
+    if (!text) return toast(HOME_UI.noticeEmpty);
+    if (text === n.text) return;
+    try { await saveHomeNotice(id, text); } catch { return toast(HOME_UI.noticeFail); }
+    n.text = text;
+    paint('notices');
+    toast(HOME_UI.noticeSaved);
+  };
+
+  // ตั้งเป้ายอดขายรวมต่อวัน (แอดมิน) → kk_sales_target แล้ววาดการ์ดยอดขายใหม่
+  const setTarget = async () => {
+    const t = HOME_UI.sales, cur = data.sales.total || {};
+    const res = await formSheet({ title: t.setTitle, fields: [{ key: 'v', kind: 'number', step: 500, label: t.setLabel, value: cur.daily ?? '' }] });
+    if (!res || res.v === '') return;
+    const v = Math.max(0, Math.round(Number(res.v) || 0));
+    try { await saveSalesTarget(v, staffCode()); } catch { return toast(t.setFail); }
+    data.sales.total = { ...cur, daily: v };
+    paint('sales');
+    toast(t.setSaved);
+  };
+
   root.addEventListener('click', event => {
+    if (event.target.closest('[data-sales-target]')) return setTarget();
+    const note = event.target.closest('[data-notice]');
+    if (note) return editNotice(note.dataset.notice);
     const go = event.target.closest('[data-go]');
     if (go) return onGo && onGo(go.dataset.go);
     const page = event.target.closest('[data-prep-page]');

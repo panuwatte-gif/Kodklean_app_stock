@@ -1,8 +1,9 @@
 // หน้าอาหารปรุงสำเร็จเหลือ — บันทึกของเหลือรายเมนู (kk_cooked_leftover) และแปลงกลับเป็นวัตถุดิบด้วย calc.js
 import { todayIso, getPrepBundle, saveLeft, getLeftHistory } from '../shared/data.js';
-import { WORK_UI, COOKED_UI as T, PREP_ENTRY, MENU_PHOTOS } from '../shared/config.js';
+import { WORK_UI, COOKED_UI as T, PREP_ENTRY } from '../shared/config.js';
+import { manageList, manageBtnHtml } from '../shared/list-edit.js';
 import { workFrame, workDateHtml, workNoteHtml, workHistorySheet } from '../shared/work-ui.js';
-import { toast, confirmSheet, glyph, handleDateClick, handleDatePick } from '../shared/ui.js';
+import { toast, confirmSheet, glyph, handleDateClick, handleDatePick, menuPhoto } from '../shared/ui.js';
 import { buildPrepModel, fahKeepOrNull } from '../shared/calc.js';
 import { staffCode } from '../shared/auth.js';
 import { gram, dayShort, fillText } from '../shared/format.js';
@@ -17,7 +18,7 @@ function tableHtml(rows, draft) {
     }).join('');
     const keep = fahKeepOrNull({ ...r, ...(draft[r.id] || {}) });
     return `<tr data-menu="${r.id}">
-      <td><span class="ctab__menu"><img src="${MENU_PHOTOS[r.id] || 'assets/fah/ic-cooked.webp'}" alt="" width="32" height="32" loading="lazy" decoding="async"><b>${r.name}</b></span></td>
+      <td><span class="ctab__menu"><img src="${menuPhoto(r, 'assets/fah/ic-cooked.webp')}" alt="" width="32" height="32" loading="lazy" decoding="async"><b>${r.name}</b></span></td>
       ${cells}<td><b class="ctab__keep">${gram(keep)}</b></td></tr>`;
   }).join('');
   return `<section class="wcard"><div class="ctab__wrap"><table class="ctab"><thead>${head}</thead><tbody>${body}</tbody></table></div></section>`;
@@ -64,7 +65,7 @@ export function mountCookedPage(root, onGo) {
   const draw = () => {
     el('#w-date').innerHTML = workDateHtml(state.date);
     if (!model) { el('#w-body').innerHTML = `<p class="wempty">${WORK_UI.loading}</p>`; return; }
-    el('#w-body').innerHTML = `
+    el('#w-body').innerHTML = manageBtnHtml('menu') + `
       <label class="wcard wfield" style="padding:8px 10px">
         <input class="wfield__in" id="w-q" type="search" placeholder="${T.search}" value="${state.q}">
       </label>
@@ -118,6 +119,7 @@ export function mountCookedPage(root, onGo) {
   load();
 
   root.addEventListener('click', async event => {
+    if (event.target.closest('[data-manage]')) return manageList({ kind: 'menu', onDone: load });
     if (event.target.closest('[data-none]')) return saveNone();
     if (event.target.closest('[data-save]')) return saveAll();
     if (event.target.closest('[data-hist]')) return history((event.target.closest('[data-menu]') || {}).dataset?.menu);

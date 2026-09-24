@@ -1,24 +1,37 @@
-// เพลงพื้นหลัง 4 โหมด: สุ่มทุกเพลง / มีเนื้อ / บรรเลง / ปิด — สุ่มเพลง ไม่ซ้ำเพลงที่เพิ่งเล่น เล่นจบแล้วต่อเพลงใหม่
-// แหล่งเพลง: (1) เพลย์ลิสต์ในหน้า "เพลง" ของแอป  (2) ไฟล์ในโฟลเดอร์ assets/music ที่ระบุใน config.js
+// เพลงพื้นหลัง — แยกเป็น 3 สวิตช์อิสระ ไม่ยุ่งกัน
+//   ประเภท : ทั้งหมด / เพลงมีเนื้อ / เพลงบรรเลง
+//   ลำดับ  : สุ่ม / เรียงลำดับ / เล่นซ้ำเพลงเดิม
+//   เปิดปิด: เปิดเพลง / ปิดเพลง
+// แหล่งเพลง: เพลย์ลิสต์ในหน้า "เพลง" ของแอป + ไฟล์ในโฟลเดอร์ assets/music ที่ระบุใน config.js
+// ถ้าประเภทที่เลือกไม่มีเพลง = เงียบ ไม่เอาเพลงประเภทอื่นมาเล่นแทน
 import { MUSIC } from '../config.js';
 import * as db from './db.js';
 
-const KEY = 'kk.merge.music2';   // เปลี่ยนชื่อที่เก็บ ให้ทุกเครื่องเริ่มที่โหมดสุ่มทุกเพลง
-const MODES = ['mix', 'vocal', 'inst', 'off'];
+export const TYPES = ['all', 'vocal', 'inst'];
+export const ORDERS = ['shuffle', 'list', 'repeat'];
+const K = { type: 'kk.merge.mtype', order: 'kk.merge.morder', on: 'kk.merge.mon' };
+
 const lists = { vocal: [], inst: [] };
-let mode = read();
-let audio = null, lastUrl = '', started = false, loaded = false;
+let type = pick(K.type, TYPES, MUSIC.defaultType);
+let order = pick(K.order, ORDERS, MUSIC.defaultOrder);
+let on = read(K.on) !== 'off';
+let audio = null, started = false, loaded = false, cursor = -1;
 
-function read() {
-  try { const v = localStorage.getItem(KEY); return MODES.includes(v) ? v : MUSIC.defaultMode; }
-  catch { return MUSIC.defaultMode; }
+function read(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function write(k, v) { try { localStorage.setItem(k, v); } catch { /* ใช้ค่าในรอบนี้ */ } }
+function pick(k, allowed, dflt) { const v = read(k); return allowed.includes(v) ? v : dflt; }
+
+export const getType = () => type;
+export const getOrder = () => order;
+export const isOn = () => on;
+
+// รายชื่อเพลงของประเภทที่เลือก (ตัด URL ซ้ำออกเสมอ)
+export function pool(t = type) {
+  const raw = t === 'all' ? [...lists.vocal, ...lists.inst] : (lists[t] || []);
+  return [...new Set(raw)];
 }
+export const hasSongs = t => pool(t).length > 0;
 
-export const getMode = () => mode;
-const pool = m => m === 'mix' ? [...new Set([...lists.vocal, ...lists.inst])] : (lists[m] || []);
-export const hasSongs = m => pool(m).length > 0;
-
-// โหลดรายชื่อเพลง (ไม่โหลดไฟล์เพลงจริง — ไฟล์จะโหลดเฉพาะเพลงที่สุ่มได้)
 export async function load() {
   lists.vocal = MUSIC.bundledVocal.map(f => MUSIC.folder + f);
   lists.inst = MUSIC.bundledInst.map(f => MUSIC.folder + f);
@@ -35,13 +48,13 @@ export async function load() {
     };
     const inst = inList(MUSIC.instPlaylist) || [];
     let vocal = inList(MUSIC.vocalPlaylist);
-    // ยังไม่ได้สร้างเพลย์ลิสต์เพลงมีเนื้อ = ถือว่าทุกเพลงในคลังที่ไม่ใช่บรรเลงเป็นเพลงมีเนื้อ
+    // ยังไม่ได้สร้างเพลย์ลิสต์เพลงมีเนื้อ = ถือว่าทุกเพลงในคลังที่ไม่ได้อยู่ในบรรเลงเป็นเพลงมีเนื้อ
     if (vocal === null) vocal = tracks.map(t => t.url).filter(u => u && !inst.includes(u));
     lists.inst.push(...inst);
     lists.vocal.push(...vocal);
   } catch { /* ไม่มีฐานข้อมูล = ใช้เฉพาะไฟล์ในโฟลเดอร์ */ }
   loaded = true;
-  if (started) playNext();
+  if (started && on) next(true);
 }
 
 function ensure() {
@@ -49,18 +62,23 @@ function ensure() {
   audio = new Audio();
   audio.preload = 'none';
   audio.volume = MUSIC.volume;
-  audio.addEventListener('ended', playNext);
-  audio.addEventListener('error', () => setTimeout(playNext, 800));   // เพลงไหนเปิดไม่ได้ ข้ามไปเพลงถัดไป
+  audio.addEventListener('ended', () => next(false));
+  audio.addEventListener('error', () => setTimeout(() => next(false), 800));  // เพลงไหนเปิดไม่ได้ ข้ามไปเพลงถัดไป
 }
 
-function playNext() {
-  if (!audio || mode === 'off' || !loaded) return;
-  const list = pool(mode);
-  if (!list.length) { audio.pause(); return; }
-  let pick = list[Math.floor(Math.random() * list.length)];
-  if (list.length > 1) while (pick === lastUrl) pick = list[Math.floor(Math.random() * list.length)];
-  lastUrl = pick;
-  audio.src = pick;
+// เลือกเพลงถัดไปตามโหมดลำดับ · fresh = เพิ่งกดสวิตช์ (ไม่ใช่เพลงเล่นจบเอง)
+function next(fresh) {
+  if (!audio || !on || !loaded) return;
+  const list = pool();
+  audio.loop = order === 'repeat';
+  if (!list.length) { audio.pause(); audio.removeAttribute('src'); cursor = -1; return; }
+  if (order === 'repeat' && !fresh && audio.src) { audio.play().catch(() => {}); return; }
+
+  if (order === 'list') cursor = (cursor + 1) % list.length;
+  else if (list.length === 1) cursor = 0;
+  else { let i = cursor; while (i === cursor) i = Math.floor(Math.random() * list.length); cursor = i; }
+
+  audio.src = list[cursor];
   audio.play().catch(() => {});
 }
 
@@ -69,21 +87,39 @@ export function start() {
   if (started) return;
   started = true;
   ensure();
-  playNext();
+  if (on) next(true);
 }
 
-// สลับโหมดวนไป สุ่มทุกเพลง → มีเนื้อ → บรรเลง → ปิด (คืนค่าโหมดใหม่)
-export function cycle() {
-  mode = MODES[(MODES.indexOf(mode) + 1) % MODES.length];
-  try { localStorage.setItem(KEY, mode); } catch { /* ใช้ค่าในรอบนี้ */ }
+export function setType(t) {
+  if (!TYPES.includes(t)) return type;
+  type = t; write(K.type, t);
+  cursor = -1;
   ensure();
-  lastUrl = '';
-  if (mode === 'off') audio.pause(); else if (started) playNext();
-  return mode;
+  if (started && on) next(true);
+  return type;
 }
+export function setOrder(o) {
+  if (!ORDERS.includes(o)) return order;
+  order = o; write(K.order, o);
+  ensure();
+  audio.loop = order === 'repeat';
+  if (started && on && !audio.src) next(true);
+  return order;
+}
+export function setOn(v) {
+  on = !!v; write(K.on, on ? 'on' : 'off');
+  ensure();
+  if (!on) audio.pause();
+  else if (started) { if (audio.src) audio.play().catch(() => {}); else next(true); }
+  return on;
+}
+export const cycleType = () => setType(TYPES[(TYPES.indexOf(type) + 1) % TYPES.length]);
+export const cycleOrder = () => setOrder(ORDERS[(ORDERS.indexOf(order) + 1) % ORDERS.length]);
+export const toggleOn = () => setOn(!on);
 
-// ออกจากแอป/พับจอ = หยุดเพลง กลับมา = เล่นต่อ
+// พับจอ/สลับแอป = หยุดเพลง กลับมา = เล่นต่อ
 document.addEventListener('visibilitychange', () => {
-  if (!audio || mode === 'off' || !started) return;
-  if (document.hidden) audio.pause(); else if (audio.src) audio.play().catch(() => {});
+  if (!audio || !on || !started) return;
+  if (document.hidden) audio.pause();
+  else if (audio.src) audio.play().catch(() => {});
 });

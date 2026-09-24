@@ -1,8 +1,8 @@
 // แท็บบันทึกอาหารเหลือ (แท็บที่ 4) — กรอกของเหลือรายเมนู (กรัม) / สถิติ 7 วันจริง / แปลงเป็นเนื้อสัตว์ / ตั้งค่าเมนู
-import { FAH_UI, MENU_PHOTOS, PREP_UI, STOCK_PHOTOS } from '../shared/config.js';
+import { FAH_UI, PREP_UI, STOCK_PHOTOS } from '../shared/config.js';
 import { fahTotals } from '../shared/calc.js';
 import { count, gram, fillText, dayShort, weightBig } from '../shared/format.js';
-import { glyph, gramCell, sparkBars } from '../shared/ui.js';
+import { glyph, gramCell, sparkBars, menuPhoto } from '../shared/ui.js';
 import { histDot, photoOf } from './prep-meat.js';
 import { assumeFahHtml } from './prep-assume.js';
 
@@ -28,7 +28,7 @@ function todayTable(rows) {
   </div>`;
   const body = rows.map(m => `
     <div class="ptab__row ptab__row--sm" data-id="${m.id}">
-      ${nameCell(m, MENU_PHOTOS[m.id] || 'assets/r9/dish-kaprao.webp')}
+      ${nameCell(m, menuPhoto(m))}
       ${['left', 'waste', 'self', 'home'].map(f => `<div class="ptab__c">${gramCell(m.id, f, m[f], 'fah')}${histDot('fah', m.id, f, m.name, m.revs[f])}</div>`).join('')}
       <div class="ptab__c fah-keep${m.keep === null ? ' fah-keep--off' : ''}">${m.keep === null ? '-' : count(m.keep)}</div>
     </div>`).join('');
@@ -52,7 +52,7 @@ function weekTable(rows, week) {
     const vals = week.days.map(d => (week.byMenu[m.id] || {})[d]);
     return `
     <div class="ptab__row ptab__row--sm">
-      ${nameCell(m, MENU_PHOTOS[m.id] || 'assets/r9/dish-kaprao.webp')}
+      ${nameCell(m, menuPhoto(m))}
       ${vals.map(v => `<div class="ptab__c fah-g">${gram(v ?? null)}</div>`).join('')}
       <div class="ptab__c fah-spark">${sparkBars(vals.map(v => v || 0), '#3B8BE0', 22)}</div>
     </div>`;

@@ -360,7 +360,7 @@
   gap: 4px;
 }
 
-.kp__table--rice .kp__head, .kp__table--rice .kp__row { grid-template-columns: 112px repeat(3, minmax(0, 1fr)) 54px; }
+.kp__table--rice .kp__head, .kp__table--rice .kp__row { grid-template-columns: 96px 38px repeat(3, minmax(0, 1fr)) 48px; }
 
 .kp__head {
   padding: 6px 4px;

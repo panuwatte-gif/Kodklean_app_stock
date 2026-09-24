@@ -1,10 +1,20 @@
 // ประตูข้อมูลบานเดียวของแอป — ทุกหน้าต้องเรียกผ่านไฟล์นี้เท่านั้น
 // รอบนี้อ่านจาก mock_data.js ถ้าจะเปลี่ยนไปต่อฐานจริง แก้เฉพาะไฟล์นี้ หน้าจอไม่ต้องแก้
 import { MOCK_DATA } from './mock_data.js';
-import { dbGet, dbPost, dbPatch, dbUpsert, dbUpsertBack, dbDelete, dbUpload, dbRemoveFile } from './db.js';
-import { parseCfg } from './fclab.js';
+import { dbGet, dbPost, dbPatch, dbPatchBack, dbInsertIgnore, dbUpsert, dbUpsertBack, dbUpsertCount, dbDelete, dbUpload, dbRemoveFile } from './db.js';
+import { parseCfg, withFcCtx, advanceFormulas, prevOpenIso, nextOpenIso, dowIso, bkkIso, addDaysIso } from './fclab.js';
 import { shiftIso } from './format.js';
 import { buildHome } from './home-model.js';
+import { meatUseRows } from './calc.js';
+import { R9_VOID_STATUS, FC_SYNC_UI } from './config.js';
+import { showSyncNote } from './sync-note.js';
+import { buildForecast, dailyRowsOf, actualPatches } from './forecast.js';
+
+// ข้อมูลที่อ่านจากฐานไม่ครบ (db.js แจ้งมา) → ขึ้นแถบเตือนพร้อมจำนวนที่ได้
+if (typeof window !== 'undefined') window.addEventListener('kk:partial', e => {
+  const d = e.detail || {};
+  showSyncNote({ text: FC_SYNC_UI.partial.replace('{t}', d.table).replace('{got}', d.got).replace('{total}', d.total === null ? '?' : d.total), tone: 'warn' });
+});
 
 const STORE_KEY = 'kodklean.store.v1';
 
@@ -65,7 +75,7 @@ export function save(collection, rows) {
 
 // วันที่ "วันนี้" ตามเวลาไทย (เก็บเป็น 2026-09-14) ให้ตรงกับวันที่ในฐาน
 export function todayIso() {
-  return new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10);
+  return bkkIso(Date.now());
 }
 
 // รายการที่ต้องนับ เฉพาะที่ยังเปิดใช้ (ปิดแล้วไม่ส่งมา) เรียงตามลำดับในฐาน
@@ -80,19 +90,15 @@ export const getStockToday = () =>
 export const getResponsibilities = () =>
   dbGet('kk_staff_responsibility?active=eq.true&select=responsibility,staff_code&order=sort_order');
 
-// บันทึกผลนับ: ปิดแถวเก่าให้ไม่ใช่ค่าล่าสุด แล้วเพิ่มแถวใหม่ทุกครั้ง (ห้าม update ทับของเดิม)
+// บันทึกผลนับผ่าน RPC kk_stock_counts_save ทีเดียวทุกรายการ (แก้ = แถวใหม่ rev+1 ของเก่าไม่หาย · กดซ้ำ key เดิม = ไม่เพิ่มแถว · ล็อกกันชนต่อรายการ)
 export async function saveStockCounts(rows, date, staffCode) {
   if (!rows.length) return [];
-  const ids = rows.map(r => encodeURIComponent(r.id)).join(',');
-  await dbPatch(`kk_stock_count?count_date=eq.${date}&is_current=is.true&count_item_id=in.(${ids})`, { is_current: false });
-  return dbPost('kk_stock_count', rows.map(r => ({
-    count_item_id: r.id,
-    count_date: date,
-    kitchen_qty: r.kitchen,
-    condo_qty: r.condo,
-    counted_by: staffCode,
-    is_current: true
-  })));
+  const num = v => (v === null || v === undefined || v === '' ? null : Number(v));
+  await dbPost('rpc/kk_stock_counts_save', { p: {
+    date, by: staffCode, key: `count:${date}:${crypto.randomUUID()}`,
+    rows: rows.map(r => ({ id: r.id, kitchen: num(r.kitchen), condo: num(r.condo) }))
+  } });
+  return rows;
 }
 
 // เพิ่มรายการที่ต้องนับรายการใหม่ (ต่อท้ายหมวดนั้น)
@@ -139,33 +145,84 @@ export const getPrepLogs = date =>
 
 // บันทึกช่วงวัน (ใช้ทำสถิติย้อนหลัง)
 export const getPrepLogRange = (from, to) =>
-  dbGet(`kk_prep_log?log_date=gte.${from}&log_date=lte.${to}&is_current=is.true&select=count_item_id,log_date,entry_type,seq,qty`);
+  dbGet(`kk_prep_log?log_date=gte.${from}&log_date=lte.${to}&is_current=is.true&select=count_item_id,log_date,entry_type,seq,qty&order=log_date,id`);
 
 // ของเหลือของวันที่เลือก / ช่วงวัน (เฉพาะช่อง "เหลือ")
 export const getLeftovers = date =>
   dbGet(`kk_cooked_leftover?left_date=eq.${date}&is_current=is.true&select=menu_id,entry_type,qty_box,rev_no,logged_by,edited_by`);
 export const getLeftoverRange = (from, to) =>
-  dbGet(`kk_cooked_leftover?left_date=gte.${from}&left_date=lte.${to}&is_current=is.true&entry_type=eq.${enc('เหลือ')}&select=menu_id,left_date,qty_box`);
+  dbGet(`kk_cooked_leftover?left_date=gte.${from}&left_date=lte.${to}&is_current=is.true&entry_type=eq.${enc('เหลือ')}&select=menu_id,left_date,qty_box&order=left_date,id`);
 
 // เมนูทั้งหมด (พร้อมค่าผูกเนื้อสัตว์)
 export const getMenus = () =>
-  dbGet('kk_menu?active=eq.true&select=id,name,protein_item_id,protein_ratio,sort_order&order=sort_order,id');
+  dbGet('kk_menu?active=eq.true&select=id,name,protein_item_id,protein_ratio,photo,sort_order&order=sort_order,id');
+
+// เพิ่มเมนูใหม่ต่อท้าย (ใช้ร่วมทุกหน้าที่มีรายการเมนู)
+export const addMenu = row => dbPost('kk_menu', [{ active: true, protein_ratio: 1, ...row }]);
+
+// ลบเมนู = ปิดการใช้งาน (บันทึกของเหลือเก่ายังอยู่ในฐาน)
+export const removeMenu = id => dbPatch(`kk_menu?id=eq.${enc(id)}`, { active: false });
+
+// สลับตำแหน่งเมนูสองรายการ (สลับเลขลำดับกัน)
+export async function swapMenuOrder(a, b) {
+  await saveMenuSetting(a.id, { sort_order: b.sort_order });
+  await saveMenuSetting(b.id, { sort_order: a.sort_order });
+}
+
+// อัพรูป WebP (data URL ที่แปลงแล้ว) ขึ้นที่เก็บไฟล์ คืนลิงก์ถาวร
+export async function uploadWebp(folder, id, dataUrl) {
+  const blob = await (await fetch(dataUrl)).blob();
+  return dbUpload('item-images', `${folder}/${id}-${Date.now()}.webp`, blob, 'image/webp');
+}
+
+// ใส่รูปเมนู / ลบรูปเมนู (ลบแล้วกลับไปใช้รูปตั้งต้น)
+export async function saveMenuPhoto(id, dataUrl) {
+  const url = await uploadWebp('menu', id, dataUrl);
+  await saveMenuSetting(id, { photo: url });
+  return url;
+}
+export const clearMenuPhoto = id => saveMenuSetting(id, { photo: null });
 
 // ค่าตั้งการคำนวณ (การ์ด Assumption)
 export const getAssumptions = () => dbGet('kk_prep_assumption?select=key,value,label');
 
 // ผลนับสต๊อกครัวกลางรอบๆ วันที่เลือก (±21 วัน ใช้โยงหักสต๊อก)
 export const getStocksNear = date =>
-  dbGet(`kk_stock_count?is_current=is.true&count_date=gte.${shiftIso(date, -21)}&count_date=lte.${shiftIso(date, 21)}&select=count_item_id,count_date,kitchen_qty`);
+  dbGet(`kk_stock_count?is_current=is.true&count_date=gte.${shiftIso(date, -21)}&count_date=lte.${shiftIso(date, 21)}&select=count_item_id,count_date,kitchen_qty&order=count_date,id`);
 
-// โหลดข้อมูลทั้งหน้าของวันเดียวในครั้งเดียว (รวมกฎการทดสอบ เพื่อให้การคำนวณใช้ค่าล่าสุดจากฐานเสมอ)
+// รอบส่งพระราม 9 ที่เป็นค่าล่าสุดของวันเดียว (ใช้บวกกลับยอดใช้จริง)
+const getR9RoundsOn = date =>
+  dbGet(`kk_r9_round?is_current=is.true&date=eq.${date}&select=id,date,status,is_current,lines`);
+
+// รายการส่งพระราม 9 ที่ต้องบวกกลับเข้ายอดใช้จริง (ยึดค่า deduct_from_use ในฐานเท่านั้น)
+const getR9Deduct = () =>
+  dbGet('kk_r9_item?deduct_from_use=is.true&select=id,name,count_item_id,deduct_from_use,kg_per_unit');
+
+// ชุดข้อมูลขั้นต่ำสำหรับคิดยอดใช้จริงของวันเดียว (วันนั้น + อาหารเหลือของวันเปิดก่อนหน้า + พระราม 9 ของวันนั้น) — อ่านใหม่จากฐานทุกครั้ง
+async function getUseBundle(date) {
+  const prevDate = prevOpenIso(date);
+  const [items, logs, leftovers, leftPrev, menus, assumptions, r9Rounds, r9Items] = await Promise.all([
+    getPrepItems(), getPrepLogs(date), getLeftovers(date), getLeftovers(prevDate), getMenus(), getAssumptions(), getR9RoundsOn(date), getR9Deduct()
+  ]);
+  return { date, prevDate, items, logs, leftovers, leftPrev, menus, assumptions, r9Rounds, r9Items, r9VoidStatus: R9_VOID_STATUS };
+}
+
+// โหลดข้อมูลทั้งหน้าของวันเดียวในครั้งเดียว (รวมกฎการทดสอบ + ประวัติพยากรณ์ + สูตรที่ผูก เพื่อให้ทุกหน้าคำนวณด้วยเอนจินเดียวกัน)
 export async function getPrepBundle(date) {
-  const [items, logs, logs7, logsFc, leftovers, left7, menus, assumptions, resp, stocks, cfg, staff, assigns] = await Promise.all([
+  const prevDate = prevOpenIso(date);
+  const [items, logs, logs7, logsFc, leftovers, left7, menus, assumptions, resp, stocks, cfg, staff, assigns, leftPrev, r9Rounds, r9Items, history, map, formulas, trials] = await Promise.all([
     getPrepItems(), getPrepLogs(date), getPrepLogRange(shiftIso(date, -6), date), getPrepLogRange(shiftIso(date, -84), shiftIso(date, -1)),
     getLeftovers(date), getLeftoverRange(shiftIso(date, -6), date),
-    getMenus(), getAssumptions(), getResponsibilities(), getStocksNear(date), getFcRules(), getStaff(), getAssigns()
+    getMenus(), getAssumptions(), getResponsibilities(), getStocksNear(date), getFcRules(), getStaff(), getAssigns(),
+    getLeftovers(prevDate), getR9RoundsOn(date), getR9Deduct(), getFcHistory(), getFcModelMap(), getFcFormulas(), getFcTrials()
   ]);
-  return { date, items, logs, logs7, logsFc, leftovers, left7, menus, assumptions, resp, stocks, cfg, staff, assigns };
+  const b = { date, prevDate, items, logs, logs7, logsFc, leftovers, left7, leftPrev, menus, assumptions, resp, stocks, cfg, staff, assigns, r9Rounds, r9Items, r9VoidStatus: R9_VOID_STATUS };
+  withFcCtx(cfg, { history, map, formulas, trials });
+  // คงเหลือใช้ต่อของอาหารปรุงสำเร็จวันเปิดก่อนหน้า (แปลงเป็นเนื้อสัตว์ด้วย calc.js) แนบไปกับบันทึกย้อนหลัง ให้ carryOver รวมเป็นของที่ยกมา
+  const kg = {}, missing = {};
+  meatUseRows(b, R9_VOID_STATUS).rows.forEach(({ row }) => { kg[row.id] = row.carry; if (row.carryMissing) missing[row.id] = true; });
+  Object.defineProperty(logsFc, '__cooked', { value: { before: date, prevDate, kg, missing }, enumerable: false });
+  return b;
 }
 
 // วันล่าสุดก่อนวันที่เลือกที่มีการกรอกช่องนั้น (ใช้กับปุ่มคัดลอกจากวันก่อนหน้า)
@@ -173,12 +230,20 @@ export const getLastPrepDateBefore = (date, type) =>
   dbGet(`kk_prep_log?log_date=lt.${date}&entry_type=eq.${enc(type)}&is_current=is.true&qty=not.is.null&select=log_date&order=log_date.desc&limit=1`).then(r => (r[0] || {}).log_date || null);
 
 // บันทึก 1 ช่องของแท็บเตรียม/ข้าว แบบเพิ่มแถวใหม่ (แก้ = rev_no+1 ของเก่าไม่หาย ทำครบในคำสั่งเดียวฝั่งฐาน)
-export const savePrep = ({ item, date, type, seq = 1, qty, by }) =>
-  dbPost('rpc/kk_prep_save', { p_item: item, p_date: date, p_type: type, p_seq: seq, p_qty: qty, p_by: by, p_key: idemKey('prep', item, date, type, seq) });
+export async function savePrep({ item, date, type, seq = 1, qty, by }) {
+  const r = await dbPost('rpc/kk_prep_save', { p_item: item, p_date: date, p_type: type, p_seq: seq, p_qty: qty, p_by: by, p_key: idemKey('prep', item, date, type, seq) });
+  queueSync(date);
+  return r;
+}
 
 // บันทึก 1 ช่องของแท็บอาหารเหลือ (กติกาเดียวกัน)
-export const saveLeft = ({ menu, date, type, qty, by }) =>
-  dbPost('rpc/kk_left_save', { p_menu: menu, p_date: date, p_type: type, p_qty: qty, p_by: by, p_key: idemKey('left', menu, date, type, 1) });
+// (คงเหลือใช้ต่อของวันนี้กระทบยอดใช้จริงของวันเปิดถัดไป จึงอัปเดตประวัติทั้งสองวัน)
+export async function saveLeft({ menu, date, type, qty, by }) {
+  const r = await dbPost('rpc/kk_left_save', { p_menu: menu, p_date: date, p_type: type, p_qty: qty, p_by: by, p_key: idemKey('left', menu, date, type, 1) });
+  queueSync(date);
+  queueSync(nextOpenIso(date));
+  return r;
+}
 
 // ประวัติการแก้ของช่องเดียว (ทุกครั้ง เรียงใหม่สุดขึ้นก่อน)
 export const getPrepHistory = (item, date, type, seq = 1) =>
@@ -214,9 +279,89 @@ export const saveFcFormula = (code, changes) =>
 export const bumpFcFormulas = rows =>
   dbUpsert('kk_forecast_formula?on_conflict=formula_code', rows.map(r => ({ ...r, updated_at: new Date().toISOString() })));
 
-// ข้อมูลใช้จริงย้อนหลังของทุกวัตถุดิบ (ใช้เป็นสนามทดสอบ)
+// ข้อมูลใช้จริงย้อนหลังของทุกวัตถุดิบ (ใช้เป็นสนามทดสอบและพยากรณ์) — db.js อ่านต่อทีละหน้าจนครบเอง
+// (อ่านจากวิว kk_view_forecast_history เท่านั้น = import ถึง 5 ก.ย. + บันทึกเตรียมจริงหลังจากนั้น · ห้ามอ่านตารางตรง)
+const FC_HIST = 'kk_view_forecast_history';
+// ยอดใช้จริงติดลบ (เตรียมน้อยกว่าคงเหลือ = กรอกผิด) ไม่ใช่ข้อมูลจริง → ตัดเป็นว่าง ติดธง actual_missing เหมือนที่แอปเคยทำตอนเขียนประวัติ
+const cleanHist = rows => rows.map(r => (r.used_kg !== null && Number(r.used_kg) < 0 ? { ...r, used_kg: null, flag: 'actual_missing' } : r));
 export const getFcHistory = () =>
-  dbGet('kk_forecast_history?select=use_date,item_id,used_kg,theo_kg,dow_num,flag&order=use_date&limit=5000');
+  dbGet(FC_HIST + '?select=use_date,item_id,used_kg,theo_kg,dow_num,flag,source&order=use_date,item_id').then(cleanHist);
+
+// วันล่าสุดที่มีในประวัติพยากรณ์ (ใช้กับปุ่มเติมประวัติย้อนหลัง)
+export const getHistoryLastDate = () =>
+  dbGet(FC_HIST + '?select=use_date&order=use_date.desc&limit=1').then(r => (r[0] || {}).use_date || null);
+
+// แถวประวัติของวันที่ระบุ (ใช้ตรวจชนก่อนนำเข้า)
+export const getHistoryOn = dates =>
+  dates.length ? dbGet(`${FC_HIST}?use_date=in.(${dates.join(',')})&select=use_date,item_id,source&order=use_date,item_id`) : Promise.resolve([]);
+
+// นำเข้าประวัติย้อนหลังจากแอปเก่า (source = manual_import) — คืนจำนวนที่เขียนสำเร็จจริงจากฐาน
+export async function importHistory(rows) {
+  if (!rows.length) return 0;
+  const done = await dbUpsertCount('kk_forecast_history?on_conflict=use_date,item_id', rows.map(r => ({ ...r, source: 'manual_import' })));
+  return Array.isArray(done) ? done.length : 0;
+}
+
+// รหัสวัตถุดิบทั้งหมดใน kk_count_item (ใช้ตรวจข้อมูลนำเข้า)
+export const getCountItemIds = () => dbGet('kk_count_item?select=id,name,grp&order=id');
+
+// ---------- เติม kk_forecast_history จากบันทึกจริงของแอป (source = app_live) ----------
+
+const SYNC_BAD = ['anomaly_excluded', 'actual_missing', 'no_prep_record', 'incomplete'];
+const medianOf = a => { const x = [...a].sort((p, q) => p - q), m = x.length >> 1; return x.length % 2 ? x[m] : (x[m - 1] + x[m]) / 2; };
+
+// คิดยอดใช้จริงของวันนั้นด้วย prepUse (ผ่าน meatUseRows ใน calc.js) แล้วเขียนลงประวัติพยากรณ์ — ไม่คิดสูตรเองในนี้
+export async function syncHistoryFromPrep(date) {
+  const b = await getUseBundle(date);
+  if (!(b.logs || []).length) return { date, written: 0, skipOld: [], anomaly: [], negative: [], incomplete: [], noData: true };
+  const [map, existing, past] = await Promise.all([
+    getFcModelMap(),
+    dbGet(`${FC_HIST}?use_date=eq.${date}&select=item_id,source`),
+    dbGet(`${FC_HIST}?use_date=lt.${date}&use_date=gte.${addDaysIso(date, -60)}&used_kg=not.is.null&select=item_id,use_date,used_kg,dow_num,flag&order=use_date.desc,item_id`)
+  ]);
+  const inMap = new Set(map.map(m => m.item_id));
+  const old = {};
+  existing.forEach(e => { old[e.item_id] = e.source || 'cleaned_v2'; });
+  const res = { date, written: 0, skipOld: [], anomaly: [], negative: [], incomplete: [] }, out = [];
+  meatUseRows(b, b.r9VoidStatus).rows.forEach(({ row }) => {
+    if (!inMap.has(row.id)) return;
+    if (old[row.id] && !['app_live', 'kk_prep_log'].includes(old[row.id])) { res.skipOld.push(row.name); return; }
+    let used = row.use, flag = 'ok';
+    if (used === null) { flag = 'incomplete'; res.incomplete.push({ name: row.name, why: row.useWhy }); }
+    else if (used < 0) { used = null; flag = 'actual_missing'; res.negative.push(row.name); }
+    else {
+      const ref = past.filter(p => p.item_id === row.id && Number(p.dow_num) !== 0 && !SYNC_BAD.includes(p.flag)).slice(0, 28).map(p => Number(p.used_kg));
+      if (ref.length >= 10) {
+        const md = medianOf(ref);
+        if (md > 0 && used > 5 * md) { used = null; flag = 'actual_missing'; res.anomaly.push(row.name); }
+      }
+    }
+    out.push({ use_date: date, item_id: row.id, used_kg: used, theo_kg: null, dow_num: dowIso(date), flag, source: 'app_live' });
+  });
+  // ไม่เขียนลง kk_forecast_history แล้ว (ตารางอ่านอย่างเดียว) — วิวคิดยอดใช้จริงจาก kk_prep_log ให้เอง ฟังก์ชันนี้เหลือหน้าที่ตรวจเตือนข้อมูลผิดปกติ
+  res.written = out.length;
+  return res;
+}
+
+// แจ้งบนจอเมื่อมีรายการที่ข้าม/ตัดออก
+function reportSync(r) {
+  const T = FC_SYNC_UI, parts = [];
+  if (r.skipOld.length) parts.push(T.skipOld.replace('{d}', r.date).replace('{names}', r.skipOld.join(', ')));
+  if (r.anomaly.length) parts.push(T.anomaly.replace('{d}', r.date).replace('{names}', r.anomaly.join(', ')));
+  if (r.negative.length) parts.push(T.negative.replace('{d}', r.date).replace('{names}', r.negative.join(', ')));
+  if (parts.length) showSyncNote({ text: parts.join(' · '), tone: 'info' });
+}
+
+// คิวอัปเดตประวัติทีละวัน ต่อแถวกัน (บันทึกถี่ๆ = รอบหลังอ่านข้อมูลล่าสุดใหม่แล้วเขียนทับทีหลังเสมอ) · ล้มเหลว = ขึ้นแถบเตือนพร้อมปุ่มลองใหม่ การบันทึกหลักไม่ย้อน
+const syncChain = {};
+function queueSync(date) {
+  if (!date) return Promise.resolve();
+  const run = () => syncHistoryFromPrep(date).then(reportSync, () => {
+    showSyncNote({ text: `${FC_SYNC_UI.fail} (${date})`, tone: 'warn', retry: () => queueSync(date) });
+  });
+  syncChain[date] = (syncChain[date] || Promise.resolve()).then(run, run);
+  return syncChain[date];
+}
 
 // สูตรที่ใช้จริงต่อวัตถุดิบ + ตั้งสูตรใช้จริงตัวใหม่
 export const getFcModelMap = () =>
@@ -224,9 +369,53 @@ export const getFcModelMap = () =>
 export const setFcLiveModel = row =>
   dbUpsert('kk_forecast_model_map?on_conflict=item_id', [{ ...row, updated_at: new Date().toISOString() }]);
 
+// เปลี่ยนสูตรใช้จริงของวัตถุดิบ แบบกันชน: เขียนได้เฉพาะเมื่อ updated_at ในฐานยังตรงกับที่อ่านมา (คืน false = มีคนแก้ก่อน ต้องโหลดใหม่)
+export async function setFcModelSafe(itemId, readAt, changes) {
+  const cur = await dbGet(`kk_forecast_model_map?item_id=eq.${enc(itemId)}&select=updated_at&limit=1`);
+  if (!cur.length || cur[0].updated_at !== readAt) return false;
+  const done = await dbPatchBack(`kk_forecast_model_map?item_id=eq.${enc(itemId)}&updated_at=eq.${enc(readAt)}`, { ...changes, updated_at: new Date().toISOString() });
+  return Array.isArray(done) && done.length > 0;
+}
+
+// ---------- ผลพยากรณ์ใช้จริง (kk_forecast_daily) ----------
+
+// ผลพยากรณ์ใช้จริงทั้งหมดของชุด scenario
+export const getFcDaily = scenario =>
+  dbGet(`kk_forecast_daily?scenario_code=eq.${enc(scenario)}&select=id,forecast_date,scenario_code,item_id,forecast_kg,lower_kg,upper_kg,sd_kg,n_history,actual_kg,hit,loss_kg&order=forecast_date,item_id,id`);
+
+// เพิ่มผลพยากรณ์ของวัน — แถวที่มีอยู่แล้วไม่ถูกแตะ (คืนแถวที่เพิ่มได้จริง)
+export const addFcDaily = rows => (rows.length ? dbInsertIgnore('kk_forecast_daily?on_conflict=forecast_date,scenario_code,item_id', rows) : Promise.resolve([]));
+
+// เติม/แก้เฉพาะผลจริงของแถว (actual_kg hit loss_kg) ห้ามแก้ค่าพยากรณ์
+export const patchFcDailyActual = p => dbPatch(`kk_forecast_daily?id=eq.${p.id}`, { actual_kg: p.actual_kg, hit: p.hit, loss_kg: p.loss_kg });
+
+// บันทึกผลพยากรณ์ของวันนั้นลง kk_forecast_daily (แถวที่มีแล้วไม่ถูกแตะ) — คืน { added, noBand }
+export async function recordFcDaily(fc, date, scenario = 'S1') {
+  const { rows, noBand } = dailyRowsOf(fc, date, scenario);
+  const added = await addFcDaily(rows);
+  return { added: added || [], noBand };
+}
+
+// อ่านผลพยากรณ์ใช้จริงทั้งหมด แล้วเติม/แก้ผลจริง (ใช้จริง/แม่นไหม/พลาดกี่กก.) จากประวัติใช้จริงก่อนส่งกลับ
+export async function refreshFcDaily(cfg, scenario = 'S1') {
+  let daily = await getFcDaily(scenario);
+  if (!daily.length) return daily;
+  const dates = daily.map(x => x.forecast_date).sort();
+  const hist = await getHistoryRange(dates[0], dates[dates.length - 1]);
+  const patches = actualPatches(daily, hist, cfg);
+  await Promise.all(patches.map(patchFcDailyActual));
+  const byId = {};
+  patches.forEach(p => { byId[p.id] = p; });
+  return daily.map(x => (byId[x.id] ? { ...x, ...byId[x.id] } : x));
+}
+
+// ประวัติใช้จริงของช่วงวัน (ใช้เติมผลจริง)
+export const getHistoryRange = (from, to) =>
+  dbGet(`${FC_HIST}?use_date=gte.${from}&use_date=lte.${to}&select=use_date,item_id,used_kg,flag&order=use_date,item_id`).then(cleanHist);
+
 // ผลการทดสอบ (1 แถวต่อ สูตร×วัตถุดิบ×กรอบ — ทดสอบซ้ำจะทับแถวเดิม)
 export const getFcTrials = () =>
-  dbGet('kk_forecast_trial?select=formula_code,item_id,band_type,band_value,period_from,period_to,regime,n,win_rate,loss_min_kg,loss_avg_kg,loss_max_kg,loss_sum_kg,loss_avg_baht,verdict,verdict_reason,tested_at&order=tested_at.desc&limit=5000');
+  dbGet('kk_forecast_trial?select=id,formula_code,item_id,band_type,band_value,period_from,period_to,regime,n,win_rate,loss_min_kg,loss_avg_kg,loss_max_kg,loss_sum_kg,loss_avg_baht,verdict,verdict_reason,tested_at&order=tested_at.desc,id');
 export const saveFcTrials = rows =>
   dbUpsert('kk_forecast_trial?on_conflict=formula_code,item_id,band_type,band_value,period_from,period_to', rows);
 
@@ -236,8 +425,8 @@ export const addFcRegime = rows => dbPost('kk_forecast_regime', rows);
 // ราคาต่อกิโลของแต่ละรายการ (kk_count_item ผูกกับราคาวัตถุดิบ — ไม่มีราคาในฐาน = คืน null ห้ามเดา)
 export async function getFcPrices() {
   const [items, ings] = await Promise.all([
-    dbGet('kk_count_item?select=id,name,grp,ingredient_id'),
-    dbGet('kk_ingredient?select=id,price_per_kg')
+    dbGet('kk_count_item?select=id,name,grp,ingredient_id&order=id'),
+    dbGet('kk_ingredient?select=id,price_per_kg&order=id')
   ]);
   const byIng = {};
   ings.forEach(i => { byIng[i.id] = i.price_per_kg === null ? null : Number(i.price_per_kg); });
@@ -251,7 +440,7 @@ export async function getFcBundle() {
   const [cfgRows, formulas, history, map, trials, prices] = await Promise.all([
     getFcConfig(), getFcFormulas(), getFcHistory(), getFcModelMap(), getFcTrials(), getFcPrices()
   ]);
-  return { cfgRows, cfg: parseCfg(cfgRows), formulas, history, map, trials, prices };
+  return { cfgRows, cfg: withFcCtx(parseCfg(cfgRows), { history, map, formulas, trials }), formulas, history, map, trials, prices };
 }
 
 // ---------- ข้อมูลจริงจากฐาน: หน้าพระราม 9 (ส่งของไปสาขา) ----------
@@ -278,7 +467,7 @@ export const getR9Items = () =>
 
 // รอบส่งที่เป็นค่าล่าสุด (แถวที่ถูกแก้ไปแล้วไม่ส่งมา จึงไม่มียอดเบิ้ล)
 export const getR9Rounds = () =>
-  dbGet('kk_r9_round?is_current=is.true&select=id,no,root_id,date,time,status,fee,note,sent_by,edited_by,rev_no,created_at,lines&order=date,created_at');
+  dbGet('kk_r9_round?is_current=is.true&select=id,no,root_id,date,time,status,fee,note,sent_by,edited_by,rev_no,created_at,lines&order=date,created_at,id');
 
 // ทุกครั้งที่แก้ของรอบนั้น ใหม่→เก่า (ดูได้ว่าเดิมเท่าไหร่ ใครแก้ เมื่อไหร่)
 export const getR9Revisions = rootId =>
@@ -294,11 +483,24 @@ export async function getR9Bundle() {
 export const newR9Key = date => `r9:${date}:${crypto.randomUUID()}`;
 
 // บันทึกรอบส่ง 1 รอบ (หัวรอบ + รายการ ในคำสั่งเดียวฝั่งฐาน) · ส่ง replaces = แก้รอบเก่าแบบไม่ทับของเดิม
-export const saveR9Round = ({ date, fee, note, by, lines, key, replaces = null }) =>
-  dbPost('rpc/kk_r9_save', { p_date: date, p_fee: fee, p_note: note, p_by: by, p_lines: lines, p_key: key, p_replaces: replaces });
+// วันที่ของรอบส่ง (ใช้อัปเดตประวัติพยากรณ์ของวันนั้นหลังแก้/ยกเลิก)
+const r9DateOf = id => dbGet(`kk_r9_round?id=eq.${id}&select=date`).then(r => (r[0] || {}).date || null).catch(() => null);
+
+export async function saveR9Round({ date, fee, note, by, lines, key, replaces = null }) {
+  const oldDate = replaces ? await r9DateOf(replaces) : null;
+  const r = await dbPost('rpc/kk_r9_save', { p_date: date, p_fee: fee, p_note: note, p_by: by, p_lines: lines, p_key: key, p_replaces: replaces });
+  queueSync(date);
+  if (oldDate && oldDate !== date) queueSync(oldDate);
+  return r;
+}
 
 // ลบรอบส่ง = ปิดไม่ให้นับ (ของเก่ายังอยู่ในฐาน)
-export const voidR9Round = (id, by) => dbPost('rpc/kk_r9_void', { p_id: id, p_by: by });
+export async function voidR9Round(id, by) {
+  const date = await r9DateOf(id);
+  const r = await dbPost('rpc/kk_r9_void', { p_id: id, p_by: by });
+  queueSync(date);
+  return r;
+}
 
 // หน้าตั้งค่ารายการ: เพิ่ม / แก้ / ลบ / เปิด-ปิด / ย้ายหมวด (ราคาตั้งต้นเป็นค่าตั้ง แก้ทับได้)
 export const addR9Item = row => dbPost('kk_rama9_item', [{ active: true, ...row }]);
@@ -386,9 +588,30 @@ export const clearDutiesOf = code =>
 export const getHomeNotices = () =>
   dbGet('kk_home_notice?active=eq.true&select=id,text,tone,character,icon,sort_order&order=sort_order');
 
+// แก้ข้อความประกาศ 1 ใบ (ทุกเครื่องเห็นข้อความใหม่ทันทีที่เปิดหน้าหลัก)
+export const saveHomeNotice = (id, text) => dbPatch(`kk_home_notice?id=eq.${enc(id)}`, { text });
+
+// เป้ายอดขายรวมต่อวัน (ตาราง kk_sales_target · ไม่มีแถว = ยังไม่ตั้งเป้า)
+export const getSalesTarget = () =>
+  dbGet('kk_sales_target?target_key=eq.all&select=daily_amount,updated_by,updated_at&limit=1').then(r => (r[0] ? Number(r[0].daily_amount) : null));
+
+// ตั้งเป้ายอดขายรวมต่อวัน (เจ้าของกดตั้งจากการ์ดยอดขายหน้าหลัก)
+export const saveSalesTarget = (amount, by) =>
+  dbUpsert('kk_sales_target?on_conflict=target_key', [{ target_key: 'all', daily_amount: amount, updated_by: by || null, updated_at: new Date().toISOString() }]);
+
+// ของที่ทิ้งจริงในช่วงวัน: วัตถุดิบดิบ (kk_prep_log "ทิ้ง" กก.) + อาหารปรุงสำเร็จ (kk_cooked_leftover "ทิ้ง" กรัม) — ใช้คิดต้นทุนของทิ้ง
+export async function getWasteRange(from, to) {
+  const t = enc('ทิ้ง');
+  const [raw, cooked] = await Promise.all([
+    dbGet(`kk_prep_log?log_date=gte.${from}&log_date=lte.${to}&is_current=is.true&entry_type=eq.${t}&qty=not.is.null&select=count_item_id,log_date,qty&order=log_date,id`),
+    dbGet(`kk_cooked_leftover?left_date=gte.${from}&left_date=lte.${to}&is_current=is.true&entry_type=eq.${t}&qty_box=not.is.null&select=menu_id,left_date,qty_box&order=left_date,id`)
+  ]);
+  return { raw, cooked };
+}
+
 // บันทึกใช้จริงย้อนหลังตั้งแต่วันที่กำหนด (ใช้ทั้งกราฟใช้ไปและการพยากรณ์)
 export const getUseHistoryFrom = from =>
-  dbGet(`kk_forecast_history?use_date=gte.${from}&select=use_date,item_id,used_kg,theo_kg,dow_num,flag&order=use_date`);
+  dbGet(`${FC_HIST}?use_date=gte.${from}&select=use_date,item_id,used_kg,theo_kg,dow_num,flag,source&order=use_date,item_id`).then(cleanHist);
 
 // ของเหลือ/ของทิ้งรายเมนูในช่วงวัน (ทุกประเภทแถว ไม่เฉพาะ "เหลือ")
 export const getLeftoverAll = (from, to) =>
@@ -397,13 +620,24 @@ export const getLeftoverAll = (from, to) =>
 // โหลดข้อมูลหน้าหลักทั้งหน้าในครั้งเดียว แล้วแปลงเป็นข้อมูลการ์ดด้วย home-model.js
 export async function getHomeBundle(date) {
   const d = date || todayIso();
-  const [notices, history, items, menus, left, rounds, r9items, map, formulas, cfg, staff, duties, assigns, brands, income] = await Promise.all([
-    getHomeNotices(), getUseHistoryFrom(shiftIso(d, -180)), getPrepItems(), getMenus(),
+  const prevStart = shiftIso(d.slice(0, 7) + '-01', -1).slice(0, 7) + '-01';   // วันที่ 1 ของเดือนก่อน (เทียบต้นทุนของทิ้ง)
+  const [notices, history, items, menus, left, rounds, r9items, map, formulas, cfg, staff, duties, assigns, brands, income, trials, target, waste, prices] = await Promise.all([
+    getHomeNotices(), getFcHistory(), getPrepItems(), getMenus(),
     getLeftoverAll(shiftIso(d, -37), d), getR9Rounds(), getR9Items(),
     getFcModelMap(), getFcFormulas(), getFcRules(), getStaff(), getStaffDuties(), getAssigns(),
-    getIncomeBrands(), getIncomeHistory(d.slice(0, 7) + '-01', d)
+    getIncomeBrands(), getIncomeHistory(d.slice(0, 7) + '-01', d), getFcTrials(),
+    getSalesTarget().catch(() => null), getWasteRange(prevStart, d), getFcPrices()
   ]);
-  return buildHome({ date: d, notices, history, items, menus, left, rounds: rounds.map(toR9Round), r9items, map, formulas, cfg, staff, duties, assigns, brands, income });
+  // ประวัติชุดเดียวกับหน้าพยากรณ์ + สูตรยอดขายบังคับโหมดล่วงหน้า + สูตรที่ใช้จริง (รวมสูตรสำรอง) ของพรุ่งนี้ → ค่าพยากรณ์ตรงกับหน้าเตรียม-เหลือ
+  withFcCtx(cfg, { history, map, formulas, trials });
+  const fc = buildForecast(items, [], shiftIso(d, 1), cfg);
+  const used = map.map(m => {
+    const r = fc.rows.find(x => x.id === m.item_id);
+    if (!r) return m;
+    if (r.fc === null) return { ...m, model_type: 'fixed', fixed_kg: null };
+    return m.model_type === 'fixed' ? m : { ...m, formula_code: r.usedCode };
+  });
+  return buildHome({ date: d, notices, history, items, menus, left, rounds: rounds.map(toR9Round), r9items, map: used, formulas: advanceFormulas(formulas), cfg, staff, duties, assigns, brands, income, target, waste, prices, fcRows: fc.rows });
 }
 
 // ---------- รูปของรายการนับสต๊อก (เก็บที่ฐาน+ที่เก็บไฟล์ ทุกหน้าเห็นรูปเดียวกัน) ----------
@@ -502,7 +736,7 @@ export const getCountItemsByGroup = grp =>
 
 // ผลนับย้อนหลังของรายการที่ระบุ (ใช้ในแผงดูประวัติ)
 export const getCountHistory = (ids, from, to) =>
-  dbGet(`kk_stock_count?is_current=is.true&count_date=gte.${from}&count_date=lte.${to}&count_item_id=in.(${ids.map(enc).join(',')})&select=count_item_id,count_date,kitchen_qty,condo_qty,counted_by&order=count_date.desc`);
+  dbGet(`kk_stock_count?is_current=is.true&count_date=gte.${from}&count_date=lte.${to}&count_item_id=in.(${ids.map(enc).join(',')})&select=count_item_id,count_date,kitchen_qty,condo_qty,counted_by&order=count_date.desc,id`);
 
 // ---------- รายได้ประจำวัน (ตาราง kk_income_brand / kk_income_channel / kk_daily_income) ----------
 
@@ -536,26 +770,23 @@ export async function getIncomeDay(date) {
   return { brands, channels, heads, lines };
 }
 
-// บันทึกยอดขาย 1 ร้านของวันนั้น (หัวบันทึกทับของเดิม แล้วทับยอดรายช่องทาง)
+// บันทึกยอดขาย 1 ร้านของวันนั้น
+// (บันทึกทีเดียวทั้งหัวและทุกช่องทางผ่าน RPC kk_income_save · ค่าเดิมก่อนแก้ถูกเก็บลง kk_daily_income_rev ไม่หาย · ช่องว่าง = ลบยอดช่องนั้น ไม่ใช่ 0)
 export async function saveIncomeDay({ date, brand, note, by, amounts }) {
-  const rows = await dbUpsertBack('kk_daily_income?on_conflict=income_date,brand_id',
-    [{ income_date: date, brand_id: brand, note: note || null, recorded_by: by || null, updated_at: new Date().toISOString() }]);
-  const id = (rows && rows[0] || {}).id;
+  const id = await dbPost('rpc/kk_income_save', { p_date: date, p_brand: brand, p_note: note || '', p_by: by || null, p_amounts: amounts || {} });
   if (!id) throw new Error('no income id');
-  const lines = Object.keys(amounts).map(ch => ({ income_id: id, channel_id: ch, amount: amounts[ch] }));
-  if (lines.length) await dbUpsert('kk_daily_income_line?on_conflict=income_id,channel_id', lines);
   return id;
 }
 
 // ยอดขายย้อนหลัง (ใช้ในแผงดูประวัติ)
 export const getIncomeRange = (from, to) =>
-  dbGet(`kk_daily_income?income_date=gte.${from}&income_date=lte.${to}&select=id,income_date,brand_id,note&order=income_date.desc`);
+  dbGet(`kk_daily_income?income_date=gte.${from}&income_date=lte.${to}&select=id,income_date,brand_id,note&order=income_date.desc,id`);
 
 // ยอดขายย้อนหลังพร้อมยอดรวมต่อวันต่อร้าน (รวมยอดให้เรียบร้อยก่อนส่งให้หน้าจอ)
 export async function getIncomeHistory(from, to) {
   const heads = await getIncomeRange(from, to);
   if (!heads.length) return [];
-  const lines = await dbGet(`kk_daily_income_line?income_id=in.(${heads.map(h => h.id).join(',')})&select=income_id,amount`);
+  const lines = await dbGet(`kk_daily_income_line?income_id=in.(${heads.map(h => h.id).join(',')})&select=income_id,amount&order=id`);
   return heads.map(h => ({
     date: h.income_date,
     brand: h.brand_id,
@@ -570,7 +801,7 @@ export const getLeaveTypes = () =>
 
 // วันลาในช่วงวัน (ใช้ทั้งปฏิทินและรายการลา)
 export const getLeaves = (from, to) =>
-  dbGet(`kk_staff_leave?leave_date=gte.${from}&leave_date=lte.${to}&select=id,staff_code,leave_date,leave_type,note,recorded_by&order=leave_date`);
+  dbGet(`kk_staff_leave?leave_date=gte.${from}&leave_date=lte.${to}&select=id,staff_code,leave_date,leave_type,note,recorded_by&order=leave_date,id`);
 
 // บันทึกวันลา: 1 แถวต่อคนต่อวัน (คนเดิมวันเดิมบันทึกซ้ำ = ทับของเดิม)
 export const saveLeaves = rows =>
@@ -578,3 +809,64 @@ export const saveLeaves = rows =>
 
 // ยกเลิกวันลา 1 แถว
 export const removeLeave = id => dbDelete(`kk_staff_leave?id=eq.${id}`);
+
+// ---------- การมาทำงาน (kk_view_open_day = วันร้านเปิด+ยอดขาย · kk_view_leave_all = วันลาแอปใหม่+แอปเก่า) ----------
+
+// โหลดข้อมูลสรุปการมาทำงานทั้งชุด (พนักงาน = ทุกคนที่ทำงานอยู่ ไม่รวมเจ้าของร้าน)
+export async function getAttendanceBundle() {
+  const [days, leaves, staff] = await Promise.all([
+    dbGet('kk_view_open_day?select=day,dow,sales,is_open&order=day'),
+    dbGet(`kk_view_leave_all?leave_date=lte.${todayIso()}&select=staff_code,leave_date,days`),
+    dbGet('kk_staff?active=eq.true&frozen=not.is.true&role=neq.owner&select=code,name,avatar,start_date,sort_order&order=sort_order,code')
+  ]);
+  const first = days.length ? days[0].day : todayIso();
+  const people = staff.map(s => ({ code: s.code, name: s.name, avatar: s.avatar || s.code, startSet: s.start_date || null, start: s.start_date || first }));
+  return { days: days.map(d => ({ ...d, sales: Number(d.sales) || 0 })), leaves, people, first };
+}
+
+// ---------- สูตรอาหาร (kk_recipe_card = การ์ดในหมวด · ตัวสูตรใช้ร่วมกับ App สูตร: kk_core_recipes / _ingredients / _steps) ----------
+
+// โหลดสูตรทั้งหมด จัดเป็นชุดพร้อมใช้ { recipes, lines, steps, cards } (ชื่อวัตถุดิบที่ผูกตารางกลางอ่านจาก ingredients_master)
+export async function getRecipeBook() {
+  const [cards, recipes, lines, steps] = await Promise.all([
+    dbGet('kk_recipe_card?select=recipe_id,section,sort_order,presets,exclude_groups,is_active&order=section,sort_order,recipe_id'),
+    dbGet('kk_core_recipes?select=id,name_th,recipe_type,recipe_subtype,base_batch_g,yield_percent,unit_size_g,unit_label,description,usage_ratio_note,status,photo_url,updated_at&order=id'),
+    dbGet('kk_core_recipe_ingredients?select=id,recipe_id,ingredient_id,custom_name,qty_g,group_name,group_order,sort_order,sub_recipe_id,sub_recipe_qty_g&order=recipe_id,group_order,sort_order,id'),
+    dbGet('kk_core_recipe_steps?select=id,recipe_id,step_order,instruction&order=recipe_id,step_order,id')
+  ]);
+  const ingIds = [...new Set(lines.map(l => l.ingredient_id).filter(Boolean))];
+  const master = ingIds.length ? await dbGet(`ingredients_master?id=in.(${ingIds.map(enc).join(',')})&select=id,name_th&order=id`) : [];
+  const book = { recipes: {}, lines: {}, steps: {}, cards: {}, list: cards };
+  recipes.forEach(r => { book.recipes[r.id] = r; });
+  cards.forEach(c => { book.cards[c.recipe_id] = c; });
+  lines.forEach(l => {
+    const m = master.find(x => x.id === l.ingredient_id);
+    const sub = l.sub_recipe_id && book.recipes[l.sub_recipe_id];
+    const name = l.custom_name || (m && m.name_th) || (sub && sub.name_th) || l.ingredient_id || '';
+    (book.lines[l.recipe_id] = book.lines[l.recipe_id] || []).push({ ...l, name, master_name: m ? m.name_th : null });
+  });
+  steps.forEach(s => { (book.steps[s.recipe_id] = book.steps[s.recipe_id] || []).push(s); });
+  return book;
+}
+
+// บันทึกสูตร (หัวสูตร / วัตถุดิบทั้งชุด / วิธีทำ) ทีเดียวผ่าน RPC · loadedAt ไม่ตรง = มีคนแก้ก่อน → โยน 'conflict'
+export async function saveRecipe({ id, loadedAt, head = null, lines = null, steps = null }) {
+  try {
+    return await dbPost('rpc/kk_recipe_save', { p_recipe: id, p_loaded: loadedAt || null, p_head: head, p_lines: lines, p_steps: steps });
+  } catch (e) {
+    if (/CONFLICT/.test(String(e && e.message))) throw new Error('conflict');
+    throw e;
+  }
+}
+
+// เพิ่มสูตรใหม่ในหมวด (สร้างหัวสูตร status active แล้วสร้างการ์ดต่อท้ายหมวด)
+export async function addRecipe({ name, type, section, order, by }) {
+  const id = 'rec_' + Date.now().toString(36);
+  await dbPost('kk_core_recipes', [{ id, name_th: name, recipe_type: type, recipe_subtype: 'standard', status: 'active', portions: 1, yield_percent: 100 }]);
+  await dbPost('kk_recipe_card', [{ recipe_id: id, section, sort_order: order, updated_by: by || null }]);
+  return id;
+}
+
+// แก้การ์ดสูตร: ปุ่ม batch / กลุ่มไม่รวมน้ำหนัก / ลำดับ / ปิดใช้-คืนกลับ (ไม่ลบสูตร)
+export const saveRecipeCard = (id, changes, by) =>
+  dbPatch(`kk_recipe_card?recipe_id=eq.${enc(id)}`, { ...changes, updated_by: by || null, updated_at: new Date().toISOString() });

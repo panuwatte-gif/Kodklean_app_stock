@@ -4,14 +4,15 @@ import { staffCode } from '../shared/auth.js';
 import { PREP_FILTERS, PREP_ENTRY, PREP_UI, PREP_PEOPLE_LOOK } from '../shared/config.js';
 import { topBarHtml, toast, dateBarHtml, dateBandHtml, handleDateClick, handleDatePick } from '../shared/ui.js';
 import { buildPrepModel, prepMeatTotals, riceTotals } from '../shared/calc.js';
-import { buildForecast, recTarget, carryOver } from '../shared/forecast.js';
+import { buildForecast, applyRecs } from '../shared/forecast.js';
 import { dayShort, fillText } from '../shared/format.js';
 import { setPeople, heroHtml, tabsHtml, filterHtml, kpiHtml, tipHtml } from './prep-view.js';
 import { historySheet } from './prep-date.js';
 import { meatBodyHtml } from './prep-meat.js';
 import { riceBodyHtml } from './prep-rice.js';
 import { fahBodyHtml } from './prep-fah.js';
-import { forecastBodyHtml } from './prep-forecast.js';
+import { forecastBodyHtml, saveFcDailyOnce } from './prep-forecast.js';
+import { manageList, manageBtnHtml } from '../shared/list-edit.js';
 
 // สถานะกลางของหน้า: วันที่ทำงานตัวเดียว ทุกแท็บใช้ร่วมกัน สลับแท็บแล้ววันที่ไม่รีเซ็ต
 const state = { tab: 'meat', filter: 'all', date: todayIso(), model: null, fc: null, draft: null, error: false };
@@ -44,10 +45,8 @@ export function mountPrepPage(root) {
       setPeople(peopleOf(b.staff));
       state.model = buildPrepModel(b);
       state.fc = buildForecast(b.items, b.logsFc, state.date, b.cfg);
-      // แนะเป้าเตรียม = ขอบบนพยากรณ์ − คงเหลือเมื่อวาน (เสาร์ห้ามเผื่อ)
-      state.model.meatRows.forEach(r => {
-        r.rec = recTarget(state.fc.rows.find(x => x.id === r.id), carryOver(b.logsFc, r.id, state.date), state.date);
-      });
+      applyRecs(state.model, state.fc, b.logsFc, state.date);   // ค่าแนะนำเนื้อสัตว์ + ข้าว (ชุดเดียวกับหน้าครัวและหน้าพนักงาน)
+      saveFcDailyOnce(state.fc, state.date);   // เก็บผลพยากรณ์ของวันนี้ไว้วัดความแม่นยำ (ครั้งเดียวต่อวัน ไม่ทับของเดิม)
     }
     catch { state.error = true; }
     drawData();
@@ -86,14 +85,14 @@ export function mountPrepPage(root) {
     if (state.tab === 'meat') {
       const rows = visible(m.meatRows);
       kpi.innerHTML = kpiHtml('meat', prepMeatTotals(rows));
-      body.innerHTML = copyBtn + meatBodyHtml(rows, get('prepMeatGroups'), m, state.draft);
+      body.innerHTML = manageBtnHtml('item', 'เนื้อสัตว์') + copyBtn + meatBodyHtml(rows, get('prepMeatGroups'), m, state.draft);
     } else if (state.tab === 'rice') {
       const rows = visible(m.riceRows);
       const t = riceTotals(rows);
       kpi.innerHTML = kpiHtml('rice', t);
-      body.innerHTML = copyBtn + riceBodyHtml(rows, t, m, state.draft);
+      body.innerHTML = manageBtnHtml('item', 'ข้าวหุง') + copyBtn + riceBodyHtml(rows, t, m, state.draft);
     } else if (state.tab === 'forecast') body.innerHTML = forecastBodyHtml(state.fc, state.date);
-    else body.innerHTML = fahBodyHtml(m);
+    else body.innerHTML = manageBtnHtml('menu') + fahBodyHtml(m);
   };
 
   // บันทึก 1 ช่องลงฐาน (append-only ผ่าน data.js) ด้วยวันที่ที่เลือก แล้วโหลดข้อมูลวันเดิมมาใหม่
@@ -153,6 +152,7 @@ export function mountPrepPage(root) {
     else if (histBtn) openHistory(histBtn);
     else if (draftBtn) applyDraft(draftBtn);
     else if (hit('[data-copy-prev]')) copyPrev();
+    else if (hit('[data-manage]')) { const b = hit('[data-manage]'); manageList({ kind: b.dataset.manage, grp: b.dataset.grp, onDone: load }); }
     else if (hit('[data-retry]')) load();
     else if (await handleDateClick(event, state)) { state.draft = null; draw(); load(); }
   });

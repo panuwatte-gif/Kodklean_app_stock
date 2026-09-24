@@ -73,9 +73,10 @@ export const MUSIC = {
   instPlaylist: 'เพลงบรรเลง',
   folder: 'assets/music/',
   bundledVocal: [],                       // เช่น ['song1.mp3', 'song2.mp3']
-  bundledInst: ['inst_village.mp3'],
+  bundledInst: [],                        // ว่าง = ใช้แต่เพลงจากเพลย์ลิสต์ ไม่มีเพลงสำรองแถม
   volume: 0.35,
-  defaultMode: 'mix'                      // 'mix' (สุ่มทุกเพลง) | 'vocal' | 'inst' | 'off'
+  defaultType: 'all',                     // เปิดเกมมาเล่นประเภทไหน: 'all' | 'vocal' | 'inst'
+  defaultOrder: 'shuffle'                 // เปิดเกมมาเล่นลำดับไหน: 'shuffle' | 'list' | 'repeat'
 };
 
 // ── ข้อความ 2 ภาษา ──
@@ -85,7 +86,9 @@ export const TEXT = {
     board: 'อันดับ', back: 'หมู่บ้าน', newBest: 'สถิติใหม่!', guest: 'โหมดทดลอง · ไม่บันทึกคะแนน',
     you: 'คุณ', empty: 'ยังไม่มีใครทำคะแนน', close: 'ปิด', loading: 'กำลังโหลด…',
     tapStart: 'แตะเพื่อเริ่ม', howTo: 'ลากซ้าย-ขวาแล้วปล่อย · ชิ้นเหมือนกันชนกันจะรวมร่าง',
-    mMix: 'สุ่มทุกเพลง', mVocal: 'เพลงมีเนื้อ', mInst: 'เพลงบรรเลง', mOff: 'ปิดเพลง', sfxOn: 'เปิดเสียงเอฟเฟกต์', sfxOff: 'ปิดเสียงเอฟเฟกต์',
+    tAll: 'ทุกเพลง', tVocal: 'เพลงมีเนื้อ', tInst: 'เพลงบรรเลง',
+    oShuffle: 'สุ่มเพลง', oList: 'เรียงตามลำดับ', oRepeat: 'เล่นซ้ำเพลงเดิม',
+    mOn: 'เปิดเพลง', mOff: 'ปิดเพลง', sfxOn: 'เปิดเสียงเอฟเฟกต์', sfxOff: 'ปิดเสียงเอฟเฟกต์',
     noSongs: 'ยังไม่มีเพลงในโหมดนี้', saved: 'บันทึกคะแนนแล้ว', saveFail: 'บันทึกคะแนนไม่สำเร็จ',
     combo: 'คอมโบ', reached: 'ไปถึงขั้น'
   },
@@ -94,7 +97,9 @@ export const TEXT = {
     board: 'အဆင့်', back: 'ရွာ', newBest: 'စံချိန်သစ်!', guest: 'စမ်းသပ်မုဒ် · ရမှတ်မသိမ်းပါ',
     you: 'သင်', empty: 'ရမှတ်မရှိသေးပါ', close: 'ပိတ်', loading: 'ဖွင့်နေသည်…',
     tapStart: 'စရန်နှိပ်ပါ', howTo: 'ဘယ်ညာဆွဲပြီး လွှတ်ပါ · တူတာနှစ်ခုထိရင် ပေါင်းသွားမည်',
-    mMix: 'အားလုံး', mVocal: 'သီချင်း', mInst: 'တီးလုံး', mOff: 'ဂီတပိတ်', sfxOn: 'အသံဖွင့်', sfxOff: 'အသံပိတ်',
+    tAll: 'အားလုံး', tVocal: 'သီချင်း', tInst: 'တီးလုံး',
+    oShuffle: 'ကျပန်း', oList: 'အစဉ်လိုက်', oRepeat: 'ထပ်ဖွင့်',
+    mOn: 'ဂီတဖွင့်', mOff: 'ဂီတပိတ်', sfxOn: 'အသံဖွင့်', sfxOff: 'အသံပိတ်',
     noSongs: 'ဤမုဒ်တွင် သီချင်းမရှိသေးပါ', saved: 'ရမှတ်သိမ်းပြီး', saveFail: 'ရမှတ်မသိမ်းနိုင်ပါ',
     combo: 'ကွန်ဘို', reached: 'ရောက်ခဲ့သည့်အဆင့်'
   }

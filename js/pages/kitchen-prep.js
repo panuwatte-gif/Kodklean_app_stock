@@ -1,10 +1,10 @@
 // แท็บเตรียมอาหาร (เอมมี่ + อัด ใช้ร่วมกัน) — ใช้ข้อมูลชุดเดียวกับหน้าเตรียม-เหลือ (kk_prep_log)
 import { getPrepBundle, savePrep } from '../shared/data.js';
 import { buildPrepModel } from '../shared/calc.js';
-import { buildForecast, recTarget, carryOver } from '../shared/forecast.js';
+import { buildForecast, applyRecs } from '../shared/forecast.js';
 import { KITCHEN_UI as T, PREP_ENTRY } from '../shared/config.js';
 import { itemPhoto } from '../shared/ui.js';
-import { weightBig } from '../shared/format.js';
+import { weightBig, fillText } from '../shared/format.js';
 
 const P = T.prep;
 
@@ -12,11 +12,7 @@ const P = T.prep;
 export async function loadPrepDay(date) {
   const b = await getPrepBundle(date);
   const model = buildPrepModel(b);
-  const fc = buildForecast(b.items, b.logsFc, date, b.cfg);
-  model.meatRows.forEach(r => {
-    r.rec = recTarget(fc.rows.find(x => x.id === r.id), carryOver(b.logsFc, r.id, date), date);
-  });
-  return model;
+  return applyRecs(model, buildForecast(b.items, b.logsFc, date, b.cfg), b.logsFc, date);
 }
 
 // ช่องกรอกตัวเลข 1 ช่อง (kind = meat/rice · f = ชื่อช่อง)
@@ -33,17 +29,21 @@ function itemCell(item) {
     </button>`;
 }
 
-// แถวเนื้อสัตว์ 1 แถว: ใช้ไป = เตรียม + เบิกเพิ่ม − ทิ้ง/เสีย − คงเหลือสด − อาหารปรุงสุกเหลือ (สูตรเดียวกับหน้าเตรียม-เหลือ)
+// ช่องใช้ไป: ตัวเลข หรือเหตุผลสั้นๆ เมื่อยังคิดไม่ได้
+const useCell = item => (item.use === null || item.use === undefined
+  ? `<small style="color:#B4741B;font-weight:700">${P.why[item.useWhy] || P.none}</small>` : weightBig(item.use));
+
+// แถวเนื้อสัตว์ 1 แถว: ใช้ไปมาจาก prepUse ใน calc.js (สูตรเดียวกับหน้าเตรียม-เหลือและข้อมูลพยากรณ์)
 function meatRow(item) {
   return `
     <div class="kp__row" data-id="${item.id}">
       ${itemCell(item)}
-      <span class="kp__fc">${item.rec ? item.rec.t : P.none}</span>
+      <span class="kp__fc"${item.carryStale || item.carryNoCooked ? ` title="${[item.carryStale ? P.carryStale : '', item.carryNoCooked ? P.carryNoCooked : ''].filter(Boolean).join(' · ')}"` : ''}>${item.rec ? item.rec.t : P.none}${item.carryStale || item.carryNoCooked ? ' ⚠' : ''}</span>
       ${cell('meat', item.id, 'prep', item.prep)}
       ${cell('meat', item.id, 'extra', item.extra)}
       ${cell('meat', item.id, 'waste', item.waste)}
       ${cell('meat', item.id, 'left', item.left)}
-      <span class="kp__sum">${item.use === null || item.use === undefined ? P.none : weightBig(item.use)}</span>
+      <span class="kp__sum">${useCell(item)}</span>
     </div>`;
 }
 
@@ -55,11 +55,21 @@ function riceRow(item) {
   return `
     <div class="kp__row kp__row--rice" data-id="${item.id}">
       ${itemCell(item)}
+      <span class="kp__fc">${item.rec ? item.rec.t : P.none}</span>
       ${cell('rice', item.id, 'r0', rounds[0])}
       ${cell('rice', item.id, 'r1', rounds[1])}
       ${cell('rice', item.id, 'r2', rounds[2])}
       <span class="kp__sum">${total === null ? P.none : weightBig(total)}</span>
     </div>`;
+}
+
+// คำเตือนใต้ตาราง: เมนูที่ไม่ได้ผูกวัตถุดิบ / ข้อมูลอาหารเหลือขัดกัน / พระราม 9 ไม่มีน้ำหนักต่อหน่วย
+function warnNotes(model) {
+  const w = model.useWarn || {}, out = [];
+  if ((w.unbound || []).length) out.push(fillText(P.warnUnbound, { names: w.unbound.join(', ') }));
+  if ((w.conflicts || []).length) out.push(fillText(P.warnConflict, { names: w.conflicts.join(', ') }));
+  if ((w.r9NoUnit || []).length) out.push(fillText(P.warnR9Unit, { names: w.r9NoUnit.join(', ') }));
+  return out.map(t => `<p class="kp__note" style="color:#B4741B">⚠ ${t}</p>`).join('');
 }
 
 // ทั้งแท็บ: การ์ดตารางเตรียมวัตถุดิบ + การ์ดตารางหุงข้าว
@@ -74,7 +84,7 @@ export function prepBodyHtml(model, q) {
         ${head(P.meatCols)}
         ${meat.length ? meat.map(meatRow).join('') : `<p class="kempty">${P.noRows}</p>`}
       </div>
-      <p class="kp__note">${P.useNote}</p>
+      <p class="kp__note">${P.useNote}</p>${warnNotes(model)}
     </section>
     <section class="kp kp--rice">
       <h2 class="kp__title">${P.riceTitle}<span>${P.unit}</span></h2>

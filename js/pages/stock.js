@@ -11,7 +11,7 @@ import { photoOf, qtyHtml, resultHtml, isBothPlaces, isBadSplit, groupsHtml } fr
 import { itemActions } from './stock-form.js';
 
 // สิ่งที่ผู้ใช้เลือกอยู่บนหน้านี้ (ไม่แชร์ข้ามหน้า)
-const view = { tab: 'all', grp: 'all', q: '', mine: true, left: false, mode: null, closed: {} };
+const view = { tab: 'kitchen', grp: 'all', q: '', mine: true, left: false, mode: null, closed: {} };
 
 // เอาโครงหน้าที่โหลดมาแล้ว มาเติมรายการที่ต้องนับจากฐานข้อมูล
 export async function mountStockPage(root) {

@@ -1,0 +1,82 @@
+/* หน้าสูตรอาหาร — ใช้โครงกระจกของหน้างาน (fah.css) + ตารางคำนวณ batch */
+.rcbody { display: flex; flex-direction: column; gap: 10px; }
+
+/* หมวดสูตร 6 หมวด */
+.rcsec { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rcsec__card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  min-height: 150px; padding: 12px; text-align: left; cursor: pointer; font: inherit;
+  border-radius: 20px; border: 1px solid rgba(255, 255, 255, .92); background: rgba(255, 255, 255, .78);
+  box-shadow: 0 8px 20px rgba(40, 80, 120, .12); color: var(--ink);
+}
+.rcsec__card:active { transform: scale(.97); }
+.rcsec__card img { width: 54px; height: 54px; object-fit: contain; margin-bottom: 4px; }
+.rcsec__card b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; }
+.rcsec__card em { font-style: normal; font-size: 11.5px; line-height: 1.4; color: var(--soft); text-wrap: pretty; }
+.rcsec__n { margin-top: auto; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--a) 14%, #fff); color: #1C6F61; font-size: 11.5px; font-weight: 600; }
+
+/* รายการสูตร */
+.rchead { display: flex; flex-direction: column; gap: 4px; }
+.rchead.wsec { flex-direction: row; padding: 12px; }
+.rchead__name { font-family: Mitr, sans-serif; font-weight: 500; font-size: 17px; line-height: 1.35; color: var(--ink); }
+.rcrow { display: flex; align-items: center; gap: 6px; padding: 8px 8px 8px 12px; }
+.rcrow.is-off { opacity: .6; }
+.rcrow__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; min-height: 44px; justify-content: center; border: 0; background: none; padding: 0; text-align: left; font: inherit; cursor: pointer; }
+.rcrow__main b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 14.5px; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
+.rcrow__main em { font-style: normal; font-size: 11.5px; color: var(--soft); }
+.rctag { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #FFF1D6; color: #8A5A00; font-style: normal; font-size: 10.5px; font-weight: 600; vertical-align: 2px; }
+.rctag--off { background: #ECEFF3; color: #5B6775; }
+.rctool { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; display: grid; place-items: center; background: #EEF5F3; color: #2B5E55; cursor: pointer; }
+.rctool--off { background: #FDECEA; color: #C23A2E; }
+.rcbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.rcbar--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rcbar--3 .wbtn { padding: 0 6px; font-size: 12.5px; }
+
+/* ส่วนหัวสูตร + ช่องต้องการทำ */
+.rcnote { margin: 0; font-size: 12px; line-height: 1.55; color: var(--soft); text-wrap: pretty; }
+.rcctl { display: flex; flex-direction: column; gap: 9px; }
+.rcctl__want { display: flex; align-items: center; gap: 8px; }
+.rcctl__want span { flex: none; font-family: Mitr, sans-serif; font-size: 14px; color: var(--ink); }
+.rcctl__want em { flex: none; font-style: normal; font-size: 12.5px; color: var(--soft); }
+.rcchips { display: flex; flex-wrap: wrap; gap: 6px; }
+.rcchip { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #D6E6E2; background: #fff; color: #2B5E55; font: inherit; font-size: 12.5px; cursor: pointer; }
+.rcchip.is-on { border-color: var(--a); background: var(--a); color: #fff; }
+.rcout { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--a) 10%, #fff); }
+.rcout b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 18px; color: #145E52; }
+.rcout em { font-style: normal; font-size: 11.5px; color: #3F6E66; }
+.rchow { margin: 0; font-size: 11.5px; line-height: 1.5; color: var(--soft); }
+.rcreset { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; min-height: 36px; padding: 0 12px; border: 1.5px solid #D6E6E2; border-radius: 999px; background: #fff; color: #2B5E55; font: inherit; font-size: 12.5px; cursor: pointer; }
+
+/* ตารางวัตถุดิบ */
+.rct { padding: 8px 10px; }
+.rct__row { display: grid; grid-template-columns: minmax(0, 1fr) 68px 92px; gap: 6px; align-items: center; padding: 7px 0; border-bottom: 1px solid #E7EEF3; }
+.rct__row:last-child { border-bottom: 0; }
+.rct__row--head { font-size: 11px; color: var(--soft); padding-top: 2px; }
+.rct__row--head span:not(:first-child) { text-align: right; }
+.rct__name { display: flex; flex-direction: column; font-size: 13px; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
+.rct__name em { font-style: normal; font-size: 10.5px; color: var(--soft); }
+.rct__err { color: #C23A2E !important; }
+.rct__need { text-align: right; font-family: Mitr, sans-serif; font-weight: 500; font-size: 14px; color: #145E52; }
+.rct__have { display: flex; flex-direction: column; align-items: stretch; gap: 2px; }
+.rct__have .wfield__in { width: 100%; height: 36px; text-align: right; padding: 0 8px; }
+.rct__have em { min-height: 12px; font-style: normal; font-size: 10.5px; text-align: right; color: #B06A00; }
+.rct__row.is-ex { opacity: .7; }
+.rct__row.is-ex .rct__name { font-style: italic; }
+.rct__row.is-limit .rct__need { color: #C23A2E; }
+.rct__row.is-limit .rct__name::before { content: '● '; color: #C23A2E; font-size: 10px; }
+.rct__grp { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding: 6px 8px; border-radius: 10px; background: #F0F6F4; font-size: 12px; color: #2B5E55; }
+.rct__grp button { flex: none; min-height: 32px; border: 0; background: none; color: #1C7C6C; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* วิธีทำ */
+.rcsteps { display: flex; flex-direction: column; gap: 8px; }
+.rcsteps__title { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: var(--ink); }
+.rcsteps__grp b { font-size: 12.5px; color: #2B5E55; }
+.rcsteps__grp ol { margin: 4px 0 0; padding-left: 20px; font-size: 12.5px; line-height: 1.6; color: var(--ink); }
+.rcsteps__in { width: 100%; min-height: 200px; margin: 8px 0; box-sizing: border-box; }
+
+/* โหมดแก้วัตถุดิบ */
+.rce { display: flex; flex-direction: column; gap: 4px; }
+.rce__row { display: grid; grid-template-columns: minmax(0, 1fr) 84px 40px; gap: 6px; align-items: center; padding: 5px 0; border-bottom: 1px solid #E7EEF3; }
+.rce__row .wfield__in { height: 40px; padding: 0 8px; }
+.rce__qty { text-align: right; }
+.rce__row em { grid-column: 1 / -1; font-style: normal; font-size: 10.5px; color: var(--soft); }

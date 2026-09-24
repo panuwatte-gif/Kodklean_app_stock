@@ -4,6 +4,7 @@ import { riceRaw, riceCooked, riceResale, riceToRaw } from '../shared/calc.js';
 import { weightBig, dayShort } from '../shared/format.js';
 import { personPill } from './prep-view.js';
 import { cellInput, histDot } from './prep-meat.js';
+import { recHtml } from '../shared/ui.js';
 
 // หัวตาราง (คอลัมน์ตาม config)
 function headHtml(cols) {
@@ -16,11 +17,11 @@ function cardTitle(icon, text, tone) {
 }
 
 // ชื่อข้าวพร้อมรูปเล็ก
-function riceName(r, no, small) {
+function riceName(r, no, small, rec = '') {
   const photo = STOCK_PHOTOS[r.id] || STOCK_PHOTO_BY_GROUP['ข้าว'];
   return `
     <span class="ptab__no${small ? ' ptab__no--sm' : ''}">${no}</span>
-    <div class="ptab__item"><span class="ptab__thumb${small ? ' ptab__thumb--sm' : ''}"><img src="${photo}" alt="" width="${small ? 22 : 28}" height="${small ? 22 : 28}" loading="lazy" decoding="async"></span><span class="ptab__name"><span>${r.name}</span></span></div>`;
+    <div class="ptab__item"><span class="ptab__thumb${small ? ' ptab__thumb--sm' : ''}"><img src="${photo}" alt="" width="${small ? 22 : 28}" height="${small ? 22 : 28}" loading="lazy" decoding="async"></span><span class="ptab__name"><span>${r.name}</span>${rec}</span></div>`;
 }
 
 // ช่องกรอกของแท็บข้าว (บันทึกเข้า kk_prep_log ผ่าน prep.js)
@@ -35,7 +36,7 @@ function cookTable(list, t, draft) {
     const dv = draft && (r.cook === null || r.cook === undefined) ? draft.values[r.id] : undefined;
     return `
     <div class="ptab__row" data-id="${r.id}">
-      ${riceName(r, i + 1)}
+      ${riceName(r, i + 1, false, recHtml(r.rec, PREP_UI.recRiceLabel))}
       <div class="ptab__owners">${r.owners.map(personPill).join('<i>+</i>')}</div>
       ${rc(r.id, 'cook', r.cook, r.revs)}
       ${[0, 1, 2].map(k => rc(r.id, 'r' + k, r.rounds[k], r.revs)).join('')}

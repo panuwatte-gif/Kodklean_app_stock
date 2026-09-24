@@ -5,14 +5,19 @@ import { P, tx } from '../core/player.js';
 const I = {
   sfxOn: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 8.5a4.5 4.5 0 0 1 0 7M18.5 6a8 8 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   sfxOff: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  mix: '<svg viewBox="0 0 24 24"><path d="M3 7h3.5a4 4 0 0 1 3.3 1.8l4.4 6.4a4 4 0 0 0 3.3 1.8H21M3 17h3.5a4 4 0 0 0 3.3-1.8l.7-1M14.2 8.8l.3-.4A4 4 0 0 1 17.8 7H21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 4.5L21 7l-2.5 2.5M18.5 14.5L21 17l-2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  vocal: '<svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
-  inst: '<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="2.8"/><circle cx="17.5" cy="16" r="2.8"/></svg>',
-  off: '<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" opacity=".45"/><circle cx="6.5" cy="18" r="2.8" opacity=".45"/><path d="M3 3l18 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  all: '<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6" cy="18" r="2.6"/><circle cx="17" cy="16" r="2.6"/></svg>',
+  vocal: '<svg viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  inst: '<svg viewBox="0 0 24 24"><path d="M4 16V9M8 19V6M12 17V4M16 19V8M20 15v-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  shuffle: '<svg viewBox="0 0 24 24"><path d="M3 7h3.6a4 4 0 0 1 3.3 1.8l4.2 6.4a4 4 0 0 0 3.3 1.8H21M3 17h3.6a4 4 0 0 0 3.3-1.8l.8-1.2M14.3 8.9l.3-.5A4 4 0 0 1 17.9 7H21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.4 4.4L21 7l-2.6 2.6M18.4 14.4L21 17l-2.6 2.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  list: '<svg viewBox="0 0 24 24"><path d="M4 7h11M4 12h11M4 17h7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M18 8v9M15.4 14.4L18 17l2.6-2.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  repeat: '<svg viewBox="0 0 24 24"><path d="M7 5h9a4 4 0 0 1 4 4v1M17 19H8a4 4 0 0 1-4-4v-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9.6 2.6L7 5l2.6 2.4M14.4 16.6L17 19l-2.6 2.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.2"/></svg>',
+  musicOn: '<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="6" cy="18" r="2.6"/><circle cx="17" cy="16" r="2.6"/></svg>',
+  musicOff: '<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" opacity=".4"/><circle cx="6" cy="18" r="2.6" opacity=".4"/><path d="M3 3l18 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
   trophy: '<svg viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   back: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
-const MODE_LABEL = { mix: 'mMix', vocal: 'mVocal', inst: 'mInst', off: 'mOff' };
+export const TYPE_LABEL = { all: 'tAll', vocal: 'tVocal', inst: 'tInst' };
+export const ORDER_LABEL = { shuffle: 'oShuffle', list: 'oList', repeat: 'oRepeat' };
 const itemSrc = tier => 'assets/items/' + ITEMS[tier - 1].img + '.webp';
 
 let root, el = {};
@@ -34,7 +39,9 @@ export function mount(host, h) {
         <div class="nextbox"><span>${tx('next')}</span><img id="h-next" alt=""></div>
         <div class="btns">
           <button class="ib" data-act="sfx" id="h-sfx"></button>
-          <button class="ib ib--wide" data-act="music" id="h-music"></button>
+          <button class="ib" data-act="order" id="h-order"></button>
+          <button class="ib" data-act="type" id="h-type"></button>
+          <button class="ib" data-act="mute" id="h-mute"></button>
           <button class="ib" data-act="board" aria-label="${tx('board')}">${I.trophy}</button>
         </div>
       </div>
@@ -44,7 +51,8 @@ export function mount(host, h) {
     <div class="layer" id="h-layer"></div>`);
   el = {
     score: root.querySelector('#h-score'), best: root.querySelector('#h-best'), next: root.querySelector('#h-next'),
-    sfx: root.querySelector('#h-sfx'), music: root.querySelector('#h-music'),
+    sfx: root.querySelector('#h-sfx'), order: root.querySelector('#h-order'),
+    type: root.querySelector('#h-type'), mute: root.querySelector('#h-mute'),
     combo: root.querySelector('#h-combo'), toast: root.querySelector('#h-toast'), layer: root.querySelector('#h-layer')
   };
   root.addEventListener('click', e => {
@@ -64,10 +72,18 @@ export function setSfx(on) {
   el.sfx.classList.toggle('is-off', !on);
   el.sfx.setAttribute('aria-label', tx(on ? 'sfxOn' : 'sfxOff'));
 }
-export function setMusic(mode) {
-  el.music.innerHTML = I[mode] + `<small>${tx(MODE_LABEL[mode])}</small>`;
-  el.music.classList.toggle('is-off', mode === 'off');
-  el.music.setAttribute('aria-label', tx(MODE_LABEL[mode]));
+export function setOrder(order) {
+  el.order.innerHTML = I[order];
+  el.order.setAttribute('aria-label', tx(ORDER_LABEL[order]));
+}
+export function setType(type) {
+  el.type.innerHTML = I[type];
+  el.type.setAttribute('aria-label', tx(TYPE_LABEL[type]));
+}
+export function setMusicOn(on) {
+  el.mute.innerHTML = on ? I.musicOn : I.musicOff;
+  el.mute.classList.toggle('is-off', !on);
+  el.mute.setAttribute('aria-label', tx(on ? 'mOn' : 'mOff'));
 }
 
 let comboT = 0;

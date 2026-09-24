@@ -2,7 +2,7 @@
 import { R9_SETUP_UI as T, R9_UNITS, R9_PHOTOS, R9_CAT_ICONS, CAT_COLOR_PRESETS } from '../shared/config.js';
 import { glyph, toast, formSheet, pickerSheet, confirmSheet, pickPhotoWebp, r9Photo } from '../shared/ui.js';
 import { money, fillText } from '../shared/format.js';
-import { addR9Item, saveR9Item, removeR9Item, setR9CatActive, setR9ItemsActive, moveR9Items, addR9Cat } from '../shared/data.js';
+import { uploadWebp, addR9Item, saveR9Item, removeR9Item, setR9CatActive, setR9ItemsActive, moveR9Items, addR9Cat } from '../shared/data.js';
 
 // แถวรายการ 1 แถว: สวิตช์เปิด/ปิด + ราคาตั้งต้น + จำนวนรอบที่เคยส่ง + ปุ่มแก้/ลบ
 function rowHtml(it, pick, sel) {
@@ -146,7 +146,7 @@ export async function changeR9Photo(it) {
   if (picked === '__upload') {
     const url = await pickPhotoWebp(192);
     if (!url) return null;
-    await saveR9Item(it.id, { photo: url });
+    await saveR9Item(it.id, { photo: await uploadWebp('rama9', it.id, url) });
     toast(T.photoUploaded);
     return true;
   }

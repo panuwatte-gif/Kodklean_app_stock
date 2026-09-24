@@ -2,7 +2,7 @@
 import { HOME_UI, HOME_CHARS } from '../shared/config.js';
 import { glyph, dropdownHtml } from '../shared/ui.js';
 import { pageOf, ricePotCount } from '../shared/calc.js';
-import { dayLongTh, weight, fillText } from '../shared/format.js';
+import { dayLongTh, weight, fillText, escHtml } from '../shared/format.js';
 
 // หัวการ์ดที่ทุกการ์ดใช้ร่วมกัน: แถบสีอ่อนประจำส่วน + ตัวละคร (ซ้าย/ขวา) + ชื่อ/ตัวเลขเด่น/คำอธิบาย + เครื่องมือด้านขวา
 export function cardHead({ tone, title, big = '', sub = '', char = '', side = 'left', tools = '' }) {
@@ -32,13 +32,14 @@ export function heroHtml(meta, ui) {
     <div class="hhero__row">${branch}<span class="hhero__sample">${HOME_UI.sample} • ${HOME_UI.closedTo} ${dayLongTh(meta.analysisEnd)}</span></div>`;
 }
 
-// ประกาศ: แสดงเฉพาะที่เปิดใช้ เรียงตามลำดับ — ข้อความคงตามที่กำหนด
-export function noticesHtml(rows) {
+// ประกาศ: แสดงเฉพาะที่เปิดใช้ เรียงตามลำดับ (canEdit = แอดมินเห็นปุ่มดินสอ แตะการ์ดแล้วแก้ข้อความได้)
+export function noticesHtml(rows, canEdit = false) {
   return rows.filter(n => n.active !== false).sort((a, b) => (a.sort || 0) - (b.sort || 0)).map(n => `
-    <article class="hnote hnote--${n.tone}">
+    <article class="hnote hnote--${n.tone}${canEdit ? ' is-edit' : ''}"${canEdit ? ` data-notice="${escHtml(n.id)}" role="button" tabindex="0" aria-label="${HOME_UI.noticeEdit}"` : ''}>
       <img class="hnote__char" src="${HOME_CHARS[n.character]}" alt="" loading="lazy" decoding="async">
       <span class="hnote__ic">${glyph(n.icon, 22)}</span>
-      <b class="hnote__text">${n.text}</b>
+      <b class="hnote__text">${escHtml(n.text)}</b>
+      ${canEdit ? `<span class="hnote__pen">${glyph('pencil', 18)}</span>` : ''}
     </article>`).join('');
 }
 
@@ -77,7 +78,7 @@ export function prepCard(prep, meta, ui) {
 // การ์ดหุงข้าว: 3 กลุ่ม แต่ละกลุ่มมี dropdown ของตัวเอง (เปลี่ยนกลุ่มหนึ่งไม่กระทบอีกสองกลุ่ม)
 export function riceCard(groups, ui) {
   const t = HOME_UI.rice;
-  const val = (v, unit) => v === null || v === undefined ? `<i class="hrice__none">${t.noRecipe}</i>` : `<b>${weight(v)}</b> ${unit}`;
+  const val = (v, unit, none = t.noRecipe) => v === null || v === undefined ? `<i class="hrice__none">${none}</i>` : `<b>${weight(v)}</b> ${unit}`;
   const cols = groups.map(g => {
     const cur = g.options.find(o => o.id === ui.rice[g.id]) || g.options[0];
     const pots = ricePotCount(cur);
@@ -86,7 +87,7 @@ export function riceCard(groups, ui) {
         <span class="hrice__group">${g.label}</span>
         <img src="${g.photo}" alt="" loading="lazy" decoding="async">
         ${dropdownHtml({ name: `rice:${g.id}`, label: g.label, hideLabel: true, block: true, value: cur.id, options: g.options.map(o => ({ value: o.id, label: o.label })) })}
-        <span class="hrice__val">${t.raw} ${val(cur.raw, t.kg)}</span>
+        <span class="hrice__val">${t.raw} ${val(cur.raw, t.kg, t.noData)}</span>
         <span class="hrice__val">${t.water} ${val(cur.water, t.liter)}</span>
         <span class="hrice__pot">${pots === null ? `<i class="hrice__none">${t.noRecipe}</i>` : `${pots} ${t.pot}`}</span>
         ${pots > 1 ? `<em class="hrice__split">${cur.pots.map(weight).join(' + ')} ${t.kg}</em>` : ''}

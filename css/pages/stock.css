@@ -488,31 +488,29 @@
 .stk-prog__bar { height: 9px; border-radius: 999px; background: #EEE8DA; overflow: hidden; }
 .stk-prog__bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #A6BE40, #1E7A3C); transition: width 220ms cubic-bezier(.2, .8, .3, 1); }
 
-/* ---------- ช่องกรอกผลนับในแถว ---------- */
-.stk-row--count { align-items: flex-start; gap: 7px; padding: 9px; }
-.stk-row--count .stk-row__thumb { border: 1px solid #F0E9DB; padding: 0; cursor: pointer; margin-top: 2px; }
-.stk-row--count .stk-row__qty { padding-top: 3px; min-width: 64px; }
+/* ---------- ช่องกรอกผลนับในแถว: 1 รายการ = 1 บรรทัด ---------- */
+.stk-row--count { align-items: center; gap: 7px; padding: 7px 9px; }
+.stk-row--count .stk-row__thumb { border: 1px solid #F0E9DB; padding: 0; cursor: pointer; }
+.stk-row--count .stk-row__info { display: flex; flex-direction: column; gap: 1px; }
+.stk-row--count .stk-row__name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; line-height: 1.25; }
+.stk-row__place { font-size: 10px; color: #8C8172; line-height: 1.2; }
+.stk-row--count .stk-row__side { gap: 4px; }
+.stk-row--count .stk-row__qty { min-width: 50px; gap: 2px; }
 .stk-row--count .stk-row__badge { white-space: nowrap; }
-.stk-row--count .stk-row__num { font-size: 17px; }
-.stk-cnt { display: flex; gap: 6px; margin-top: 6px; }
+.stk-row--count .stk-row__num { font-size: 15px; }
+.stk-cnt { flex: none; display: flex; gap: 5px; }
 
-.stk-cnt__f {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stk-cnt__f > span { font-size: 9.5px; color: #6B6153; padding-left: 3px; }
+.stk-cnt__f { position: relative; display: block; width: 92px; }
+.stk-row--both .stk-cnt__f { width: 68px; }
+.stk-cnt__f > span { position: absolute; left: 8px; top: 3px; font-size: 8.5px; line-height: 1; color: #6B6153; pointer-events: none; }
 
 .stk-cnt__f input {
+  display: block;
   width: 100%;
   min-width: 0;
-  height: 42px;
-  padding: 0 30px 0 10px;
-  border-radius: 11px;
+  height: 38px;
+  padding: 0 28px 0 9px;
+  border-radius: 10px;
   border: 1.5px solid #E9E0CC;
   background: #FFFDF8;
   font-family: Mitr, sans-serif;
@@ -522,37 +520,27 @@
   -moz-appearance: textfield;
 }
 
+.stk-cnt__f.has-tag input { padding: 10px 22px 0 7px; font-size: 14px; }
 .stk-cnt__f input::-webkit-outer-spin-button, .stk-cnt__f input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .stk-cnt__f input:focus { border-color: var(--c); box-shadow: 0 0 0 3px rgba(166, 190, 64, .22); }
 .stk-cnt__f input::placeholder { color: #C7BDAA; }
 
 .stk-cnt__f > i {
   position: absolute;
-  right: 9px;
-  bottom: 13px;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
   font-style: normal;
   font-size: 10px;
   color: #6B6153;
   pointer-events: none;
 }
+.stk-cnt__f.has-tag > i { right: 6px; font-size: 9px; }
 
-/* บรรทัดผลลัพธ์ปิดท้ายการ์ด: คอนโดที่คิดให้เอง */
-.stk-res {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 6px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  background: #EAF2FD;
-  font-size: 11px;
-  color: #2F63C9;
-}
-
-.stk-res b { font-family: Mitr, sans-serif; font-size: 15px; font-weight: 600; }
-.stk-res b i { font-family: Sarabun, sans-serif; font-size: 10px; font-weight: 400; font-style: normal; }
-.stk-res--bad { background: #FDE7E5; color: #A82A22; justify-content: flex-start; }
+/* บรรทัดเล็กใต้ชื่อ: คอนโดที่คิดให้เอง */
+.stk-res { display: flex; align-items: center; gap: 3px; font-size: 10px; line-height: 1.2; color: #2F63C9; }
+.stk-res b { font-family: Mitr, sans-serif; font-size: 12px; font-weight: 600; }
+.stk-res--bad { color: #A82A22; }
 .stk-res--bad svg { flex: none; }
 
 /* โหมดแก้/ลบ: แถวที่แตะได้ */

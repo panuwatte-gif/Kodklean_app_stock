@@ -146,3 +146,34 @@ export function channelShort(name) {
 export function fillText(template, values) {
   return String(template).replace(/\{(\w+)\}/g, (_, k) => (values[k] === undefined ? '' : values[k]));
 }
+
+// น้ำหนักกรัมละเอียดตามขนาด เช่น 0.15 / 26.25 / 435.1 / 10,353 (ไม่มีค่า = ขีด)
+export function gramFine(value) {
+  if (value === null || value === undefined || value === '' || !isFinite(value)) return '-';
+  const n = Number(value);
+  return n.toLocaleString('en-US', { maximumFractionDigits: Math.abs(n) >= 1000 ? 0 : 2 });
+}
+
+// กันข้อความที่ผู้ใช้พิมพ์ไม่ให้กลายเป็นโค้ดหน้าจอ (ใช้ก่อนเอาชื่อ/หมายเหตุไปวาด)
+export function escHtml(text) {
+  return String(text ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+// เดือนเต็มแบบไทย เช่น 2026-09 → กันยายน 2569
+const TH_MONTH_LONG = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+export function monthLongTh(ym) {
+  const [y, m] = String(ym).split('-').map(Number);
+  return `${TH_MONTH_LONG[m - 1]} ${y + 543}`;
+}
+
+// วันสุดท้ายของเดือน เช่น 2026-09 → 2026-09-30
+export function monthEndIso(ym) {
+  const [y, m] = String(ym).split('-').map(Number);
+  return `${ym}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+}
+
+// ตัวเลขวันแบบครึ่งวัน เช่น 3 / 2.5
+export function days1(value) {
+  const n = Math.round((Number(value) || 0) * 10) / 10;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}

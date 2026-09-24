@@ -2,8 +2,10 @@
 import { todayIso, getPrepBundle, savePrep, getPrepHistory } from '../shared/data.js';
 import { WORK_UI, CHICKEN_UI as T, PREP_ENTRY } from '../shared/config.js';
 import { workFrame, workDateHtml, workStatsHtml, workNoteHtml, workHistorySheet } from '../shared/work-ui.js';
-import { itemPhoto, toast, handleDateClick, handleDatePick, glyph } from '../shared/ui.js';
+import { itemPhoto, toast, handleDateClick, handleDatePick, glyph, recHtml } from '../shared/ui.js';
 import { buildPrepModel } from '../shared/calc.js';
+import { buildForecast, applyRecs } from '../shared/forecast.js';
+import { manageList, manageBtnHtml } from '../shared/list-edit.js';
 import { staffCode } from '../shared/auth.js';
 import { weightOrDash, dayShort } from '../shared/format.js';
 
@@ -28,7 +30,7 @@ function itemHtml(row) {
   return `
     <section class="wcard wrow">
       <span class="wrow__thumb"><img src="${itemPhoto(row)}" alt="" width="46" height="46" decoding="async"></span>
-      <span class="wrow__name">${row.name}</span>
+      <span class="wrow__name">${row.name}${recHtml(row.rec, T.recLabel)}</span>
       <span class="wrow__unit">${row.unit}</span>
     </section>`;
 }
@@ -61,14 +63,15 @@ export function mountChickenPage(root, onGo) {
   const draw = () => {
     el('#w-date').innerHTML = workDateHtml(state.date);
     if (!row) { el('#w-body').innerHTML = `<p class="wempty">${WORK_UI.loading}</p>`; return; }
-    el('#w-body').innerHTML = itemHtml(row)
+    el('#w-body').innerHTML = manageBtnHtml('item', 'เนื้อสัตว์') + itemHtml(row)
       + `<div class="wgrid2">${T.fields.map(f => fieldHtml(f, row)).join('')}</div>`
       + statHtml(row, hasLeft) + workNoteHtml(T.note);
   };
 
   const load = async () => {
     try {
-      const model = buildPrepModel(await getPrepBundle(state.date));
+      const b = await getPrepBundle(state.date);
+      const model = applyRecs(buildPrepModel(b), buildForecast(b.items, b.logsFc, state.date, b.cfg), b.logsFc, state.date);
       row = model.meatRows.find(r => r.id === T.item) || null;
       hasLeft = model.conv.filled > 0;   // มีเมนูที่กรอกของเหลือแล้วอย่างน้อย 1 เมนู
       draft = {};
@@ -111,6 +114,7 @@ export function mountChickenPage(root, onGo) {
   root.addEventListener('click', async event => {
     const hist = event.target.closest('[data-hist-f]');
     if (hist) return history(hist.dataset.histF);
+    if (event.target.closest('[data-manage]')) return manageList({ kind: 'item', grp: 'เนื้อสัตว์', onDone: load });
     if (event.target.closest('[data-hist]')) return history('prep');
     if (event.target.closest('[data-save]')) return saveAll();
     if (event.target.closest('[data-back]')) return onGo('mywork');

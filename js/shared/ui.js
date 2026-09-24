@@ -1,10 +1,20 @@
 // ชิ้นส่วนหน้าจอที่ใช้ซ้ำทั้งแอป — เมนูล่าง 7 ปุ่ม + การ์ดกระจก + แผงถาม + ชุดไอคอนเส้น
-import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, DATE_UI, CHART_UI } from './config.js';
+import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, DATE_UI, CHART_UI, MENU_PHOTOS, PREP_UI } from './config.js';
 import { fillText, dayLongTh, shiftIso } from './format.js';
 import { todayIso } from './data.js';
 
 // รูปประจำรายการวัตถุดิบ (ชุดเดียวกันทุกหน้า)
 export const itemPhoto = item => (item && item.photo) || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
+
+// ป้ายค่าแนะนำใต้ชื่อ (ใช้ทั้งแท็บเนื้อสัตว์และข้าว): ตัวเลขใหญ่ชัด + ช่วง · ยังพยากรณ์ไม่ได้ = บอกตรงๆ
+export function recHtml(rec, label) {
+  if (!rec) return `<span class="ptab__rec ptab__rec--none">${PREP_UI.recNone}</span>`;
+  const range = !rec.sat && rec.lo !== null && rec.lo !== undefined && rec.lo !== rec.hi ? ` <i>(${rec.lo}–${rec.hi})</i>` : '';
+  return `<span class="ptab__rec">${label} <b>${rec.t}</b> กก.${range}${rec.sat ? ` <i>· ${PREP_UI.recSat}</i>` : ''}</span>`;
+}
+
+// รูปประจำเมนู: รูปที่อัพไว้ในฐาน > รูปตั้งต้นของเมนู > รูปจานกลาง
+export const menuPhoto = (m, fallback = 'assets/r9/dish-kaprao.webp') => (m && m.photo) || MENU_PHOTOS[m && m.id] || fallback;
 
 // รูปของรายการส่งของ — ลบรูปแล้วให้ใช้รูปกล่องแทน (ไม่ปล่อยให้รูปเสีย)
 export const r9Photo = item => (item && item.photo) || 'assets/r9/boxes.webp';
@@ -343,6 +353,7 @@ export function formSheet({ title, fields, okLabel = 'บันทึก' }) {
     if (f.kind === 'select') return `<label class="ask__field"><span>${f.label}</span><select data-k="${f.key}">${f.options.map(o => `<option value="${o.value}"${o.value === f.value ? ' selected' : ''}>${o.label}</option>`).join('')}</select></label>`;
     if (f.kind === 'swatch') return `<div class="ask__field"><span>${f.label}</span><div class="ask__swatches" data-k="${f.key}">${f.options.map((o, i) => `<button class="ask__swatch${i === 0 ? ' is-on' : ''}" type="button" data-v="${o.value}" style="background:${o.value}" aria-label="สี"></button>`).join('')}</div></div>`;
     if (f.kind === 'image') return `<div class="ask__field"><span>${f.label}</span><div class="ask__icons" data-k="${f.key}">${f.options.map((o, i) => `<button class="ask__icon${i === 0 ? ' is-on' : ''}" type="button" data-v="${o.value}" title="${o.label}"><img src="${o.image || o.value}" alt="${o.label}"></button>`).join('')}</div></div>`;
+    if (f.kind === 'date') return `<label class="ask__field"><span>${f.label}</span><input type="date" data-k="${f.key}" value="${f.value || ''}"></label>`;
     if (f.kind === 'number') return `<label class="ask__field"><span>${f.label}</span><input type="number" inputmode="decimal" step="${f.step || 0.1}" min="0" data-k="${f.key}" value="${f.value ?? ''}" placeholder="${f.placeholder || ''}"></label>`;
     return `<label class="ask__field"><span>${f.label}</span><input data-k="${f.key}" value="${f.value || ''}" placeholder="${f.placeholder || ''}"></label>`;
   };

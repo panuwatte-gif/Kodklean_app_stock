@@ -1,5 +1,5 @@
 // แปลงแถวดิบจากฐาน → ข้อมูลการ์ดของหน้าหลัก (ไฟล์นี้ไม่ยิงฐานเอง data.js เป็นคนดึงมาส่งให้)
-import { STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, MENU_PHOTOS, PREP_ENTRY } from './config.js';
+import { STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, MENU_PHOTOS, PREP_ENTRY, HOME_RICE_GROUPS } from './config.js';
 import { buildSeries, predictorOf } from './fclab.js';
 import { namesOf } from './assign.js';
 import { shiftIso, dayLongTh } from './format.js';
@@ -60,7 +60,7 @@ function leftOf(rows, menus, dates) {
     return mean(Object.values(byDate));
   };
   const ranking = menus.map(m => ({
-    id: m.id, name: m.name, photo: MENU_PHOTOS[m.id] || 'assets/r9/dish-kaprao.webp',
+    id: m.id, name: m.name, photo: m.photo || MENU_PHOTOS[m.id] || 'assets/r9/dish-kaprao.webp',
     usable: days(dates, U, m.id), disposed: days(dates, W, m.id),
     priorUsable: days(prior, U, m.id), priorDisposed: days(prior, W, m.id),
     avg7: mean(days(dates, U, m.id)), avg30: mean30(m.id, U),
@@ -121,9 +121,51 @@ function r9Of(rounds, r9items) {
   return { basis: 'มูลค่าของในรอบ + ค่าส่ง (จากตาราง kk_r9_round)', types: 'วัตถุดิบ + ซอส', hasData: shipments.length > 0, shipments };
 }
 
-// ยอดขายเทียบเป้า: ยอดจริงจากตารางรายได้ประจำวัน (kk_daily_income ที่ฟ้า/แม่พันบันทึก) เทียบเป้ารายร้าน
-// ยังไม่มีบันทึกของร้านไหน = null (แสดง "ยังไม่มีข้อมูล") ห้ามเดาเป็น 0 · ไม่ได้ตั้งเป้า = null เช่นกัน
-function salesOf(brands, income, date) {
+// จำนวนวันเปิด (ไม่ใช่อาทิตย์) ตั้งแต่วันที่ 1 ของเดือนถึง date (all = ทั้งเดือน)
+function openDaysInMonth(date, all = false) {
+  const [y, m] = date.split('-').map(Number);
+  const last = all ? new Date(y, m, 0).getDate() : Number(date.slice(8, 10));
+  let n = 0;
+  for (let d = 1; d <= last; d++) if (new Date(y, m - 1, d).getDay() !== 0) n++;
+  return n;
+}
+
+// การ์ดหุงข้าว: ค่าพยากรณ์ข้าวดิบของพรุ่งนี้ต่อชนิด (สูตรเดียวกับหน้าเตรียมข้าว) · น้ำ/หม้อ ยังไม่มีสูตร = null
+function riceOf(fcRows, items) {
+  return HOME_RICE_GROUPS.map(g => ({ ...g, options: g.items.map(id => {
+    const it = (items || []).find(i => i.id === id) || { name: id };
+    const f = (fcRows || []).find(r => r.id === id);
+    return { id, label: it.name, raw: f && f.fc !== null ? Math.ceil(f.fc * 10) / 10 : null, water: null, pots: null };
+  }) }));
+}
+
+// การ์ดลดของเหลือ = ลดต้นทุน: ต้นทุนของทิ้งจริงสะสม (กก. × ราคาต่อกก.) เดือนนี้เทียบช่วงวันเดียวกันของเดือนก่อน
+// ของทิ้งดิบ = kk_prep_log "ทิ้ง" · อาหารปรุงสำเร็จทิ้ง = กรัม ÷ 1000 × อัตราส่วนเนื้อ × ราคาเนื้อหลักของเมนู · ไม่มีราคา = ไม่นับ (บอกจำนวนไว้)
+function savingsOf(waste, menus, prices, date) {
+  const priceOf = id => (prices && prices[id] && prices[id].price !== null && prices[id].price !== undefined ? Number(prices[id].price) : null);
+  const byDate = {}, noPrice = new Set();
+  const add = (d, id, kg) => { const p = priceOf(id); if (p === null) { noPrice.add(id); return; } byDate[d] = (byDate[d] || 0) + kg * p; };
+  (waste.raw || []).forEach(r => add(r.log_date, r.count_item_id, Number(r.qty) || 0));
+  (waste.cooked || []).forEach(r => {
+    const m = (menus || []).find(x => x.id === r.menu_id);
+    if (m && m.protein_item_id) add(r.left_date, m.protein_item_id, (Number(r.qty_box) || 0) / 1000 * (Number(m.protein_ratio) || 1));
+  });
+  const day = Number(date.slice(8, 10)), cur = date.slice(0, 8);
+  const prev = shiftIso(date.slice(0, 7) + '-01', -1).slice(0, 8);
+  const prevLast = Number(shiftIso(date.slice(0, 7) + '-01', -1).slice(8, 10));
+  const days = Array.from({ length: day }, (_, i) => i + 1);
+  const cum = (month, cap) => { let s = 0; return days.map(d => { if (d <= cap) s += byDate[month + String(d).padStart(2, '0')] || 0; return Math.round(s); }); };
+  const has = Object.keys(byDate).length > 0;   // มีของทิ้งที่มีราคาอย่างน้อย 1 แถว (ไม่มีราคาเลย = ยังไม่มีข้อมูล ไม่ใช่ ฿0)
+  const priorCum = cum(prev, prevLast), currentCum = cum(cur, day);
+  if (!has) { priorCum[priorCum.length - 1] = null; currentCum[currentCum.length - 1] = null; }
+  const pad = d => String(d).padStart(2, '0');
+  return { days, priorCum, currentCum, ticks: null,
+    currentPeriod: [cur + '01', date], priorPeriod: [prev + '01', prev + pad(Math.min(day, prevLast))], noPrice: noPrice.size };
+}
+
+// ยอดขายเทียบเป้า: ยอดจริงจากตารางรายได้ประจำวัน (kk_daily_income ที่ฟ้า/แม่พันบันทึก) · เป้ารวมต่อวันจาก kk_sales_target
+// ยังไม่มีบันทึก = null (แสดง "ยังไม่มีข้อมูล") ห้ามเดาเป็น 0 · เป้าเดือนถึงวันนี้ = เป้าต่อวัน × วันเปิดที่ผ่านมา
+function salesOf(brands, income, date, target) {
   const month = date.slice(0, 7);
   const sum = rows => (rows.length ? Math.round(rows.reduce((s, r) => s + (Number(r.total) || 0), 0)) : null);
   const stores = (brands || []).map(b => {
@@ -136,7 +178,14 @@ function salesOf(brands, income, date) {
     };
   });
   const dates = (income || []).map(r => r.date).sort();
-  return { through: dates.length ? dates[dates.length - 1] : date, updatedAt: dayLongTh(date), stores };
+  const all = rows => sum(rows);
+  const total = {
+    today: all((income || []).filter(r => r.date === date)),
+    month: all((income || []).filter(r => r.date.slice(0, 7) === date.slice(0, 7))),
+    daily: target === null || target === undefined ? null : Number(target),
+    openSoFar: openDaysInMonth(date), openMonth: openDaysInMonth(date, true)
+  };
+  return { through: dates.length ? dates[dates.length - 1] : date, updatedAt: dayLongTh(date), stores, total };
 }
 
 // รวมทุกการ์ดที่ต่อฐานได้แล้ว (การ์ดข้าว / ลดของเหลือ ยังไม่มีตารางในฐาน — หน้าจอใช้ข้อมูลตั้งต้นต่อไป)
@@ -153,7 +202,9 @@ export function buildHome(src) {
     usage: usageOf(src.history, src.items, dates),
     left: leftOf(src.left, src.menus, dates),
     prep: prepOf({ ...src, date: src.date }),
-    sales: salesOf(src.brands, src.income, src.date),
+    sales: salesOf(src.brands, src.income, src.date, src.target),
+    rice: riceOf(src.fcRows, src.items),
+    save: savingsOf(src.waste || {}, src.menus, src.prices, src.date),
     r9: r9Of(src.rounds, src.r9items)
   };
 }

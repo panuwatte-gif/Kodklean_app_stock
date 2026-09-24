@@ -26,8 +26,14 @@ export function filterHtml(sel) {
   </div></div>`).join('');
 }
 
-// ตารางประวัติการทดสอบของสูตรหนึ่ง
-function trialsHtml(trials, names) {
+// ป้ายกรอบของผลทดสอบ (win rate ต้องบอกกรอบเสมอ)
+const bandOfTrial = t => (t.band_value === null || t.band_value === undefined ? '' : String(t.band_type || 'SD').toUpperCase() === 'PCT' ? `±${t.band_value}%` : `±${t.band_value} SD`);
+
+// ป้าย "ต้องทดสอบใหม่" ของผลที่มาจากสูตรรู้ยอดขายวันเดียวกัน
+const retestTag = () => `<i class="eqf-v eqf-v--fail" title="${EQ_LIB_UI.retestWhy}">${EQ_LIB_UI.retestTag}</i>`;
+
+// ตารางประวัติการทดสอบของสูตรหนึ่ง (bad = ผลของสูตร nowcast ใช้ไม่ได้)
+function trialsHtml(trials, names, bad) {
   if (!trials.length) return `<p class="eqf-none">${EQ_LIB_UI.noTrial}</p>`;
   return `<div class="eqf-trials"><div class="eqf-trial eqf-trial--head">${EQ_LIB_UI.trialCols.map(c => `<span>${c}</span>`).join('')}</div>
     ${trials.map(t => `<div class="eqf-trial">
@@ -36,15 +42,21 @@ function trialsHtml(trials, names) {
       <span>${names[t.item_id] || t.item_id}</span>
       <span>${t.regime ? FC_REGIME_TH[t.regime].label : '—'}</span>
       <span>${dash(t.n)}</span>
-      <span>${t.win_rate === null ? '—' : pct1(t.win_rate)}</span>
+      <span>${t.win_rate === null ? '—' : `${pct1(t.win_rate)} <em>${bandOfTrial(t)}</em>`}</span>
       <span>${dash(t.loss_avg_kg)}</span>
       <span>${dash(t.loss_max_kg)}</span>
-      <i class="eqf-v eqf-v--${t.verdict}">${FC_VERDICT_TH[t.verdict] || t.verdict}</i>
-    </div><p class="eqf-why">${t.verdict_reason || ''}</p>`).join('')}</div>`;
+      ${bad ? retestTag() : `<i class="eqf-v eqf-v--${t.verdict}">${FC_VERDICT_TH[t.verdict] || t.verdict}</i>`}
+    </div><p class="eqf-why">${bad ? EQ_LIB_UI.retestWhy : t.verdict_reason || ''}</p>`).join('')}</div>`;
+}
+
+// ที่มาของ best_regime: ผลผ่านล่าสุดในสถานการณ์นั้น (วัตถุดิบ กรอบ ช่วง)
+function bestSrc(f, trials, names) {
+  const t = trials.filter(x => x.verdict === 'pass' && x.regime === f.best_regime).sort((a, b) => (a.tested_at < b.tested_at ? 1 : -1))[0];
+  return t ? ` (${fillText(EQ_LIB_UI.bestFrom, { item: names[t.item_id] || t.item_id, band: bandOfTrial(t), from: t.period_from, to: t.period_to })})` : ' (ไม่พบผลผ่านที่เป็นที่มา)';
 }
 
 // การ์ดสูตร 1 ใบ (กดแล้วขยายดูสมการเต็ม พารามิเตอร์ และประวัติการทดสอบ)
-export function formulaCardHtml(f, trials, names, open) {
+export function formulaCardHtml(f, trials, names, open, nowcast) {
   const params = Object.keys(f.params || {});
   return `<section class="eqf-item${open ? ' is-open' : ''}">
     <button class="eqf-top" type="button" data-open="${f.formula_code}">
@@ -55,9 +67,10 @@ export function formulaCardHtml(f, trials, names, open) {
     </button>
     <div class="eqf-meta">
       <i>${FC_FAMILY_TH[f.family] || f.family}</i>
+      ${f.family === 'sales' ? `<i class="eqf-tag">${nowcast ? EQ_LIB_UI.nowcastTag : EQ_LIB_UI.advanceTag}</i>` : ''}
       <i>ทดสอบ ${f.times_tested || 0} ครั้ง</i>
-      ${f.last_verdict ? `<i class="eqf-v eqf-v--${f.last_verdict}">${FC_VERDICT_TH[f.last_verdict]}</i>` : ''}
-      ${f.best_regime ? `<i class="eql-reg" style="--c:${FC_REGIME_TH[f.best_regime].color};--t:${FC_REGIME_TH[f.best_regime].tint}">เก่งตอน${FC_REGIME_TH[f.best_regime].label}</i>` : ''}
+      ${nowcast && trials.length ? retestTag() : f.last_verdict ? `<i class="eqf-v eqf-v--${f.last_verdict}">${FC_VERDICT_TH[f.last_verdict]}</i>` : ''}
+      ${f.best_regime && FC_REGIME_TH[f.best_regime] ? `<i class="eql-reg" style="--c:${FC_REGIME_TH[f.best_regime].color};--t:${FC_REGIME_TH[f.best_regime].tint}">เก่งตอน${FC_REGIME_TH[f.best_regime].label}${bestSrc(f, trials, names)}</i>` : ''}
       ${(f.tags || []).map(t => `<i class="eqf-tag">${t}</i>`).join('')}
       <i class="eqf-src">${FC_SOURCE_TH[f.source] || f.source}</i>
     </div>
@@ -66,7 +79,7 @@ export function formulaCardHtml(f, trials, names, open) {
       <div class="eqf-det__row"><span>${EQ_LIB_UI.paramHead}</span><b>${params.length ? params.map(k => `${k} = ${JSON.stringify(f.params[k])}`).join(' · ') : 'ไม่มี'}</b></div>
       ${f.note ? `<div class="eqf-det__row"><span>บันทึก</span><b>${f.note}</b></div>` : ''}
       <div class="eqf-det__head">${EQ_LIB_UI.trialHead}</div>
-      ${trialsHtml(trials, names)}
+      ${trialsHtml(trials, names, nowcast)}
     </div>` : ''}
   </section>`;
 }
@@ -121,3 +134,33 @@ export const libActsHtml = () => `<div class="eql-acts">
 
 // ข้อความจำนวนสูตรที่เห็นหลังกรอง
 export const countHtml = (shown, total) => `<p class="eqf-count">${fillText('เห็น {a} จาก {b} สูตร', { a: shown, b: total })}</p>`;
+
+// ปุ่มนำเข้าประวัติย้อนหลัง (เจ้าของเท่านั้น)
+export const importBtnHtml = () => `<div class="eql-acts"><button class="eql-btn" type="button" data-import="1">${EQ_LIB_UI.importBtn}</button></div>`;
+
+// แถวสูตรที่ผ่าน 1 ครั้ง
+function passRowHtml(t, item, bad, main) {
+  const reg = t.regime && FC_REGIME_TH[t.regime] ? FC_REGIME_TH[t.regime].label : '—';
+  const cells = [`${t.formula_code}`, item, reg, bandOfTrial(t), `${dash(t.n)} วัน`, `${pct1(t.win_rate)} <em>${bandOfTrial(t)}</em>`, `${dash(t.loss_avg_kg)} กก.`, `${dash(t.loss_max_kg)} กก.`, `${t.period_from ? dayShort(t.period_from) : '—'}–${t.period_to ? dayShort(t.period_to) : '—'}`, dayShort(t.tested_at)];
+  return `<div class="eqf-trial"${main ? '' : ' style="opacity:.75"'}>${cells.map(c => `<span>${c}</span>`).join('')}</div>`;
+}
+
+// กล่องสูตรที่ผ่านการคัดเลือก (อ่านจาก kk_forecast_trial verdict = pass · วางเหนือคลังสูตรเดิม)
+export function passHtml(groups, nc, items, st) {
+  const chip = (k, v, label) => `<button class="eqf-chip${st[k] === v ? ' is-on' : ''}" type="button" data-pf="${k}" data-v="${v}">${label}</button>`;
+  const filters = `<div class="eqf-frow"><span>${EQ_LIB_UI.passFilterItem}</span><div class="eqf-chips">${chip('passItem', '', EQ_LIB_UI.all)}${items.map(i => chip('passItem', i.id, i.name)).join('')}</div></div>
+    <div class="eqf-frow"><span>${EQ_LIB_UI.passFilterRegime}</span><div class="eqf-chips">${chip('passRegime', '', EQ_LIB_UI.all)}${Object.keys(FC_REGIME_TH).map(k => chip('passRegime', k, FC_REGIME_TH[k].label)).join('')}</div></div>`;
+  const head = `<div class="eqf-trial eqf-trial--head">${EQ_LIB_UI.passCols.map(c => `<span>${c}</span>`).join('')}</div>`;
+  const body = groups.length ? groups.map(g => {
+    const bad = nc.has(g.main.formula_code);
+    const open = st.passOpen[g.key];
+    return `<div class="eqf-item">${head}${passRowHtml(g.main, g.item, bad, true)}
+      ${bad ? `<p class="eqf-why" style="color:#8A1F17">${EQ_LIB_UI.passBadEvidence}</p>` : ''}
+      <div class="eql-acts">
+        ${g.older.length ? `<button class="eql-btn" type="button" data-pass-open="${g.key}">${fillText(EQ_LIB_UI.passOlder, { n: g.older.length })}</button>` : ''}
+        ${bad || g.main.verdict !== 'pass' ? '' : `<button class="eql-btn eql-btn--main" type="button" data-pass-use="${g.key}">${EQ_LIB_UI.passUse}</button>`}
+      </div>
+      ${open ? g.older.map(t => passRowHtml(t, g.item, bad, false)).join('') : ''}</div>`;
+  }).join('') : `<p class="eqf-none">${EQ_LIB_UI.passEmpty}</p>`;
+  return `<section class="eqf-box"><div class="eqf-box__head">${glyph('check', 14)}<span>${EQ_LIB_UI.passHead}</span></div>${filters}<div class="eqt__scroll">${body}</div></section>`;
+}

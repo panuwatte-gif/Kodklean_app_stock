@@ -744,3 +744,16 @@ export function attendance({ days, leaves, people, from, to }) {
     helpPts: r.wAll ? 100 * r.help / r.wAll : null
   }));
 }
+
+// ภาษีเงินได้บุคคลธรรมดา (ประมาณ) ของเงินได้ทั้งปี income · หักค่าใช้จ่ายเหมา (flat_rate) หรือตามจริง (actual_expense) · ลดหย่อน allowance
+// T = { brackets: [[เพดาน, อัตรา]...], minRate, minIncome, minFloor } · ภาษีขั้นต่ำ: เงินได้ ≥ minIncome ให้เทียบ minRate × เงินได้ เสียอันที่มากกว่า (ไม่เกิน minFloor ไม่ต้องเสียแบบขั้นต่ำ)
+export function personalTax(income, set, T) {
+  const inc = Math.max(0, Number(income) || 0);
+  const expense = set.expense_mode === 'actual' ? Math.min(inc, Math.max(0, Number(set.actual_expense) || 0)) : inc * (Number(set.flat_rate) || 0);
+  const net = Math.max(0, inc - expense - (Number(set.allowance) || 0));
+  let prev = 0, tax = 0;
+  const steps = T.brackets.map(([cap, rate]) => { const part = Math.max(0, Math.min(net, cap) - prev), t = part * rate; prev = cap; tax += t; return { cap, rate, part, tax: t }; }).filter(x => x.part > 0);
+  const minTax = inc >= T.minIncome ? inc * T.minRate : 0, useMin = minTax > T.minFloor && minTax > tax;
+  const pay = useMin ? minTax : tax;
+  return { income: inc, expense, net, steps, progressive: tax, minTax, useMin, pay, eff: inc ? pay / inc : 0 };
+}

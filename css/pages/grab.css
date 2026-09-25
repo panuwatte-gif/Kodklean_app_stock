@@ -1,0 +1,169 @@
+/* หน้า Grab (หน้ารวม · ออเดอร์ · Import · รายงานผู้บริหาร) — ใช้โครงกระจกของหน้างาน (fah.css) */
+.grpage { --ink: #173A2B; --soft: #58756A; }
+.grbody { display: flex; flex-direction: column; gap: 10px; }
+.grh { margin: 0 0 4px; font-family: Mitr, sans-serif; font-weight: 500; font-size: 16px; color: var(--ink); }
+.grh--sm { margin: 10px 0 4px; font-size: 13.5px; }
+.grsub { margin: 0 0 8px; font-size: 11.5px; line-height: 1.45; color: var(--soft); text-wrap: pretty; }
+.grsub--range { margin: 0 4px; }
+.grkeep { margin: 8px 0 0; font-size: 12.5px; color: var(--ink); }
+
+/* หน้ารวม 3 การ์ด */
+.grhub { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 84px; font: inherit; text-align: left; cursor: pointer; }
+.grhub img { flex: none; width: 54px; height: 54px; object-fit: contain; }
+.grhub__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.grhub__text b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 16.5px; color: var(--ink); }
+.grhub__text em { font-style: normal; font-size: 11.5px; line-height: 1.4; color: var(--soft); }
+.grhub__go { flex: none; font-size: 26px; color: var(--a); }
+.grhub:active { transform: scale(.98); }
+
+/* ป้ายสถานะ */
+.grchip { flex: none; padding: 2px 9px; border-radius: 999px; font-style: normal; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.grchip--ok { background: #DDF3E4; color: #17683A; }
+.grchip--lack { background: #FDE6D8; color: #A4471A; }
+.grchip--none { background: #ECEFF3; color: #56657A; }
+
+/* Import */
+.grpick { display: flex; flex-direction: column; gap: 8px; }
+.grpick__btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; border-radius: 16px; border: 2px dashed color-mix(in srgb, var(--a) 55%, #fff); background: color-mix(in srgb, var(--a) 8%, #fff); color: color-mix(in srgb, var(--a) 80%, #000); font-family: Mitr, sans-serif; font-size: 15px; cursor: pointer; }
+.grpick__hint { margin: 0; font-size: 11.5px; color: var(--soft); text-align: center; }
+.grpick__list { display: flex; flex-direction: column; gap: 6px; }
+.grpick__save { width: 100%; margin-top: 4px; }
+.grfile { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .8); border: 1px solid #E3EAF0; }
+.grfile.is-bad { background: #FDF1EC; }
+.grfile__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.grfile__main b { font-size: 13px; color: var(--ink); }
+.grfile__main em { font-style: normal; font-size: 10.5px; color: var(--soft); overflow-wrap: anywhere; }
+.grfile__st { flex: none; font-size: 11.5px; font-weight: 600; color: color-mix(in srgb, var(--a) 80%, #000); text-align: right; }
+.grcov__row { display: flex; flex-direction: column; gap: 2px; padding: 9px 0; border-bottom: 1px solid #E8EEF2; }
+.grcov__row:last-child { border-bottom: 0; }
+.grcov__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.grcov__top b { font-size: 13.5px; color: var(--ink); }
+.grcov__range { font-family: Mitr, sans-serif; font-size: 13px; color: var(--ink); }
+.grcov__row em { font-style: normal; font-size: 11px; line-height: 1.4; color: var(--soft); }
+.grcov__row em.grcov__gap { color: #A4471A; }
+
+/* ออเดอร์ */
+.grlist { display: flex; flex-direction: column; padding: 4px 10px; }
+.grord { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 48px; padding: 6px 0; border: 0; border-bottom: 1px solid #E8EEF2; background: none; font: inherit; text-align: left; cursor: pointer; }
+.grord:last-child { border-bottom: 0; }
+.grord.is-off { opacity: .6; }
+.grord__time { font-size: 12px; color: var(--soft); }
+.grord__main { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.grord__main b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 14px; color: var(--ink); }
+.grord__amt { display: flex; flex-direction: column; align-items: flex-end; }
+.grord__amt b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: var(--ink); }
+.grord__amt em { font-style: normal; font-size: 11px; color: #17683A; }
+.grline { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 5px 0; font-size: 12.5px; color: var(--ink); border-bottom: 1px dashed #E3EAF0; }
+.grline:last-child { border-bottom: 0; }
+.grline span { min-width: 0; overflow-wrap: anywhere; }
+.grline b { flex: none; font-weight: 600; }
+.grline.is-sum { font-weight: 700; }
+.grsheet { max-height: 56vh; overflow: auto; padding: 0 4px; }
+.is-good { color: #17683A !important; }
+.is-bad { color: #B03A1E !important; }
+
+/* แท็บช่วงเวลา */
+.grtabs { display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); gap: 6px; padding: 4px; border-radius: 16px; background: rgba(255, 255, 255, .7); }
+.grtabs button { min-height: 44px; border: 0; border-radius: 12px; background: none; font: inherit; font-size: 14px; color: var(--soft); cursor: pointer; }
+.grtabs button.is-on { background: var(--a); color: #fff; font-weight: 600; }
+
+/* รายงาน */
+.grsec { padding: 14px 12px; }
+.grkpi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.grkpi--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grkpi__cell { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 14px; background: rgba(255, 255, 255, .85); border: 1px solid #E3EAF0; }
+.grkpi__cell em { font-style: normal; font-size: 11px; color: var(--soft); }
+.grkpi__cell b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 20px; line-height: 1.2; color: var(--ink); }
+.grkpi__cell span { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+.grkpi__cell span i { font-style: normal; font-size: 10.5px; color: var(--soft); }
+.grd { font-style: normal; font-size: 11.5px; font-weight: 600; color: var(--soft); white-space: nowrap; }
+.grwf { display: flex; flex-direction: column; gap: 6px; }
+.grwf__row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 62px 46px; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); }
+.grwf__row b { text-align: right; font-weight: 600; }
+.grwf__row em { font-style: normal; text-align: right; font-size: 11px; color: var(--soft); }
+.grwf__bar { display: block; height: 10px; border-radius: 99px; background: #EEF2F5; overflow: hidden; }
+.grwf__bar i { display: block; height: 100%; border-radius: inherit; }
+.grwf__row--base .grwf__bar i { background: #8FA3B5; }
+.grwf__row--cut .grwf__bar i { background: #E58B63; }
+.grwf__row--add .grwf__bar i { background: #6BC08E; }
+.grwf__row--end .grwf__bar i { background: var(--a); }
+.grwf__row--end { padding-top: 6px; border-top: 1px solid #E3EAF0; font-weight: 700; }
+.grsvg { width: 100%; height: auto; display: block; }
+.grrat { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #E8EEF2; }
+.grrat:last-child { border-bottom: 0; }
+.grrat > span:first-child { display: flex; flex-direction: column; min-width: 0; }
+.grrat b { font-size: 12.5px; color: var(--ink); }
+.grrat em { font-style: normal; font-size: 10.5px; color: var(--soft); }
+.grrat__v { flex: none; display: flex; flex-direction: column; align-items: flex-end; }
+.grrat__v b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 16px; }
+.grcors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.grcor { display: flex; flex-direction: column; gap: 3px; padding: 9px; border-radius: 14px; background: rgba(255, 255, 255, .85); border: 1px solid #E3EAF0; }
+.grcor__name { font-size: 12px; line-height: 1.3; color: var(--ink); }
+.grcor__r { font-family: Mitr, sans-serif; font-size: 17px; color: #58756A; }
+.grcor__r.lv2 { color: #1F7A45; }
+.grcor__r.lv3 { color: #0F5A30; }
+.grcor em { font-style: normal; font-size: 10.5px; line-height: 1.35; color: var(--soft); }
+.grsc { width: 100%; height: auto; margin-top: 4px; }
+.grheat { display: grid; grid-template-columns: 22px repeat(var(--cols), minmax(0, 1fr)); gap: 2px; align-items: center; }
+.grheat em { font-style: normal; font-size: 9.5px; color: var(--soft); text-align: center; }
+.grheat i { display: block; aspect-ratio: 1; border-radius: 4px; background: color-mix(in srgb, #1F9D55 calc(var(--v) * 100%), #EEF3F0); }
+.grtb { display: flex; flex-direction: column; }
+.grtb__row { display: grid; align-items: center; gap: 6px; padding: 7px 0; border-bottom: 1px solid #E8EEF2; font-size: 12px; color: var(--ink); text-align: right; }
+.grtb__row:last-child { border-bottom: 0; }
+.grtb--menu .grtb__row { grid-template-columns: minmax(0, 1fr) 38px 58px 44px; }
+.grtb--ads .grtb__row { grid-template-columns: minmax(0, 1fr) 54px 46px 50px; }
+.grtb__row--head { font-size: 10.5px; color: var(--soft); padding-top: 0; }
+.grtb__row--head span:first-child { text-align: left; }
+.grtb__name { display: flex; gap: 6px; min-width: 0; text-align: left; line-height: 1.35; overflow-wrap: anywhere; }
+.grtb__name i { flex: none; width: 18px; font-style: normal; font-weight: 700; color: var(--a); }
+
+/* แท็บร้าน (เลื่อนซ้ายขวาได้) */
+.grshops { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.grshops::-webkit-scrollbar { display: none; }
+.grshops button { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px 0 8px; border-radius: 999px; border: 1.5px solid #E3EAF0; background: rgba(255, 255, 255, .85); font: inherit; font-size: 13px; color: var(--ink); white-space: nowrap; cursor: pointer; }
+.grshops button img { width: 22px; height: 22px; object-fit: contain; border-radius: 50%; }
+.grshops button > i { width: 18px; height: 18px; border-radius: 50%; background: var(--c); }
+.grshops button.is-on { border-color: var(--c); background: color-mix(in srgb, var(--c) 14%, #fff); font-weight: 600; }
+.grpick__warn { margin: 0; padding: 8px 10px; border-radius: 12px; background: #FDF1EC; font-size: 12px; color: #A4471A; text-align: center; }
+/* ป้ายแนวโน้มบนกราฟ */
+.grtrend { display: inline-block; margin: 0 0 6px; padding: 3px 10px; border-radius: 999px; background: #ECEFF3; font-size: 11.5px; font-weight: 600; color: #56657A; }
+.grtrend.is-good { background: #DDF3E4; }
+.grtrend.is-bad { background: #FDE6D8; }
+.grshopts { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; }
+.grshopt { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--ink); }
+.grshopt i { width: 9px; height: 9px; border-radius: 3px; }
+.grshopt b { font-weight: 700; }
+
+/* ลูกค้าเป็นใคร */
+.grkpi--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.grkpi--4 .grkpi__cell { padding: 8px 6px; }
+.grkpi--4 .grkpi__cell b { font-size: 15px; }
+.grkpi--4 .grkpi__cell em { font-size: 10px; line-height: 1.25; }
+.grwho { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; padding: 10px; border-radius: 12px; background: #F2F8F4; }
+.grwho p { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--ink); text-wrap: pretty; }
+.grtb--cat .grtb__row, .grtb--seg .grtb__row { grid-template-columns: minmax(0, 1fr) 44px 58px 48px; }
+.grtb--band .grtb__row { grid-template-columns: 64px 46px 60px minmax(0, 1fr); }
+/* ภาษี */
+.grtabs--tax { margin-bottom: 8px; }
+.grtaxin { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 12.5px; color: var(--ink); }
+.grtaxin input { width: 140px; min-height: 44px; padding: 0 10px; border-radius: 12px; border: 1.5px solid #D5E0E8; font: inherit; font-size: 15px; text-align: right; background: #fff; }
+.grtaxpay { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 2px 8px; margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--a) 12%, #fff); }
+.grtaxpay span { font-size: 13px; font-weight: 600; color: var(--ink); }
+.grtaxpay span em { font-style: normal; font-weight: 400; font-size: 11px; color: var(--soft); }
+.grtaxpay b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 22px; color: var(--ink); }
+.grtaxpay > em { grid-column: 1 / -1; font-style: normal; font-size: 11px; color: var(--soft); }
+
+/* ปุ่มช่วงวันที่ใต้หัวการ์ด + แผงเลือกช่วง */
+.grcard { transition: opacity .2s; }
+.grrbar { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 32px; margin: 0 0 8px; padding: 4px 10px; border-radius: 999px; border: 1px solid #D5E0E8; background: #F4F8FB; font: inherit; font-size: 12px; color: var(--ink); cursor: pointer; }
+.grrbar span { font-weight: 600; white-space: nowrap; }
+.grrbar em { font-style: normal; font-size: 10.5px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.grrbar i { font-style: normal; font-size: 10px; color: var(--soft); }
+.grrbar.is-own { border-color: var(--a); background: color-mix(in srgb, var(--a) 12%, #fff); }
+.grrbar.is-own em { color: color-mix(in srgb, var(--a) 80%, #000); font-weight: 600; }
+.grrchips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 4px 0 12px; }
+.grrchip { min-height: 44px; border-radius: 12px; border: 1.5px solid #D5E0E8; background: #fff; font: inherit; font-size: 13.5px; color: #173A2B; cursor: pointer; }
+.grrchip:active { background: #EAF5EE; }
+.grrdates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+.grrdates label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #58756A; }
+.grrdates input { min-height: 46px; padding: 0 8px; border-radius: 12px; border: 1.5px solid #D5E0E8; font: inherit; font-size: 16px; color: #173A2B; background: #fff; width: 100%; box-sizing: border-box; }

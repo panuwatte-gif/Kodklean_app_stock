@@ -870,3 +870,81 @@ export async function addRecipe({ name, type, section, order, by }) {
 // แก้การ์ดสูตร: ปุ่ม batch / กลุ่มไม่รวมน้ำหนัก / ลำดับ / ปิดใช้-คืนกลับ (ไม่ลบสูตร)
 export const saveRecipeCard = (id, changes, by) =>
   dbPatch(`kk_recipe_card?recipe_id=eq.${enc(id)}`, { ...changes, updated_by: by || null, updated_at: new Date().toISOString() });
+
+// ---------- Grab (import · ออเดอร์ · รายงาน) — ทุกไฟล์เก็บตารางเดียว kk_grab_report แยกร้าน (shop = kk_income_brand.id) ----------
+
+const grabShopQ = shop => (Array.isArray(shop) ? `shop=in.(${shop.map(enc).join(',')})` : `shop=eq.${enc(shop)}`);
+
+// บันทึกไฟล์ Grab ที่อ่านแล้วของร้าน shop ทีละ 500 แถว (ซ้ำกุญแจเดิม = ทับด้วยค่าใหม่) แล้วจดประวัติไฟล์ · onStep(เสร็จกี่แถว)
+export async function saveGrabImport(p, shop, by, onStep) {
+  const size = 500, now = new Date().toISOString();
+  for (let i = 0; i < p.rows.length; i += size) {
+    const part = p.rows.slice(i, i + size).map(r => ({ shop, ds: p.kind, row_key: r.row_key, day: r.day, data: r.data, file_name: p.name, uploaded_by: by || null, uploaded_at: now }));
+    await dbUpsert('kk_grab_report?on_conflict=shop,ds,row_key', part);
+    if (onStep) onStep(Math.min(i + size, p.rows.length));
+  }
+  await dbPost('kk_grab_report', [{ shop, ds: 'file', row_key: `${now}|${p.name}`, day: p.from, file_name: p.name, uploaded_by: by || null,
+    data: { file_type: p.kind, period_start: p.from, period_end: p.to, row_count: p.rows.length, file_name: p.name, note: p.capped ? 'capped' : null } }]);
+}
+
+// ประวัติไฟล์ที่ import + วันที่ที่มีข้อมูลจริงของแต่ละชุด ของร้านเดียว (ใช้ทำตารางความครบ)
+export async function getGrabCoverage(shop) {
+  const [files, days] = await Promise.all([
+    dbGet(`kk_grab_report?${grabShopQ(shop)}&ds=eq.file&select=uploaded_by,uploaded_at,data&order=uploaded_at.desc,id.desc`),
+    dbGet(`kk_view_grab_report_coverage?${grabShopQ(shop)}&select=ds,d,n&order=ds,d`)
+  ]);
+  return { files: files.map(f => ({ ...f.data, uploaded_by: f.uploaded_by, uploaded_at: f.uploaded_at })), days };
+}
+
+// ออเดอร์ Grab ของร้านเดียววันเดียว (จากไฟล์ Transaction) + บิลที่ถ่ายรูปไว้วันนั้น (kk_grab_orders) เอาไว้ดูเมนู
+export async function getGrabOrdersDay(shop, iso) {
+  const [txns, bills] = await Promise.all([
+    dbGet(`kk_grab_report?${grabShopQ(shop)}&ds=eq.transactions&day=eq.${iso}&select=data&order=id`),
+    dbGet(`kk_grab_orders?order_date=eq.${iso}&select=order_number,customer_name,order_time,main_menu,add_on,drinks,customer_note,total_amount,menu_details&order=id`)
+  ]);
+  return { txns: txns.map(t => t.data).sort((x, y) => String(x.created_at).localeCompare(String(y.created_at))), bills };
+}
+
+// วันล่าสุดที่มีข้อมูล Grab ของร้าน (ส่งรายการร้านได้) · หน้าออเดอร์ใช้วันล่าสุดของไฟล์ Transaction · รายงานใช้วันล่าสุดของไฟล์ Sales ก่อน (ไฟล์ Transaction มักมีวันสุดท้ายไม่ครบวัน)
+export async function getGrabLastDay(shop, forReport = false) {
+  const q = grabShopQ(shop);
+  const [r, s] = await Promise.all([dbGet(`kk_view_grab_report_txn?${q}&select=day&order=day.desc&limit=1`), dbGet(`kk_grab_report?${q}&ds=eq.sales&select=day&order=day.desc&limit=1`)]);
+  const t = (r[0] || {}).day || null, d = (s[0] || {}).day || null;
+  return forReport ? d || t : t || d;
+}
+
+// ข้อมูลทั้งหมดของรายงานผู้บริหาร ของร้านที่เลือก (รายการร้าน) ช่วง from–to (pf = วันแรกของช่วงก่อนหน้า ไว้เทียบ)
+export async function getGrabReport(shops, pf, from, to) {
+  const q = grabShopQ(shops);
+  const r = (ds, a, cols, extra = '') => dbGet(`kk_grab_report?${q}&ds=eq.${ds}&day=gte.${a}&day=lte.${to}${extra}&select=shop,date:day,${cols.map(c => `${c}:data->>${c}`).join(',')}&order=day,id`);
+  const [sales, txn, menu, peak, adsT, adsC, kw, issue, issueOrd, transfers, store, bills] = await Promise.all([
+    r('sales', pf, ['gross_sales', 'net_sales', 'orders', 'rating']),
+    dbGet(`kk_view_grab_report_txn?${q}&day=gte.${pf}&day=lte.${to}&select=*&order=day,shop`),
+    r('menu', pf, ['item', 'units', 'gross_sales']),
+    r('peak', from, ['hour', 'orders']),
+    r('ads_daily', pf, ['campaign', 'level', 'spend', 'ad_orders', 'ad_sales', 'impressions', 'clicks']),
+    r('ads_campaign', pf, ['campaign', 'level', 'spend', 'ad_orders', 'ad_sales', 'impressions', 'clicks']),
+    r('ads_keyword', from, ['keyword', 'impressions', 'clicks', 'ad_orders', 'ad_sales', 'spend']),
+    r('miwi_item', from, ['item_name', 'missing', 'wrong', 'total']),
+    r('miwi_order', pf, ['hour', 'disposition']),
+    r('transfers', from, ['amount', 'status']),
+    dbGet(`kk_view_open_day?day=gte.${pf}&day=lte.${to}&select=day,sales&order=day`),
+    r('transactions', from, ['net_sales'], `&data->>category=eq.${enc('ชำระเงิน')}`)
+  ]);
+  return { sales, txn, menu, peak, ads: [...adsT, ...adsC], kw: kw.filter(k => Number(k.clicks) > 0 || Number(k.ad_orders) > 0), issue, issueOrd, transfers, store, bills: bills.map(x => Number(x.net_sales) || 0) };
+}
+
+// บิลที่ถ่ายรูปไว้ (เมนูในบิล) ที่จับคู่ออเดอร์ในไฟล์ Transaction ได้ ของร้านที่เลือก — ใช้ดูว่าบิลแต่ละขนาดสั่งเมนูอะไร
+export const getGrabBaskets = shops =>
+  dbGet(`kk_view_grab_basket?${grabShopQ(shops)}&select=order_date,main_menu,add_on,drinks,net_sales&order=order_date,order_number`);
+
+// ยอดขายสุทธิ Grab รายวันต่อร้าน ตั้งแต่ 1 ม.ค. ของปีถึงวัน end (ใช้คิดภาษีทั้งปี)
+export const getGrabYear = (shops, end) =>
+  dbGet(`kk_view_grab_report_txn?${grabShopQ(shops)}&day=gte.${end.slice(0, 4)}-01-01&day=lte.${end}&select=shop,day,sales&order=day,shop`);
+
+// ตั้งค่าคำนวณภาษีต่อร้าน (ยังไม่เคยตั้ง = ไม่มีแถว ใช้ค่าเริ่มต้นใน config)
+export const getTaxSettings = () => dbGet('kk_tax_setting?select=*&order=shop');
+
+// บันทึกตั้งค่าภาษีของร้าน (ทับของเดิม)
+export const saveTaxSetting = (shop, changes, by) =>
+  dbUpsert('kk_tax_setting?on_conflict=shop', [{ shop, ...changes, updated_by: by || null, updated_at: new Date().toISOString() }]);

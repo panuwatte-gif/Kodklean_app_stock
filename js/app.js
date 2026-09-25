@@ -25,6 +25,10 @@ import { mountEmmyCountPage, mountAdCountPage } from './pages/kitchen-count.js';
 import { mountRecipePage } from './pages/recipe.js';
 import { mountLeaveSumPage } from './pages/leave-sum.js';
 import { mountBonusPage } from './pages/bonus.js';
+import { mountGrabPage } from './pages/grab.js';
+import { mountGrabImportPage } from './pages/grab-import.js';
+import { mountGrabOrdersPage } from './pages/grab-orders.js';
+import { mountGrabReportPage } from './pages/grab-report.js';
 import { mountNav, fillGlyphs, confirmSheet, toast } from './shared/ui.js';
 import { currentUser, signOut, loadAccounts } from './shared/auth.js';
 import { APP_UI } from './shared/config.js';
@@ -56,7 +60,11 @@ const PAGES = {
   'ad-count': { file: 'pages/kitchen.html', mount: mountAdCountPage },
   recipe: { file: 'pages/recipe.html', mount: mountRecipePage },
   'leave-sum': { file: 'pages/attend.html', mount: mountLeaveSumPage },
-  bonus: { file: 'pages/attend.html', mount: mountBonusPage }
+  bonus: { file: 'pages/attend.html', mount: mountBonusPage },
+  grab: { file: 'pages/grab.html', mount: mountGrabPage },
+  'grab-import': { file: 'pages/grab.html', mount: mountGrabImportPage },
+  'grab-orders': { file: 'pages/grab.html', mount: mountGrabOrdersPage },
+  'grab-report': { file: 'pages/grab.html', mount: mountGrabReportPage }
 };
 
 const app = document.querySelector('.app');

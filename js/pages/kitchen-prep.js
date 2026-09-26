@@ -5,6 +5,7 @@ import { buildForecast, applyRecs } from '../shared/forecast.js';
 import { KITCHEN_UI as T, PREP_ENTRY } from '../shared/config.js';
 import { itemPhoto } from '../shared/ui.js';
 import { weightBig, fillText } from '../shared/format.js';
+import { splitIssues, dayBarHtml, itemTagHtml } from './prep-fc-issues.js';
 
 const P = T.prep;
 
@@ -12,7 +13,9 @@ const P = T.prep;
 export async function loadPrepDay(date) {
   const b = await getPrepBundle(date);
   const model = buildPrepModel(b);
-  return applyRecs(model, buildForecast(b.items, b.logsFc, date, b.cfg), b.logsFc, date);
+  const fc = buildForecast(b.items, b.logsFc, date, b.cfg);
+  model.fc = fc;   // เก็บผลพยากรณ์ชุดเดียวกับตารางพยากรณ์ ไว้แสดงช่วงต่ำสุด–สูงสุด
+  return applyRecs(model, fc, b.logsFc, date);
 }
 
 // ช่องกรอกตัวเลข 1 ช่อง (kind = meat/rice · f = ชื่อช่อง)
@@ -22,10 +25,10 @@ function cell(kind, id, f, value) {
 }
 
 // ช่องรูป + ชื่อรายการ (กดเพื่อแก้ชื่อ/เปลี่ยนรูป — บันทึกลงฐาน ทุกหน้าเปลี่ยนตาม)
-function itemCell(item) {
-  return `<button class="kp__item" type="button" data-edit="${item.id}" title="${P.editTitle}">
-      <img src="${itemPhoto(item)}" alt="" width="28" height="28" loading="lazy" decoding="async">
-      <b>${item.name}</b>
+function itemCell(item, fit = false) {
+  return `<button class="kp__item" type="button" data-edit="${item.id}" title="${P.editTitle}"${fit ? ' style="width:100%;height:auto;min-height:44px;padding:3px 4px;gap:3px"' : ''}>
+      <img src="${itemPhoto(item)}" alt="" width="28" height="28" loading="lazy" decoding="async"${fit ? ' style="width:20px;height:20px"' : ''}>
+      <b${fit ? ' style="min-width:0;white-space:normal;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.2"' : ''}>${item.name}</b>
     </button>`;
 }
 
@@ -33,12 +36,30 @@ function itemCell(item) {
 const useCell = item => (item.use === null || item.use === undefined
   ? `<small style="color:#B4741B;font-weight:700">${P.why[item.useWhy] || P.none}</small>` : weightBig(item.use));
 
+// ความกว้างคอลัมน์ตารางเนื้อสัตว์ (ช่องแนะเตรียมกว้างพอตัวเลขทศนิยม 1 ตำแหน่ง + ช่วงพยากรณ์)
+const MEAT_GRID = 'grid-template-columns:88px 50px repeat(4, minmax(0, 1fr)) 34px';
+
+// ช่องแนะเตรียม 2 บรรทัด: บนตัวใหญ่ = แนะเตรียม (ขอบบน − ของยกมา · เสาร์ใช้ค่ากลาง) · ล่างตัวเล็ก = ช่วงพยากรณ์ หรือเหตุผลสั้น
+function recCell(item, f, all) {
+  const top = item.rec ? weightBig(item.rec.t) : P.none;
+  let sub;
+  if (f && f.fc !== null && f.fc !== undefined) {
+    const txt = f.lo !== null && f.lo !== undefined && f.hi !== null && f.hi !== undefined
+      ? fillText(P.fcRange, { lo: weightBig(f.lo), hi: weightBig(f.hi) }) : fillText(P.fcOne, { v: weightBig(f.fc) });
+    sub = txt.replace(' ', '<br><span style="white-space:nowrap">') + '</span>';   // "พยากรณ์" บรรทัดหนึ่ง ตัวเลขอีกบรรทัด
+  } else sub = (all[0] || {}).t || P.none;
+  return `<span class="kp__fc" style="display:flex;flex-direction:column;align-items:center;line-height:1.15">
+      <b style="font-size:13px;font-weight:700;color:#1F5E99;white-space:nowrap">${top}</b>
+      <small style="font-size:9px;line-height:1.2;color:#5E6E7D;text-align:center">${sub}</small>
+    </span>`;
+}
+
 // แถวเนื้อสัตว์ 1 แถว: ใช้ไปมาจาก prepUse ใน calc.js (สูตรเดียวกับหน้าเตรียม-เหลือและข้อมูลพยากรณ์)
-function meatRow(item) {
+function meatRow(item, f, issues, all) {
   return `
-    <div class="kp__row" data-id="${item.id}">
-      ${itemCell(item)}
-      <span class="kp__fc"${item.carryStale || item.carryNoCooked ? ` title="${[item.carryStale ? P.carryStale : '', item.carryNoCooked ? P.carryNoCooked : ''].filter(Boolean).join(' · ')}"` : ''}>${item.rec ? item.rec.t : P.none}${item.carryStale || item.carryNoCooked ? ' ⚠' : ''}</span>
+    <div class="kp__row" data-id="${item.id}" style="${MEAT_GRID}">
+      <div style="min-width:0">${itemCell(item, true)}${itemTagHtml(issues)}</div>
+      ${recCell(item, f, all)}
       ${cell('meat', item.id, 'prep', item.prep)}
       ${cell('meat', item.id, 'extra', item.extra)}
       ${cell('meat', item.id, 'waste', item.waste)}
@@ -76,13 +97,18 @@ function warnNotes(model) {
 export function prepBodyHtml(model, q) {
   const find = rows => rows.filter(r => !q || r.name.includes(q));
   const meat = find(model.meatRows), rice = find(model.riceRows);
-  const head = cols => `<div class="kp__head">${cols.map(c => `<b>${c}</b>`).join('')}</div>`;
+  const head = (cols, style = '') => `<div class="kp__head"${style ? ` style="${style}"` : ''}>${cols.map(c => `<b>${c}</b>`).join('')}</div>`;
+  // ผลพยากรณ์ของแถวเนื้อสัตว์ (ชุดเดียวกับตารางพยากรณ์) + คำเตือนแยกระดับวัน/รายการ
+  const fcRows = ((model.fc && model.fc.rows) || []).filter(r => model.meatRows.some(m => m.id === r.id));
+  const fcOf = id => fcRows.find(r => r.id === id);
+  const iss = splitIssues(fcRows);
   return `
     <section class="kp">
       <h2 class="kp__title">${P.meatTitle}<span>${P.unit}</span></h2>
       <div class="kp__table">
-        ${head(P.meatCols)}
-        ${meat.length ? meat.map(meatRow).join('') : `<p class="kempty">${P.noRows}</p>`}
+        ${dayBarHtml(iss.day)}
+        ${head(P.meatCols, MEAT_GRID)}
+        ${meat.length ? meat.map(m => meatRow(m, fcOf(m.id), iss.item[m.id] || [], iss.all[m.id] || [])).join('') : `<p class="kempty">${P.noRows}</p>`}
       </div>
       <p class="kp__note">${P.useNote}</p>${warnNotes(model)}
     </section>

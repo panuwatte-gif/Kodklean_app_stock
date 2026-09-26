@@ -29,7 +29,8 @@ import { mountGrabPage } from './pages/grab.js';
 import { mountGrabImportPage } from './pages/grab-import.js';
 import { mountGrabOrdersPage } from './pages/grab-orders.js';
 import { mountGrabReportPage } from './pages/grab-report.js';
-import { mountNav, fillGlyphs, confirmSheet, toast } from './shared/ui.js';
+import { mountNav, fillGlyphs, confirmSheet, toast, enableDragScroll } from './shared/ui.js';
+import { startMy, myToggleHtml, bindMyToggle } from './shared/i18n.js';
 import { currentUser, signOut, loadAccounts } from './shared/auth.js';
 import { APP_UI } from './shared/config.js';
 
@@ -109,6 +110,12 @@ async function showLogin() {
 
 // ดึง PIN ล่าสุดจากฐานก่อนเปิดหน้าแรก (แก้รหัสจากเครื่องไหนก็ใช้ได้ทุกเครื่อง)
 loadAccounts().then(() => { if (currentUser()) showPage('home'); else showLogin(); });
+
+// บนคอม: แถบแท็บที่ล้นจอลาก/หมุนล้อเมาส์เลื่อนซ้าย-ขวาได้ · สวิตช์พม่ากำกับเปิดอยู่ = ใส่พม่าใต้ข้อความไทย (ปิด = ไม่เรียกฐาน)
+enableDragScroll(app);
+startMy(app);
+bindMyToggle(app);
+document.querySelector('.app-bar .icon-btn[aria-label="แจ้งเตือน"]')?.insertAdjacentHTML('beforebegin', myToggleHtml());
 
 // ปุ่มออกจากระบบบนแถบบนสุด: ถามยืนยันก่อน แล้วกลับไปหน้าเข้าสู่ระบบ
 const logoutBtn = document.getElementById('btn-logout');

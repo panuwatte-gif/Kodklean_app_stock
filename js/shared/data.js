@@ -730,6 +730,40 @@ export const getPackItems = (resp = 'นับบรรจุภัณฑ์อ�
 export const getSomStockItems = grp =>
   dbGet(`kk_count_item?active=eq.true&grp=eq.${enc(grp)}&responsibility=eq.${enc('นับเครื่องดื่มและบรรจุภัณฑ์น้ำ')}&select=id,name,grp,unit,location,responsibility,photo,sort_order&order=sort_order,id`);
 
+// คำพม่าของรายการนับที่ระบุ (ตาราง kk_word_my) คืน { count_item_id: { name_my, unit_my } } · ว่าง/ต่อฐานไม่ได้ = {} เงียบๆ
+export async function getSomBurmese(ids) {
+  if (!ids || !ids.length) return {};
+  try {
+    const rows = await dbGet(`kk_word_my?count_item_id=in.(${ids.map(enc).join(',')})&select=count_item_id,name_my,unit_my`);
+    const out = {};
+    (rows || []).forEach(r => { out[r.count_item_id] = { name_my: r.name_my || '', unit_my: r.unit_my || '' }; });
+    return out;
+  } catch { return {}; }
+}
+
+// ---------- แปลภาษาพม่า (kk_word_my = คำของรายการนับ · kk_app_word_my = ข้อความบนจอแอป) ----------
+
+// คำพม่าของรายการนับทั้งหมด (แท็บแปลภาษาพม่า + สวิตช์พม่ากำกับทั้งแอป)
+export const getWordMyAll = () =>
+  dbGet('kk_word_my?select=id,th_name,name_my,unit_th,unit_my,cat_th,cat_my,count_item_id,source&order=cat_th.nullslast,th_name,id');
+
+// บันทึกคำพม่าของรายการนับ (แถวเดิมทับตาม id · แถวใหม่เพิ่ม) ต้องส่งครบทุกช่อง
+export const saveWordMy = rows => dbUpsert('kk_word_my?on_conflict=id', rows.map(r => ({ ...r, updated_at: new Date().toISOString() })));
+
+// ลบคำพม่าของรายการนับ 1 คำ
+export const removeWordMy = id => dbDelete(`kk_word_my?id=eq.${enc(id)}`);
+
+// รายการนับทั้งหมดที่ยังใช้อยู่ (ให้เลือกผูกกับคำพม่า)
+export const getCountItemsBrief = () =>
+  dbGet('kk_count_item?active=eq.true&select=id,name,grp,unit,photo,sort_order&order=sort_order,id');
+
+// คำแปลพม่าของข้อความบนจอแอป
+export const getAppWordMy = () => dbGet('kk_app_word_my?select=th,my,cat&order=th');
+
+// บันทึกคำแปลข้อความบนจอ 1 คำ (ข้อความไทยเป็นกุญแจ)
+export const saveAppWordMy = (th, my, cat, by) =>
+  dbUpsert('kk_app_word_my?on_conflict=th', [{ th, my, cat, updated_by: by || null, updated_at: new Date().toISOString() }]);
+
 // รายการนับทั้งหมดของหมวดหนึ่ง (หน้านับผัก/ซอส/เครื่องปรุง/เนื้อสัตว์ — ชุดเดียวกับหน้านับสต๊อก)
 export const getCountItemsByGroup = grp =>
   dbGet(`kk_count_item?active=eq.true&grp=eq.${enc(grp)}&select=id,name,grp,unit,location,responsibility,photo,sort_order&order=sort_order,id`);

@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500&display=swap");
 /* หน้าตาพื้นฐานที่ใช้ร่วมทั้งแอป: สีพื้น ตัวอักษร แถบบนสุด */
 * { box-sizing: border-box; }
 
@@ -15,6 +16,19 @@ body {
 
 a { color: #125B2A; }
 a:hover { color: #0C3F1D; }
+
+/* คำพม่าที่สวิตช์ "แสดงภาษาพม่ากำกับทั้งแอป" ใส่ใต้ข้อความไทย (js/shared/i18n.js) */
+.i18n-my {
+  display: block;
+  margin-top: 1px;
+  font-family: 'Noto Sans Myanmar', 'Padauk', 'Myanmar Text', sans-serif;
+  font-size: .78em;
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: .85;
+}
 
 .app {
   position: relative;
@@ -65,6 +79,28 @@ a:hover { color: #0C3F1D; }
 .icon-btn:hover { background: #FDF3E3; }
 .icon-btn:active { transform: scale(.96); }
 .icon-btn img { width: 26px; height: 26px; object-fit: contain; }
+
+/* สวิตช์ภาษาพม่ากำกับทั้งแอป (ข้างระฆัง) */
+.my-tog {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 6px 0 11px;
+  border: 1.5px solid #D8EBD8;
+  border-radius: 999px;
+  background: #fff;
+  font: 500 12px Mitr, sans-serif;
+  color: #5E6B57;
+  cursor: pointer;
+}
+.my-tog:active { transform: scale(.96); }
+.my-tog__knob { position: relative; width: 34px; height: 20px; border-radius: 999px; background: #E3DDD2; transition: background .2s; }
+.my-tog__knob::after { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); transition: transform .2s; }
+.my-tog.is-on { border-color: #F7C9A0; color: #C2410C; }
+.my-tog.is-on .my-tog__knob { background: #F26A1B; }
+.my-tog.is-on .my-tog__knob::after { transform: translateX(14px); }
 
 /* ปุ่มออกจากระบบ (ไอคอนเส้น สีแดงอ่อน) */
 .icon-btn--out { border-color: #F3D3CF; color: #C0392E; }

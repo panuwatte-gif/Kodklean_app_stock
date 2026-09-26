@@ -112,7 +112,8 @@ const GLYPHS = {
   upload: '<path d="M12 17V4"/><path d="M7 9l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
   snow: '<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/>',
   users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6.1M17.5 20a5.6 5.6 0 0 0-2-4.3"/>',
-  x: '<path d="M6 6l12 12M18 6L6 18"/>'
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  lang: '<path d="M4 5h9M8.5 3v2M6 5c.6 3 2.6 5.6 5.5 7.2M11 5c-.6 3.4-3 6.4-6.6 8"/><path d="M13 21l4-9 4 9M14.4 18h5.2"/>'
 };
 
 // สร้างโค้ดไอคอนเส้นหนึ่งอัน (สีตามตัวอักษรที่ครอบ)
@@ -679,4 +680,51 @@ export function printArea(selector) {
   const done = () => { app.classList.remove('printing'); target.classList.remove('is-printing'); window.removeEventListener('afterprint', done); };
   window.addEventListener('afterprint', done);
   setTimeout(() => window.print(), 60);
+}
+
+// แถบ/แท็บที่เลื่อนซ้าย-ขวาได้: บนคอมให้ลากด้วยเมาส์ หรือหมุนล้อเมาส์เลื่อนได้ (มือถือปัดนิ้วเหมือนเดิม) — ติดตั้งครั้งเดียวทั้งแอป
+export function enableDragScroll(host = document) {
+  if (host.__kkDrag) return;
+  host.__kkDrag = true;
+  // กล่องที่ใกล้ที่สุดซึ่งเลื่อนแนวนอนได้จริง
+  const scrollerOf = el => {
+    for (let n = el; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
+      if (n.scrollWidth > n.clientWidth + 2) {
+        const ox = getComputedStyle(n).overflowX;
+        if (ox === 'auto' || ox === 'scroll') return n;
+      }
+    }
+    return null;
+  };
+  let drag = null, moved = false;
+  host.addEventListener('pointerdown', e => {
+    moved = false;
+    if (e.pointerType !== 'mouse' || e.button !== 0 || e.target.closest('input, textarea, select, [contenteditable]')) return;
+    const box = scrollerOf(e.target);
+    if (box) drag = { box, x: e.clientX, left: box.scrollLeft };
+  });
+  window.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (!moved && Math.abs(dx) < 6) return;
+    if (!moved) { drag.box.style.cursor = 'grabbing'; document.body.style.userSelect = 'none'; }
+    moved = true;
+    drag.box.scrollLeft = drag.left - dx;
+  });
+  window.addEventListener('pointerup', () => {
+    if (drag) { drag.box.style.cursor = ''; document.body.style.userSelect = ''; }
+    drag = null;
+  });
+  host.addEventListener('dragstart', e => { if (drag) e.preventDefault(); });
+  // ลากเสร็จแล้วอย่าให้นับเป็นการกดปุ่มที่ปล่อยเมาส์ทับ
+  host.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  host.addEventListener('wheel', e => {
+    if (e.ctrlKey || e.shiftKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+    const box = scrollerOf(e.target);
+    if (!box || box.clientHeight > 180) return;
+    const max = box.scrollWidth - box.clientWidth;
+    if ((e.deltaY < 0 && box.scrollLeft <= 0) || (e.deltaY > 0 && box.scrollLeft >= max - 1)) return;
+    box.scrollLeft += e.deltaY;
+    e.preventDefault();
+  }, { passive: false });
 }

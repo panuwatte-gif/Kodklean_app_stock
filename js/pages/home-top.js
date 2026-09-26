@@ -1,5 +1,6 @@
 // หน้าหลัก: ส่วนหัว + ประกาศ 2 ใบ + การ์ดแนะนำเตรียมของพรุ่งนี้ + การ์ดแนะนำปริมาณหุงข้าว
 import { HOME_UI, HOME_CHARS } from '../shared/config.js';
+import { myToggleHtml } from '../shared/i18n.js';
 import { glyph, dropdownHtml } from '../shared/ui.js';
 import { pageOf, ricePotCount } from '../shared/calc.js';
 import { dayLongTh, weight, fillText, escHtml } from '../shared/format.js';
@@ -26,6 +27,7 @@ export function heroHtml(meta, ui) {
       <img class="hhero__logo" src="assets/home/logo-group.webp" alt="KodKlean Group" decoding="async">
       <span class="hhero__name"><b>${HOME_UI.title}</b><small>${HOME_UI.sub}</small><em>${HOME_UI.tagline}</em></span>
       <button class="hhero__date" type="button" data-home-date="1">${glyph('calendar', 16)}<span id="home-date">${dayLongTh(meta.asOf)}</span>${glyph('chevron', 14)}</button>
+      ${myToggleHtml()}
       <button class="icon-btn" type="button" aria-label="แจ้งเตือน"><img src="assets/icons/ic17.webp" alt="" width="26" height="26" decoding="async"><span class="icon-btn__dot">3</span></button>
       <button class="icon-btn" type="button" aria-label="ตั้งค่า"><img src="assets/icons/ic20.webp" alt="" width="26" height="26" decoding="async"></button>
     </div>

@@ -1,6 +1,6 @@
 // ชิ้นส่วนหน้าจอเฉพาะหน้านับสต๊อกเครื่องดื่มของส้ม (หัวหน้าจอ · แท็บ · ตาราง · แถบสรุป)
 import { glyph, itemPhoto } from '../shared/ui.js';
-import { SOM_UI as T } from '../shared/config.js';
+import { SOM_UI as T, SOM_MY_UI as MY } from '../shared/config.js';
 import { money, dayLongTh } from '../shared/format.js';
 
 // ขึ้นบรรทัดใหม่ในข้อความที่ตั้งไว้ใน config
@@ -29,14 +29,17 @@ export function somHeroHtml(tab) {
       <span class="shero__bubble">${br(tab.bubble)}</span>
       <img class="shero__char" src="${tab.char}" alt="ส้ม" height="188" decoding="async">
       <span class="shero__script">${br(tab.script)}</span>
+      <img class="shero__leaf shero__leaf--a" src="assets/som/theme-leaf-2.webp" alt="" width="30" height="28" decoding="async">
+      <img class="shero__leaf shero__leaf--b" src="assets/som/theme-leaf-3.webp" alt="" width="14" height="30" decoding="async">
+      <img class="shero__leaf shero__leaf--c" src="assets/som/theme-bubble.webp" alt="" width="14" height="14" decoding="async">
     </section>`;
 }
 
-// แถวแท็บ 4 หมวด
+// แถวแท็บ 4 หมวด + แท็บแปลภาษาพม่า
 export function somTabsHtml(activeId) {
-  return `<nav class="stabs">${T.tabs.map(t => `
+  return `<nav class="stabs">${[...T.tabs, MY.tab].map(t => `
     <button class="stab${t.id === activeId ? ' is-on' : ''}" type="button" data-tab="${t.id}">
-      <img src="${t.icon}" alt="" width="26" height="26" loading="lazy" decoding="async">
+      ${t.glyph ? `<i class="stab__glyph">${glyph(t.glyph, 22)}</i>` : `<img src="${t.icon}" alt="" width="26" height="26" loading="lazy" decoding="async">`}
       <span>${br(t.tab)}</span>
     </button>`).join('')}</nav>`;
 }
@@ -76,10 +79,10 @@ function rowHtml(item, index, tab) {
       <span class="srow__no">${index + 1}</span>
       <span class="srow__item">
         <span class="srow__thumb"><img src="${itemPhoto(item)}" alt="" width="38" height="38" loading="lazy" decoding="async"></span>
-        <span class="srow__name"><b>${item.name}</b><em>${item.location}</em></span>
+        <span class="srow__name"><b${item.name_my ? ' data-no-my="1"' : ''}>${item.name}</b>${item.name_my ? `<span class="srow__my" lang="my">${item.name_my}</span>` : ''}<em>${item.location}</em></span>
       </span>
       <input class="srow__in" type="number" inputmode="numeric" min="0" step="1" placeholder="-" value="${item.qty ?? ''}" aria-label="${item.name}">
-      <span class="srow__unit">${item.unit || ''}</span>
+      <span class="srow__unit"${item.unit_my ? ' data-no-my="1"' : ''}>${item.unit || ''}${item.unit_my ? ` / <span class="srow__my" lang="my">${item.unit_my}</span>` : ''}</span>
       ${somTagHtml(item.qty, tab)}
       <button class="srow__more" type="button" data-more="${item.id}" aria-label="${T.moreTitle}">⋮</button>
     </div>`;

@@ -1,32 +1,28 @@
-/* หน้านับสต๊อกเครื่องดื่มของส้ม (4 แท็บ) — โทนครีม-เขียวใบชาแบบ KodKlean */
+/* หน้างานของส้ม (นับเครื่องดื่ม 4 แท็บ + แปลภาษาพม่า) — โทนส้มครีม ใบไม้เขียว ตามภาพ reference */
 .som {
   position: relative;
   min-height: 100%;
   padding-bottom: 12px;
-  background: #FDF8F0;
-  --a: #14532B;
-  --ink: #24331F;
-  --soft: #6E7F66;
-  --line: #EFE7D8;
+  background: linear-gradient(180deg, #FFF1E0 0%, #FFF7EE 38%, #FFF4E6 100%);
+  --a: #F26A1B;
+  --a2: #FF9F43;
+  --deep: #C2410C;
+  --ink: #3B2A1E;
+  --soft: #8A6A52;
+  --line: #F6DDBF;
+  --card: #FFFCF8;
 }
 
-/* ---------- หัวหน้าจอ + การ์ดหัวเรื่อง (พื้นไล่สีเขียวอ่อน) ---------- */
+/* ---------- หัวหน้าจอ + การ์ดหัวเรื่อง (พื้นลายคลื่นส้ม) ---------- */
 .som__head {
   position: relative;
   overflow: hidden;
   padding: 10px 12px 0;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F1FAEE 48%, #FDF8F0 100%);
-}
-
-.som__head::before {
-  content: '';
-  position: absolute;
-  left: -60px;
-  top: -90px;
-  width: 340px;
-  height: 300px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(166, 190, 64, .20), rgba(166, 190, 64, 0) 70%);
+  border-radius: 0 0 26px 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 230, 0) 62%, #FFF4E8 100%),
+    url('../../assets/som/theme-hero-bg.webp') center 18% / cover no-repeat,
+    #FFE9D2;
 }
 
 .som__head > * { position: relative; }
@@ -35,14 +31,14 @@
 
 .stop__back {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--line);
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 3px 8px rgba(74, 62, 48, .10);
+  background: rgba(255, 252, 247, .94);
+  box-shadow: 0 3px 10px rgba(194, 65, 12, .12);
   color: var(--a);
   cursor: pointer;
 }
@@ -55,12 +51,12 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 42px;
-  padding: 0 10px 0 4px;
-  border: 1px solid var(--line);
+  height: 44px;
+  padding: 0 12px 0 4px;
+  border: 1.5px solid var(--line);
   border-radius: 999px;
-  background: #fff;
-  box-shadow: 0 3px 8px rgba(74, 62, 48, .10);
+  background: rgba(255, 252, 247, .94);
+  box-shadow: 0 3px 10px rgba(194, 65, 12, .12);
   font-family: Mitr, sans-serif;
   font-weight: 500;
   font-size: 13px;
@@ -68,27 +64,28 @@
 }
 
 .stop__me img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
-.stop__me i { font-style: normal; font-size: 11px; color: var(--soft); }
+.stop__me i { font-style: normal; font-size: 11px; color: var(--a); }
 
 /* ---------- การ์ดหัวเรื่อง ---------- */
-.shero { position: relative; min-height: 186px; padding: 10px 0 14px; }
+.shero { position: relative; min-height: 196px; padding: 12px 0 18px; }
 
 .shero__title {
   margin: 0;
-  max-width: min(214px, calc(100% - 200px));
+  max-width: calc(100% - 150px);
   font-family: Mitr, sans-serif;
-  font-weight: 500;
-  font-size: 23px;
-  line-height: 1.24;
-  color: #14532B;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.22;
+  color: #E8561C;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
 }
 
 .shero__sub {
-  margin: 7px 0 0;
-  max-width: min(206px, calc(100% - 200px));
+  margin: 8px 0 0;
+  max-width: calc(100% - 182px);
   font-size: 11.5px;
   line-height: 1.6;
-  color: #5E7056;
+  color: #5B4636;
   text-wrap: pretty;
 }
 
@@ -96,23 +93,25 @@
   position: absolute;
   right: -10px;
   top: -18px;
-  height: 188px;
+  height: 196px;
   pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgba(194, 65, 12, .18));
 }
 
 .shero__bubble {
   position: absolute;
-  right: 100px;
-  top: 2px;
-  width: 96px;
+  right: 104px;
+  top: 0;
+  width: 98px;
   padding: 7px 8px;
-  border: 1.5px solid #B9D8BE;
+  border: 1.5px solid #F7C9A0;
   border-radius: 14px;
-  background: rgba(255, 255, 255, .94);
+  background: rgba(255, 253, 250, .96);
+  box-shadow: 0 3px 8px rgba(194, 65, 12, .10);
   font-family: Mali, sans-serif;
   font-size: 9.5px;
   line-height: 1.45;
-  color: #1B5E33;
+  color: #9A3412;
   text-align: center;
 }
 
@@ -123,60 +122,84 @@
   bottom: 12px;
   width: 10px;
   height: 10px;
-  border-right: 1.5px solid #B9D8BE;
-  border-bottom: 1.5px solid #B9D8BE;
+  border-right: 1.5px solid #F7C9A0;
+  border-bottom: 1.5px solid #F7C9A0;
   background: #fff;
   transform: rotate(-45deg);
 }
 
 .shero__script {
+  position: relative;
   display: inline-block;
   margin-top: 10px;
+  padding-bottom: 6px;
   font-family: Mali, sans-serif;
   font-size: 11px;
   line-height: 1.3;
-  color: #2F6B3C;
+  color: #E8561C;
 }
 
-/* ---------- แท็บ 4 หมวด ---------- */
+.shero__script::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 44px;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #F26A1B, rgba(242, 106, 27, 0));
+}
+
+/* ใบไม้/หยดน้ำตกแต่ง */
+.shero__leaf { position: absolute; pointer-events: none; object-fit: contain; }
+.shero__leaf--a { width: 30px; height: 28px; left: min(176px, calc(100% - 222px)); top: 6px; transform: rotate(-18deg); }
+.shero__leaf--b { width: 14px; height: 30px; left: 44%; bottom: 8px; transform: rotate(38deg); opacity: .9; }
+.shero__leaf--c { width: 14px; height: 14px; right: 168px; bottom: 34px; opacity: .9; }
+
+/* ---------- แท็บหมวด (4 หมวดนับ + แปลภาษาพม่า) ---------- */
 .stabs {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   padding: 10px 12px 0;
 }
 
 .stab {
   flex: 1;
   min-width: 0;
+  min-height: 66px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 8px 4px 7px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(74, 62, 48, .07);
+  padding: 8px 2px 7px;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #FFFDF9, #FFF4E6);
+  box-shadow: 0 3px 10px rgba(194, 65, 12, .08);
   font-family: Mitr, sans-serif;
   font-weight: 500;
   font-size: 10px;
   line-height: 1.2;
-  color: #6E7F66;
+  color: #9A3412;
   text-align: center;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .stab img { width: 26px; height: 26px; object-fit: contain; }
+.stab__glyph { display: grid; place-items: center; width: 26px; height: 26px; font-style: normal; color: var(--a); }
 .stab:active { transform: scale(.97); }
 
 .stab.is-on {
-  background: var(--a);
-  border-color: var(--a);
+  background: linear-gradient(160deg, #FF9F43 0%, #F26A1B 100%);
+  border-color: #FFC58F;
   color: #fff;
-  box-shadow: 0 6px 14px rgba(20, 83, 43, .26);
+  box-shadow: 0 6px 16px rgba(242, 106, 27, .34), inset 0 0 0 2px rgba(255, 255, 255, .35);
 }
 
 .stab.is-on img { filter: drop-shadow(0 0 2px rgba(255, 255, 255, .9)); }
+.stab.is-on .stab__glyph { color: #fff; }
 
 /* ---------- แถบวันที่ + ค้นหา ---------- */
 .stools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 12px 0; }
@@ -187,11 +210,11 @@
   align-items: center;
   gap: 8px;
   height: 52px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(74, 62, 48, .07);
+  padding: 0 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 2px 8px rgba(194, 65, 12, .07);
   color: var(--a);
 }
 
@@ -211,7 +234,7 @@
   outline: none;
 }
 
-.ssearch input::placeholder { color: #A99E8C; }
+.ssearch input::placeholder { color: #B79C84; }
 
 /* ---------- ปุ่มเพิ่ม / จัดการรายการ ---------- */
 .sacts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 12px 0; }
@@ -221,9 +244,9 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  height: 48px;
+  height: 50px;
   border: 0;
-  border-radius: 15px;
+  border-radius: 16px;
   font-family: Mitr, sans-serif;
   font-weight: 500;
   font-size: 14px;
@@ -231,38 +254,45 @@
 }
 
 .sbtn:active { transform: scale(.97); }
-.sbtn--add { background: var(--a); color: #fff; box-shadow: 0 6px 14px rgba(20, 83, 43, .24); }
-.sbtn--manage { background: #E7F4E4; color: #1B5E33; }
+.sbtn span, .sdate__text b { white-space: nowrap; }
+.sbtn--add { background: linear-gradient(90deg, #F26A1B 0%, #FF9F43 100%); color: #fff; box-shadow: 0 6px 14px rgba(242, 106, 27, .30), inset 0 0 0 1.5px rgba(255, 255, 255, .3); }
+.sbtn--manage { background: #FFEFD9; border: 1.5px solid #F6D2A8; color: var(--deep); }
 
-/* ---------- ตารางรายการ ---------- */
+/* ---------- ตารางรายการ (แถวละการ์ด) ---------- */
 .stable {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   margin: 10px 12px 0;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 2px 10px rgba(74, 62, 48, .08);
-  overflow: hidden;
+  padding: 6px;
+  border: 1.5px solid #F6E2CA;
+  border-radius: 20px;
+  background: rgba(255, 246, 236, .8);
 }
 
 .srow {
   display: grid;
-  grid-template-columns: 16px 1fr 62px 32px 66px 14px;
+  grid-template-columns: 16px 1fr 62px 34px 66px 14px;
   align-items: center;
   gap: 6px;
-  padding: 8px 9px;
-  border-top: 1px solid #F4EEE2;
+  padding: 8px 8px;
+  border: 1px solid #F5E4D0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(194, 65, 12, .05);
 }
 
 .srow--head {
-  border-top: 0;
-  background: #FAF6EC;
-  padding: 9px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  padding: 4px 8px 2px;
   font-size: 10px;
-  color: #6F6355;
+  color: #8A6A52;
 }
 
 .srow--head b { font-weight: 400; }
-.srow__no { font-size: 11px; color: #6F6355; text-align: center; }
+.srow__no { font-size: 12px; font-weight: 600; color: var(--a); text-align: center; }
 
 .srow__item { display: flex; align-items: center; gap: 8px; min-width: 0; }
 
@@ -272,21 +302,34 @@
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 11px;
-  background: #F7F3E9;
+  border-radius: 12px;
+  background: #FFF4E6;
 }
 
 .srow__thumb img { width: 38px; height: 38px; object-fit: contain; }
 .srow__name { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
 .srow__name b { font-family: Mitr, sans-serif; font-weight: 400; font-size: 12px; color: var(--ink); }
-.srow__name em { font-style: normal; font-size: 9.5px; color: #6F6355; }
+.srow__name em { font-style: normal; font-size: 9.5px; color: #8A6A52; }
+
+/* ชื่อพม่าใต้ชื่อไทย (แสดงเฉพาะคนที่อยู่ใน BURMESE_STAFF) */
+.srow__my {
+  display: block;
+  margin: 0 0 1px;
+  font-family: 'Noto Sans Myanmar', 'Padauk', 'Myanmar Text', sans-serif;
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: #8A6A52;
+  overflow-wrap: anywhere;
+}
+
+.srow__unit .srow__my { display: inline; font-size: 9.5px; }
 
 .srow__in {
   width: 100%;
   height: 38px;
-  border: 1.5px solid #E5DCCA;
-  border-radius: 10px;
-  background: #fff;
+  border: 1.5px solid #F3D2AE;
+  border-radius: 12px;
+  background: #FFFDFA;
   font: inherit;
   font-size: 15px;
   font-weight: 600;
@@ -295,33 +338,35 @@
   -moz-appearance: textfield;
 }
 
-.srow__in:focus { outline: 2px solid #A6BE40; outline-offset: 1px; border-color: #A6BE40; }
+.srow__in:focus { outline: 2px solid #FFB978; outline-offset: 1px; border-color: var(--a); }
 .srow__in::-webkit-outer-spin-button, .srow__in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.srow__unit { font-size: 11px; color: #5A6B52; text-align: center; }
+.srow__unit { font-size: 11px; color: #5B4636; text-align: center; overflow-wrap: anywhere; line-height: 1.3; }
 
 .stag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  height: 26px;
+  height: 28px;
   border-radius: 999px;
   font-size: 10.5px;
   white-space: nowrap;
 }
 
 .stag i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.stag--ok { background: #E7F4E7; color: #1B7A3E; }
-.stag--out { background: #FDEAEA; color: #C1443C; }
-.stag--none { background: #F3EFE6; color: #8B8070; }
+.stag--ok { background: #E9F6E5; color: #2E7D32; }
+.stag--out { background: #FDE8E4; color: #C2410C; }
+.stag--none { background: #FCEBD7; color: #9A6A45; }
 
 .srow__more {
   border: 0;
   background: none;
   padding: 0;
-  font-size: 15px;
+  min-height: 32px;
+  font-size: 17px;
+  font-weight: 700;
   line-height: 1;
-  color: #A99E8C;
+  color: var(--a);
   cursor: pointer;
 }
 
@@ -338,19 +383,19 @@
   align-items: center;
   margin: 12px 12px 0;
   padding: 8px;
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--line);
   border-radius: 20px;
-  background: rgba(255, 255, 255, .95);
+  background: rgba(255, 252, 247, .95);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
-  box-shadow: 0 8px 22px rgba(74, 62, 48, .16);
+  box-shadow: 0 8px 22px rgba(194, 65, 12, .16);
 }
 
 .sfoot__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; min-width: 0; }
-.sfoot__cell { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; padding-left: 8px; border-left: 2px solid #E3EFDF; }
-.sfoot__cell em { font-style: normal; font-size: 9.5px; color: #5A6B52; }
-.sfoot__cell b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: #14532B; }
-.sfoot__cell b span { font-size: 10px; font-weight: 400; color: #5A6B52; }
+.sfoot__cell { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; padding-left: 8px; border-left: 2px solid #FBD9B5; }
+.sfoot__cell em { font-style: normal; font-size: 9.5px; color: #8A6A52; }
+.sfoot__cell b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 15px; color: var(--deep); }
+.sfoot__cell b span { font-size: 10px; font-weight: 400; color: #8A6A52; }
 
 .sfoot__save {
   display: inline-flex;
@@ -360,14 +405,129 @@
   padding: 0 16px;
   border: 0;
   border-radius: 16px;
-  background: var(--a);
+  background: linear-gradient(90deg, #F26A1B 0%, #FF9F43 100%);
   color: #fff;
   font-family: Mitr, sans-serif;
   font-weight: 500;
   font-size: 14px;
-  box-shadow: 0 6px 14px rgba(20, 83, 43, .26);
+  box-shadow: 0 6px 14px rgba(242, 106, 27, .30);
   cursor: pointer;
 }
 
 .sfoot__save:active { transform: scale(.97); }
 .sfoot__save:disabled { opacity: .6; }
+
+/* ---------- แท็บแปลภาษาพม่า ---------- */
+.mwrap { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 0; }
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  cursor: pointer;
+}
+
+
+.mseg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 16px; background: #FFE9D2; }
+
+.mseg__btn {
+  min-height: 44px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  font-family: Mitr, sans-serif;
+  font-weight: 500;
+  font-size: 11.5px;
+  line-height: 1.25;
+  color: #9A3412;
+  cursor: pointer;
+}
+
+.mseg__btn.is-on { background: #fff; color: var(--a); box-shadow: 0 2px 8px rgba(194, 65, 12, .14); }
+
+.mtools { display: flex; gap: 8px; }
+.mtools .ssearch { flex: 1; min-width: 0; }
+.mtools__add { flex: none; height: 52px; padding: 0 14px; }
+
+.mtodo { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; font-size: 11.5px; color: var(--soft); white-space: nowrap; cursor: pointer; }
+.mtodo input { accent-color: var(--a); width: 16px; height: 16px; }
+
+.mprog { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; font-size: 11px; color: var(--soft); }
+.mprog b { font-family: Mitr, sans-serif; font-weight: 500; color: var(--a); }
+.mprog i { grid-column: 1 / -1; height: 6px; border-radius: 6px; background: #F8E3CC; overflow: hidden; }
+.mprog s { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #F26A1B, #FF9F43); }
+
+.mcats { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
+.mcats::-webkit-scrollbar { display: none; }
+
+.mcat {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  font-family: Mitr, sans-serif;
+  font-size: 11.5px;
+  color: #9A3412;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mcat i { font-style: normal; font-size: 10px; color: var(--soft); }
+.mcat.is-on { background: var(--a); border-color: var(--a); color: #fff; }
+.mcat.is-on i { color: #FFE4CC; }
+
+.mhint { margin: 0; padding: 8px 10px; border-radius: 12px; background: #FFF1DE; font-size: 10.5px; line-height: 1.5; color: #8A5A36; }
+
+.mgroup { display: flex; flex-direction: column; gap: 6px; padding: 6px; border: 1.5px solid #F6E2CA; border-radius: 20px; background: rgba(255, 246, 236, .8); }
+.mgroup__title { display: flex; justify-content: space-between; margin: 2px 6px 0; font-family: Mitr, sans-serif; font-weight: 500; font-size: 13px; color: var(--deep); }
+.mgroup__title span { font-weight: 400; font-size: 11px; color: var(--soft); }
+.mgroup__head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) 14px; gap: 8px; padding: 0 8px; font-size: 10px; color: #8A6A52; }
+.mgroup__head b { font-weight: 400; }
+
+.mrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) 14px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #F5E4D0;
+  border-left: 3px solid #F5E4D0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.mrow.is-done { border-left-color: #7CB342; }
+.mrow--app { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+.mrow__th { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.mrow__th b { font-family: Mitr, sans-serif; font-weight: 400; font-size: 12px; color: var(--ink); overflow-wrap: anywhere; }
+.mrow__th em { font-style: normal; font-size: 9.5px; color: #8A6A52; }
+.mrow__my { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.mrow__in {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1.5px solid #F3D2AE;
+  border-radius: 10px;
+  background: #FFFDFA;
+  font-family: 'Noto Sans Myanmar', 'Padauk', 'Myanmar Text', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.mrow__in--unit { min-height: 32px; font-size: 12px; }
+.mrow__in--area { resize: vertical; line-height: 1.4; }
+.mrow__in:focus { outline: 2px solid #FFB978; outline-offset: 1px; border-color: var(--a); }
+.mrow__in::placeholder { font-family: Sarabun, sans-serif; color: #C3AB95; font-size: 11.5px; }
+.mrow__more { border: 0; background: none; padding: 0; min-height: 36px; font-size: 17px; font-weight: 700; color: var(--a); cursor: pointer; }

@@ -25,7 +25,7 @@ export const MOCK_DATA = {
     {
       id: 'som', name: 'ส้ม', role: 'staff', roleLabel: 'พนักงาน',
       accent: '#B65B0C', tint: '#FFF3E4', photo: 'assets/chars/som-port.webp',
-      duties: ['สต๊อกเครื่องดื่ม / ขวด', 'สติ๊กเกอร์ / เครื่องดื่มพร้อมขาย']
+      duties: ['สต๊อกเครื่องดื่ม / ขวด', 'สติ๊กเกอร์ / เครื่องดื่มพร้อมขาย', 'แปลภาษาพม่า']
     },
     {
       id: 'ad', name: 'อัด', role: 'staff', roleLabel: 'พนักงาน',

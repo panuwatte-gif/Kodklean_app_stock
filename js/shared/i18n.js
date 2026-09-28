@@ -1,7 +1,7 @@
 // ภาษาพม่าของแอป — ที่เดียว: รวมข้อความไทยทั้งแอปให้แปล + สวิตช์ใส่พม่ากำกับทั้งแอป (ปิดไว้เป็นค่าตั้งต้น)
 // คำพม่ามาจากตาราง kk_word_my (รายการนับ) และ kk_app_word_my (ข้อความบนจอ) เท่านั้น ไม่แปลเอง
 import * as CFG from './config.js';
-import { MY_APP_CATS, MY_SKIP_KEYS, MY_SKIP_PAGES } from './config.js';
+import { MY_APP_TABS, MY_SKIP_KEYS, MY_SKIP_PAGES } from './config.js';
 import { getAppWordMy, getWordMyAll } from './data.js';
 import { MY_TOGGLE_UI } from './config.js';
 import { toast } from './ui.js';
@@ -13,7 +13,7 @@ const MARK = 'i18n-my';
 // ทำข้อความให้อยู่ในรูปเดียวกันก่อนเทียบ (ตัดแท็ก ขึ้นบรรทัด และช่องว่างซ้ำ)
 export const normTh = s => String(s || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 
-// ข้อความไทยทั้งแอป (จาก config.js ยกเว้นเกม) แยกหมวด ข้อความซ้ำเก็บครั้งเดียว
+// ข้อความไทยทั้งแอป (จาก config.js ยกเว้นเกม) แยกแท็บ.หมวด (cat = 'home.shared') ข้อความซ้ำเก็บครั้งแรกที่เจอ
 export function appThaiList() {
   const seen = new Set(), out = [];
   const walk = (v, cat, key) => {
@@ -25,7 +25,7 @@ export function appThaiList() {
     if (Array.isArray(v)) return v.forEach(x => walk(x, cat, key));
     if (v && typeof v === 'object') Object.entries(v).forEach(([k, x]) => walk(x, cat, k));
   };
-  MY_APP_CATS.forEach(c => c.from.forEach(name => walk(CFG[name], c.id, name)));
+  MY_APP_TABS.forEach(t => t.groups.forEach(g => g.from.forEach(name => walk(CFG[name], `${t.id}.${g.id}`, name))));
   return out;
 }
 

@@ -22,7 +22,7 @@ function listHtml(kind, rows) {
       <button type="button" data-pick="photo:${r.id}" aria-label="รูป" style="width:44px;height:44px;flex:none;border:0;padding:0;border-radius:12px;overflow:hidden;background:#FDF3E3;cursor:pointer">
         <img src="${photo(r)}" alt="" width="44" height="44" style="width:100%;height:100%;object-fit:cover">
       </button>
-      <span style="flex:1;min-width:0;font-size:14px;line-height:1.3;color:#3A3128;overflow-wrap:anywhere">${r.name}</span>
+      <span style="flex:1;min-width:0;font-size:14px;line-height:1.3;color:#3A3128;overflow-wrap:anywhere">${r.name}${r.prep_group ? `<small style="display:block;font-size:11.5px;color:#8A7D6B">${r.prep_group}</small>` : ''}</span>
       ${tool('edit', r.id, 'pencil')}${tool('up', r.id, 'up')}${tool('down', r.id, 'down')}${tool('del', r.id, 'trash', true)}
     </div>`).join('');
   return `
@@ -36,7 +36,7 @@ function listHtml(kind, rows) {
 }
 
 // ช่องกรอกของฟอร์มเพิ่ม/แก้ (เมนูเลือกวัตถุดิบหลักได้ · วัตถุดิบเลือกหน่วยได้)
-async function fieldsOf(kind, row) {
+async function fieldsOf(kind, row, grp) {
   const f = [{ key: 'name', label: T.fName, value: row ? row.name : '', placeholder: T.fNameHint }];
   if (kind === 'menu') {
     const meat = (await data.getPrepItems()).filter(i => i.grp === 'เนื้อสัตว์');
@@ -44,31 +44,32 @@ async function fieldsOf(kind, row) {
       options: [{ value: '', label: T.noProtein }].concat(meat.map(i => ({ value: i.id, label: i.name }))) });
   } else {
     f.push({ key: 'unit', label: T.fUnit, kind: 'select', value: row ? row.unit : 'กก.', options: STOCK_COUNT_UNITS.map(u => ({ value: u, label: u })) });
+    if (grp === 'เนื้อสัตว์') f.push({ key: 'group', label: T.fGroup, value: row ? row.prep_group || '' : '', placeholder: T.fGroupHint });   // หมวดย่อยบนหน้าเตรียม (ทุกหน้าเตรียมเปลี่ยนตาม)
   }
   return f;
 }
 
 // เพิ่มรายการใหม่ต่อท้าย
 async function addRow(kind, grp, rows) {
-  const out = await formSheet({ title: kind === 'menu' ? T.addMenu : T.addItem, fields: await fieldsOf(kind), okLabel: T.close });
+  const out = await formSheet({ title: kind === 'menu' ? T.addMenu : T.addItem, fields: await fieldsOf(kind, null, grp), okLabel: T.close });
   if (!out) return;
   const name = String(out.name || '').trim();
   if (!name) return toast(T.needName);
   const order = rows.reduce((n, r) => Math.max(n, Number(r.sort_order) || 0), 0) + 1;
   const id = (kind === 'menu' ? 'menu_' : 'item_') + Date.now().toString(36);
   if (kind === 'menu') await data.addMenu({ id, name, protein_item_id: out.protein || null, sort_order: order });
-  else await data.addCountItem({ id, name, grp, unit: out.unit, responsibility: 'บันทึกเตรียมอาหาร', sort_order: order });
+  else await data.addCountItem({ id, name, grp, unit: out.unit, responsibility: 'บันทึกเตรียมอาหาร', sort_order: order, prep_group: String(out.group || '').trim() || null });
   toast(T.saved);
 }
 
 // แก้ชื่อ (และหน่วย/วัตถุดิบหลัก)
 async function editRow(kind, row) {
-  const out = await formSheet({ title: T.editTitle, fields: await fieldsOf(kind, row), okLabel: T.editTitle });
+  const out = await formSheet({ title: T.editTitle, fields: await fieldsOf(kind, row, row.grp), okLabel: T.editTitle });
   if (!out) return;
   const name = String(out.name || '').trim();
   if (!name) return toast(T.needName);
   if (kind === 'menu') await data.saveMenuSetting(row.id, { name, protein_item_id: out.protein || null });
-  else await data.saveCountItem(row.id, { name, unit: out.unit });
+  else await data.saveCountItem(row.id, row.grp === 'เนื้อสัตว์' ? { name, unit: out.unit, prep_group: String(out.group || '').trim() || null } : { name, unit: out.unit });
   toast(T.saved);
 }
 

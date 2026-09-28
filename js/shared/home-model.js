@@ -1,12 +1,10 @@
 // แปลงแถวดิบจากฐาน → ข้อมูลการ์ดของหน้าหลัก (ไฟล์นี้ไม่ยิงฐานเอง data.js เป็นคนดึงมาส่งให้)
 import { STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, MENU_PHOTOS, PREP_ENTRY, HOME_RICE_GROUPS } from './config.js';
-import { buildSeries, predictorOf } from './fclab.js';
 import { namesOf } from './assign.js';
 import { shiftIso, dayLongTh } from './format.js';
 
 const U = PREP_ENTRY.fah.left;    // ประเภทแถว "เหลือ" ในตาราง kk_cooked_leftover
 const W = PREP_ENTRY.fah.waste;   // ประเภทแถว "ทิ้ง"
-const dowOf = iso => new Date(iso + 'T00:00:00').getDay();
 const r1 = n => Math.round(n * 10) / 10;
 
 // ค่าเฉลี่ยเฉพาะวันที่มีตัวเลข (ไม่มีข้อมูลเลย = null ห้ามแปลงเป็น 0)
@@ -74,33 +72,16 @@ function leftOf(rows, menus, dates) {
   };
 }
 
-// การ์ด "แนะนำเตรียมพรุ่งนี้" — ใช้สูตรที่ล็อกไว้ต่อรายการใน kk_forecast_model_map คำนวณบนบันทึกใช้จริง
-function prepOf({ history, items, map, formulas, cfg, date, duties, staff, assigns }) {
-  const reg = {};
-  (formulas || []).forEach(f => { reg[f.formula_code] = f; });
-  const target = shiftIso(date, 1);
-  const aim = { date: target, dow: dowOf(target), used: null, theo: null };
+// การ์ด "พยากรณ์ใช้พรุ่งนี้" — ค่าพยากรณ์ชุดเดียวกับหน้าเตรียม-เหลือของวันเปิดถัดไป (recRows.fcDay จาก data.getPrepRecs) เรียงตามค่ากลางมาก→น้อย
+function prepOf({ recRows, items, history, duties, staff, assigns }) {
   // คนที่ต้องเตรียมรายการนั้น = ตามหน้าแบ่งงาน (ยังไม่เคยแบ่ง = ใช้คนที่มีหน้าที่บันทึกเตรียมอาหาร)
   const fallback = (duties || []).filter(d => d.responsibility === 'บันทึกเตรียมอาหาร').map(d => d.staff_code);
-
-  const rows = (map || []).filter(m => m.active !== false).map(m => {
-    const item = items.find(i => i.id === m.item_id) || { id: m.item_id, name: m.item_name_th, unit: 'กก.' };
-    let qty = null;
-    if (m.model_type === 'fixed') qty = m.fixed_kg === null || m.fixed_kg === undefined ? null : Number(m.fixed_kg);
-    else {
-      const f = reg[m.formula_code];
-      const fn = f ? predictorOf(f, reg) : null;
-      const series = buildSeries(history, m.item_id, cfg);
-      if (fn && series.length) {
-        let p = null;
-        try { p = fn(series, aim, f.params || {}, f.formula_code, cfg); } catch { p = null; }
-        qty = p === null || !isFinite(p) ? null : r1(Math.max(0, p));
-      }
-    }
-    return { id: m.item_id, name: item.name || m.item_name_th, qty, unit: item.unit || 'กก.', photo: photoOfItem(item),
+  const band = f => (f.lo !== null && f.lo !== undefined && f.hi !== null && f.hi !== undefined && f.lo !== f.hi ? ` (${f.lo}–${f.hi})` : '');
+  const rows = (recRows || []).filter(r => r.fcDay && r.fcDay.fc !== null && r.fcDay.fc !== undefined).map(r => {
+    const item = (items || []).find(i => i.id === r.id) || r;
+    return { id: r.id, name: item.name || r.name, qty: r.fcDay.fc, lo: r.fcDay.lo, hi: r.fcDay.hi, unit: item.unit || 'กก.', range: band(r.fcDay).trim(), photo: photoOfItem(item),
       staff: namesOf(assigns, staff, 'prep', item, fallback) };
-  }).filter(r => r.qty !== null).sort((a, b) => b.qty - a.qty).map((r, i) => ({ ...r, rank: i + 1 }));
-
+  }).sort((a, b) => b.qty - a.qty).map((r, i) => ({ ...r, rank: i + 1 }));
   const lastDay = openDates(history, 1)[0] || null;
   return { pageSize: 3, basis: null, lastDay, items: rows };   // lastDay = วันที่ข้อมูลล่าสุด หน้าจอเป็นคนแปลงเป็นวันไทยเอง
 }
@@ -165,8 +146,43 @@ function savingsOf(waste, menus, prices, date) {
 
 // ยอดขายเทียบเป้า: ยอดจริงจากตารางรายได้ประจำวัน (kk_daily_income ที่ฟ้า/แม่พันบันทึก) · เป้ารวมต่อวันจาก kk_sales_target
 // ยังไม่มีบันทึก = null (แสดง "ยังไม่มีข้อมูล") ห้ามเดาเป็น 0 · เป้าเดือนถึงวันนี้ = เป้าต่อวัน × วันเปิดที่ผ่านมา
-function salesOf(brands, income, date, target) {
-  const month = date.slice(0, 7);
+// รวมยอดขาย 1 ร้าน 1 วัน แยกช่องทาง: ยอดที่บันทึกในรายได้ประจำวันมาก่อน · ช่อง Grab ที่ยังไม่ได้กรอก ใช้ยอดขายสุทธิจากรายงาน Grab (วันที่มีออเดอร์)
+function mergeIncome(income, grab) {
+  const map = new Map();
+  const at = (brand, date) => { const k = brand + '|' + date; if (!map.has(k)) map.set(k, { brand, date, ch: {} }); return map.get(k); };
+  (income || []).forEach(r => {
+    const x = at(r.brand, r.date), ch = r.ch || { other: Number(r.total) || 0 };
+    Object.keys(ch).forEach(c => { x.ch[c] = (x.ch[c] || 0) + ch[c]; });
+  });
+  (grab || []).forEach(g => {
+    if (!(Number(g.orders) > 0)) return;
+    const x = at(g.shop, g.day);
+    if (x.ch.grab === undefined) x.ch.grab = Number(g.sales) || 0;
+  });
+  return [...map.values()].map(x => ({ ...x, total: Object.values(x.ch).reduce((s, v) => s + v, 0) }));
+}
+
+// การ์ด KodKlean Group + สัดส่วนรายได้: ยอดรวมทุกร้านรายวัน (แยกสีร้าน) ตั้งแต่วันที่ 1 ถึงวันนี้ + ยอดต่อร้าน/ต่อช่องทางทั้งเดือน
+function groupOf(stores, rows, channels, date) {
+  const month = date.slice(0, 7), mine = rows.filter(r => r.date.slice(0, 7) === month);
+  const labels = Array.from({ length: Number(date.slice(8)) }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`);
+  const daily = labels.map(d => {
+    const rs = mine.filter(r => r.date === d);
+    return rs.length ? stores.map(s => rs.filter(r => r.brand === s.id).reduce((a, r) => a + r.total, 0)) : null;
+  });
+  const has = daily.filter(Boolean), total = mine.reduce((s, r) => s + r.total, 0);
+  const chIds = [...new Set([...(channels || []).map(c => c.id), ...mine.flatMap(r => Object.keys(r.ch))])];
+  return {
+    labels, daily, total: mine.length ? Math.round(total) : null, days: has.length,
+    avg: has.length ? Math.round(total / has.length) : null,
+    last: has.length ? labels[daily.lastIndexOf(has[has.length - 1])] : null,
+    byStore: stores.map(s => ({ id: s.id, name: s.name, color: s.color, value: mine.filter(r => r.brand === s.id).reduce((a, r) => a + r.total, 0) })),
+    byChannel: chIds.map(id => ({ id, name: ((channels || []).find(c => c.id === id) || {}).name || id, value: mine.reduce((a, r) => a + (r.ch[id] || 0), 0) }))
+  };
+}
+
+function salesOf(brands, rawIncome, date, target, grab, channels) {
+  const month = date.slice(0, 7), income = mergeIncome(rawIncome, grab);
   const sum = rows => (rows.length ? Math.round(rows.reduce((s, r) => s + (Number(r.total) || 0), 0)) : null);
   const stores = (brands || []).map(b => {
     const mine = (income || []).filter(r => r.brand === b.id);
@@ -185,7 +201,7 @@ function salesOf(brands, income, date, target) {
     daily: target === null || target === undefined ? null : Number(target),
     openSoFar: openDaysInMonth(date), openMonth: openDaysInMonth(date, true)
   };
-  return { through: dates.length ? dates[dates.length - 1] : date, updatedAt: dayLongTh(date), stores, total };
+  return { through: dates.length ? dates[dates.length - 1] : date, updatedAt: dayLongTh(date), stores, total, group: groupOf(stores, income, channels, date) };
 }
 
 // รวมทุกการ์ดที่ต่อฐานได้แล้ว (การ์ดข้าว / ลดของเหลือ ยังไม่มีตารางในฐาน — หน้าจอใช้ข้อมูลตั้งต้นต่อไป)
@@ -195,14 +211,14 @@ export function buildHome(src) {
   const openDays = [...new Set(src.history.filter(h => h.use_date > shiftIso(src.date, -30)).map(h => h.use_date))].length;
   return {
     meta: {
-      asOf: src.date, analysisEnd: last, prepDate: shiftIso(src.date, 1), prepClosed: false,
+      asOf: src.date, analysisEnd: last, prepDate: src.prepDate || shiftIso(src.date, 1), prepClosed: false,
       openDaysFixture: openDays || 26, branches: [{ id: 'all', label: 'ทุกสาขา' }]
     },
     notices: (src.notices || []).map(n => ({ ...n, sort: n.sort_order, active: true })),
     usage: usageOf(src.history, src.items, dates),
     left: leftOf(src.left, src.menus, dates),
     prep: prepOf({ ...src, date: src.date }),
-    sales: salesOf(src.brands, src.income, src.date, src.target),
+    sales: salesOf(src.brands, src.income, src.date, src.target, src.grab, src.channels),
     rice: riceOf(src.fcRows, src.items),
     save: savingsOf(src.waste || {}, src.menus, src.prices, src.date),
     r9: r9Of(src.rounds, src.r9items)

@@ -1,29 +1,14 @@
 // เอนจินพยากรณ์วัตถุดิบสำหรับเตรียมของจริง — ใช้เอนจินเดียวกับห้องทดสอบ (fclab.js) บนข้อมูล kk_forecast_history
 // สูตรของแต่ละวัตถุดิบอ่านจาก kk_forecast_model_map เท่านั้น · ใช้ข้อมูลก่อนวันที่พยากรณ์เท่านั้น · สูตรยอดขายถูกบังคับเป็นโหมดล่วงหน้า
-import { buildSeries, predictorOf, evalFormula, bandOf, bandLabel, advanceFormulas, isNowcast, fcCtxOf, dowIso, prevOpenIso, bkkIso, sdOf, cfgProblems, EVAL_KEYS } from './fclab.js';
-import { FORECAST_MODELS } from './config.js';
+// ค่าพยากรณ์ = ยอดใช้จริงที่คาดของวันนั้นโดยตรง ไม่บวก/ลบกับคงเหลือใดๆ คนเตรียมตัดสินใจเองว่าจะเอาออกมาเท่าไหร่
+import { buildSeries, predictorOf, evalFormula, bandOf, bandLabel, advanceFormulas, isNowcast, fcCtxOf, dowIso, bkkIso, sdOf, cfgProblems, EVAL_KEYS } from './fclab.js';
+import { FORECAST_MODELS, PREP_UI } from './config.js';
 
 const r1 = n => Math.round(n * 10) / 10;
 const r2 = n => Math.round(n * 100) / 100;
 const avg = a => a.reduce((s, v) => s + v, 0) / a.length;
 const wd = iso => new Date(iso + 'T00:00:00').getDay();
-
-// ของที่ยกมา = คงเหลือสดล่าสุดก่อนวันที่เลือก + คงเหลือใช้ต่อของอาหารปรุงสำเร็จของวันเปิดก่อนหน้า (แปลงเป็นเนื้อสัตว์แล้ว · data.js แนบมากับ logs)
-// อาหารสุกยกมาไม่ได้บันทึก = ใช้คงเหลือสดอย่างเดียวและติดธงเตือน · คงเหลือสดเก่ากว่า 2 วันเปิด = ติดธงเตือนแต่คำนวณต่อ
-export function carryOverInfo(logs, itemId, before) {
-  const rows = (logs || []).filter(l => l.count_item_id === itemId && l.entry_type === 'คงเหลือ' && l.log_date < before && l.qty !== null).sort((a, b) => (a.log_date > b.log_date ? -1 : 1));
-  const fresh = rows.length ? Number(rows[0].qty) : 0;
-  const date = rows.length ? rows[0].log_date : null;
-  const att = logs && logs.__cooked;
-  const known = !!att && att.before === before && !att.missing[itemId];
-  const cooked = known ? Number(att.kg[itemId] || 0) : 0;
-  return { kg: r2(fresh + cooked), fresh, cooked, cookedMissing: !known, date, stale: !!date && date < prevOpenIso(prevOpenIso(before)) };
-}
-
-// ของที่ยกมา (กก.) ใช้หักออกจากแนะเป้า
-export function carryOver(logs, itemId, before) {
-  return carryOverInfo(logs, itemId, before).kg;
-}
+const FALLBACK_N = 6;   // สูตรสำรองขั้นสุดท้าย = เฉลี่ย 6 วันเปิดล่าสุด (ต้องมีอย่างน้อย 3 วัน)
 
 // ทะเบียนสูตร (รหัส → สูตร)
 const regOf = list => { const r = {}; (list || []).forEach(f => { r[f.formula_code] = f; }); return r; };
@@ -76,7 +61,16 @@ function tryPredict(f, reg, series, dateIso, cfg) {
   if (p !== null && isFinite(p)) return { p: Math.max(0, p), why: null };
   const need = needOf(f);
   if (f.family === 'sales' || f.forced) return { p: null, why: 'ไม่มียอดขายของวันเปิดก่อนหน้าให้สูตรยอดขายใช้' };
-  return { p: null, why: need ? `มีข้อมูล ${series.length} วัน ต้องการอย่างน้อย ${need} วัน` : `ข้อมูลยังไม่พอ (มี ${series.length} วัน)` };
+  return { p: null, need, why: need ? `มีข้อมูล ${series.length} วัน ต้องการอย่างน้อย ${need} วัน` : `ข้อมูลยังไม่พอ (มี ${series.length} วัน)` };
+}
+
+// ป้ายสั้นไม่เกิน 15 ตัวอักษรเมื่อไม่มีค่าพยากรณ์ (ใต้ชื่อรายการทุกหน้าเตรียม): ข้อมูล n/ต้องการ วัน · ยังไม่ตั้งสูตร · คำนวณไม่ได้
+export function fcShortWhy(row) {
+  if (!row) return PREP_UI.fcNoCalc;
+  if (row.status === 'closed') return PREP_UI.fcClosed;
+  if (row.status === 'no_model' || row.status === 'no_fixed') return PREP_UI.fcNoModel;
+  if (row.need) return `ข้อมูล ${row.n}/${row.need} วัน`;
+  return PREP_UI.fcNoCalc;
 }
 
 // สูตรสำรองจาก kk_forecast_trial: วัตถุดิบเดียวกัน · pass · ไม่ใช้ยอดขายทั้งสาย · กรอบตรง · ช่วงทดสอบจบและทดสอบก่อน/ในวันที่จะพยากรณ์
@@ -88,13 +82,12 @@ function fallbackCandidates(itemId, trials, orig, band, dateIso) {
 }
 
 // พยากรณ์ 1 รายการ ณ วันที่เลือก: ค่ากลาง + กรอบ (ลำดับกรอบเดียวกับห้องทดสอบ) + คะแนนทดสอบย้อนหลังจากข้อมูลก่อนวันนั้น
-export function forecastItem(item, logs, dateIso, cfg, ctx) {
+export function forecastItem(item, dateIso, cfg, ctx) {
   const c = ctx || fcCtxOf(cfg) || {};
   const out = {
     id: item.id, name: item.name, grp: item.grp, model: { label: '' }, setCode: null, usedCode: null, fallbackWhy: null, fallbackTrial: null,
     modelType: null, n: 0, avg6: null, hist10: [], fc: null, lo: null, hi: null, sd: null, trend: null, wape: null, hitRate: null, hitN: 0,
-    band: null, bandLabel: '', status: 'insufficient', statusText: '', salesWarn: false, forced: false, diff: null,
-    carry: carryOverInfo(logs, item.id, dateIso)
+    band: null, bandLabel: '', status: 'insufficient', statusText: '', salesWarn: false, forced: false, diff: null, need: null, fallbackAvg: false
   };
   if (!c.history) { out.status = 'no_ctx'; return out; }
   const bad = cfgProblems(cfg, EVAL_KEYS);
@@ -117,13 +110,14 @@ export function forecastItem(item, logs, dateIso, cfg, ctx) {
     out.fc = r1(Number(m.fixed_kg));
     out.status = 'fixed';
   } else {
-    const band = bandOf(cfg, m, null);
+    const band = bandOf(cfg);   // กรอบกลางจาก kk_forecast_config ค่าเดียวกันทุกวัตถุดิบ
     out.band = band; out.bandLabel = bandLabel(band);
     out.setCode = m.formula_code || null;
     out.salesWarn = isNowcast(orig[m.formula_code], orig);
     let f = m.formula_code ? adv[m.formula_code] : null;
     let res = m.formula_code ? tryPredict(f, adv, series, dateIso, cfg) : { p: null, why: 'ยังไม่ได้กำหนดสูตร' };
     if (res.p === null) {
+      out.need = res.need || null;
       // สูตรที่ตั้งไว้คำนวณไม่ได้ → หาสูตรสำรองที่มีหลักฐานผ่านการทดสอบ ห้ามเดา ห้ามแก้ mapping
       out.fallbackWhy = res.why;
       const cand = fallbackCandidates(item.id, c.trials, orig, band, dateIso);
@@ -132,12 +126,17 @@ export function forecastItem(item, logs, dateIso, cfg, ctx) {
         const r = tryPredict(adv[t.formula_code], adv, series, dateIso, cfg);
         if (r.p !== null) { picked = t; res = r; f = adv[t.formula_code]; break; }
       }
-      if (!picked) { out.status = 'no_fallback'; out.model.label = `${m.formula_code || '—'} · กรอบ ${out.bandLabel}`; return out; }
-      out.fallbackTrial = picked;
+      if (!picked) {
+        // ไม่มีสูตรสำรองที่ผ่านการทดสอบ → เฉลี่ย 6 วันเปิดล่าสุดที่ใช้ได้ (น้อยกว่า 3 วัน = ไม่พยากรณ์)
+        if (series.length < 3) { out.status = 'insufficient'; out.need = FALLBACK_N; out.model.label = `${m.formula_code || '—'} · ข้อมูล ${series.length}/${FALLBACK_N} วัน`; return out; }
+        f = { formula_code: 'avg6_fallback', name_th: PREP_UI.fcFallback, family: 'mean', params: { window: Math.min(FALLBACK_N, series.length) } };
+        res = { p: avg(series.slice(-FALLBACK_N).map(s => s.used)), why: null };
+        out.fallbackAvg = true;
+      } else out.fallbackTrial = picked;
     }
     out.usedCode = f.formula_code;
     out.forced = !!f.forced;
-    out.model.label = `${m.formula_code || '—'}${out.fallbackTrial ? ` → ใช้ ${f.formula_code}` : ''}${f.forced ? ' (โหมดล่วงหน้า: ยอดขายวันเปิดก่อนหน้า)' : ''} · กรอบ ${out.bandLabel}`;
+    out.model.label = `${m.formula_code || '—'}${out.fallbackAvg ? ` → ${PREP_UI.fcFallback}` : out.fallbackTrial ? ` → ใช้ ${f.formula_code}` : ''}${f.forced ? ' (โหมดล่วงหน้า: ยอดขายวันเปิดก่อนหน้า)' : ''} · กรอบ ${out.bandLabel}`;
     const p = res.p;
     out.fc = r1(p);
     const ev = evalFormula(series, f, cfg, adv, band);
@@ -159,45 +158,20 @@ export function forecastItem(item, logs, dateIso, cfg, ctx) {
 }
 
 // พยากรณ์ทุกรายการ + คะแนนทดสอบย้อนหลังรวม (เฉพาะรายการแบบสูตรที่วัดผลได้ครบ · แบบคงที่ไม่นับ · บอกกรอบที่ใช้เสมอ)
-export function buildForecast(items, logs, dateIso, cfg) {
+export function buildForecast(items, dateIso, cfg) {
   const ctx = fcCtxOf(cfg);
+  const closed = wd(dateIso) === 0;   // วันอาทิตย์ร้านปิด ไม่พยากรณ์
   const rows = (items || []).filter(i => i.grp === 'เนื้อสัตว์' || i.grp === 'ข้าวหุง').map(i => {
-    try { return forecastItem(i, logs, dateIso, cfg, ctx); }
-    catch { return { id: i.id, name: i.name, grp: i.grp, model: { label: '' }, status: 'error', fc: null, lo: null, hi: null, hist10: [], carry: null }; }
+    if (closed) return { id: i.id, name: i.name, grp: i.grp, model: { label: '' }, status: 'closed', fc: null, lo: null, hi: null, hist10: [] };
+    try { return forecastItem(i, dateIso, cfg, ctx); }
+    catch { return { id: i.id, name: i.name, grp: i.grp, model: { label: '' }, status: 'error', fc: null, lo: null, hi: null, hist10: [] }; }
   });
   const ok = rows.filter(r => r.modelType === 'model' && r.hitRate !== null && r.hitRate !== undefined);
   const bands = [...new Set(ok.map(r => r.bandLabel).filter(Boolean))];
   const accuracy = ok.length
     ? { status: 'ok', rate: Math.round(ok.reduce((s, r) => s + r.hitRate, 0) / ok.length * 10) / 10, n: ok.length, bands }
     : { status: 'insufficient', n: 0, bands };
-  return { rows, accuracy, cfg, cfgBad: cfgProblems(cfg, EVAL_KEYS) };
-}
-
-// แนะเป้าเตรียมของวัน = ขอบบน − ของที่ยกมา (ต่ำสุด 0, ปัดขึ้น 1 ตำแหน่ง) · วันเสาร์ใช้ค่าพยากรณ์ตรงๆ เพราะอาทิตย์ปิด ห้ามเผื่อ
-export function recTarget(fcRow, carryKg, dateIso) {
-  if (!fcRow || fcRow.fc === null) return null;
-  const sat = wd(dateIso) === 6;
-  const up = n => Math.ceil(Math.max(0, n - (carryKg || 0)) * 10) / 10;
-  if (sat) return { t: up(fcRow.fc), lo: up(fcRow.fc), hi: up(fcRow.fc), sat };
-  if (fcRow.hi === null) return { t: up(fcRow.fc), lo: null, hi: null, sat };
-  return { t: up(fcRow.hi), lo: up(fcRow.lo), hi: up(fcRow.hi), sat };
-}
-
-// ใส่ค่าแนะนำให้แถวเนื้อสัตว์ (ขอบบน − ของที่ยกมา) และแถวข้าว (ค่าพยากรณ์ปัดขึ้น) — ใช้ร่วมหน้าเตรียม-เหลือ หน้าครัวอัด/เอมมี่ และหน้างานพนักงาน
-export function applyRecs(model, fc, logs, dateIso) {
-  const up = v => (v === null || v === undefined ? null : Math.ceil(v * 10) / 10);
-  const rowOf = id => fc.rows.find(x => x.id === id);
-  (model.meatRows || []).forEach(r => {
-    const f = rowOf(r.id);
-    r.rec = recTarget(f, carryOver(logs, r.id, dateIso), dateIso);
-    r.carryStale = !!(f && f.carry && f.carry.stale);
-    r.carryNoCooked = !!(f && f.carry && f.carry.cookedMissing);
-  });
-  (model.riceRows || []).forEach(r => {
-    const f = rowOf(r.id);
-    r.rec = f && f.fc !== null ? { t: up(f.fc), lo: up(f.lo), hi: up(f.hi), sat: false } : null;
-  });
-  return model;
+  return { rows, accuracy, cfg, closed, date: dateIso, cfgBad: cfgProblems(cfg, EVAL_KEYS) };
 }
 
 // ---------- ผลพยากรณ์ใช้จริง (kk_forecast_daily) ----------
@@ -223,6 +197,26 @@ function scoreOf(d, a, cfg) {
   const hit = cfg.edge_counts_as_win === 1 ? a >= lo && a <= hi : a > lo && a < hi;
   const loss = hit ? 0 : cfg.loss_mode === 'full' ? Math.abs(a - f) : a > hi ? a - hi : lo - a;
   return { hit, loss_kg: r2(loss) };
+}
+
+// วัตถุดิบพร้อมบันทึกค่าพยากรณ์ของวัน D หรือยัง = วันเปิดก่อนหน้า D ของวัตถุดิบนั้นมี used_kg ในประวัติแล้ว หรือถูกตัดออก (anomaly_excluded)
+export function fcReadyFor(history, itemId, prevDate) {
+  return (history || []).some(h => h.item_id === itemId && h.use_date === prevDate
+    && (h.flag === 'anomaly_excluded' || (h.used_kg !== null && h.used_kg !== undefined && !['actual_missing', 'no_prep_record', 'incomplete'].includes(h.flag))));
+}
+
+// ค่าพยากรณ์ที่ต้องแก้ในแถว kk_forecast_daily ที่ยังไม่มีผลจริง (หลังตัดวันผิดปกติ) — เทียบกับค่าที่คำนวณใหม่ แถวที่เท่าเดิมไม่แตะ
+export function forecastPatches(daily, fc) {
+  const { rows } = dailyRowsOf(fc, fc.date || '', 'S1');
+  const out = [];
+  (daily || []).forEach(d => {
+    if (d.actual_kg !== null && d.actual_kg !== undefined) return;
+    const n = rows.find(r => r.item_id === d.item_id);
+    if (!n) return;
+    const same = ['forecast_kg', 'lower_kg', 'upper_kg', 'sd_kg', 'n_history'].every(k => Number(d[k]) === Number(n[k]));
+    if (!same) out.push({ id: d.id, forecast_kg: n.forecast_kg, lower_kg: n.lower_kg, upper_kg: n.upper_kg, sd_kg: n.sd_kg, n_history: n.n_history });
+  });
+  return out;
 }
 
 // ผลจริงที่ต้องเติม/แก้ใน kk_forecast_daily จาก kk_forecast_history (ห้ามแตะค่าพยากรณ์เดิม)
@@ -258,4 +252,46 @@ export function dailyStats(daily, cfg) {
   const items = {};
   Object.keys(byItem).forEach(k => { items[k] = sum(byItem[k]); });
   return { rows: (daily || []).length, all: sum(scored), items };
+}
+
+// ---------- ทดสอบสูตรที่ใช้อยู่กับข้อมูลจริง (หน้าสมการ Forecast) ----------
+
+// ทายย้อนหลังทีละวันเปิดด้วยข้อมูลก่อนวันนั้นเท่านั้น · win = ใช้จริงอยู่ในกรอบ · loss = |ใช้จริง − ค่ากลาง| (เฉพาะวันที่หลุดกรอบ) · สรุป n วันล่าสุดต่อช่วง
+export function liveTestOf(series, f, cfg, reg, band, windows) {
+  if (!f) return null;
+  const ev = evalFormula(series, f, { ...cfg, loss_mode: 'full' }, reg, band);
+  const out = {};
+  windows.forEach(w => {
+    const pts = ev.pts.slice(-w);
+    if (!pts.length) { out[w] = null; return; }
+    const losses = pts.filter(p => !p.win).map(p => p.loss);
+    out[w] = {
+      n: pts.length,
+      win: Math.round(pts.filter(p => p.win).length / pts.length * 1000) / 10,
+      lossAvg: losses.length ? r2(losses.reduce((s, v) => s + v, 0) / losses.length) : 0,
+      lossMax: losses.length ? r2(Math.max(...losses)) : 0
+    };
+  });
+  return out;
+}
+
+// ผลใช้งานจริง (real time) ของวัตถุดิบ 1 ตัว จาก kk_forecast_daily: ค่าที่แนะนำไว้ล่วงหน้าจริง เทียบใช้จริงของวันนั้น
+// win = ใช้จริงอยู่ในกรอบ · loss = |ใช้จริง − ค่ากลาง| เฉพาะวันที่หลุดกรอบ · ไม่นับวันที่ยังไม่มีผลจริง (วันหยุด/ยังไม่ปิดยอด) และแถวเตรียมคงที่
+export function liveDailyOf(daily, itemId, windows) {
+  const list = (daily || []).filter(d => d.item_id === itemId && d.actual_kg !== null && d.actual_kg !== undefined && !isFixedDaily(d))
+    .sort((a, b) => (a.forecast_date < b.forecast_date ? -1 : 1));
+  const out = {};
+  windows.forEach(w => {
+    const pts = list.slice(-w);
+    if (!pts.length) { out[w] = null; return; }
+    const losses = [];
+    let wins = 0;
+    pts.forEach(p => {
+      const a = Number(p.actual_kg), lo = Number(p.lower_kg), hi = Number(p.upper_kg);
+      if (a >= lo && a <= hi) wins += 1; else losses.push(Math.abs(a - Number(p.forecast_kg)));
+    });
+    out[w] = { n: pts.length, win: Math.round(wins / pts.length * 1000) / 10,
+      lossAvg: losses.length ? r2(losses.reduce((s, v) => s + v, 0) / losses.length) : 0, lossMax: losses.length ? r2(Math.max(...losses)) : 0 };
+  });
+  return out;
 }

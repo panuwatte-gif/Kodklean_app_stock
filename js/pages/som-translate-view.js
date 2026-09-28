@@ -1,6 +1,6 @@
 // ชิ้นส่วนหน้าจอของแท็บ "แปลภาษาพม่า" ในหน้างานของส้ม (สวิตช์ · ตารางคำนับสต๊อก · ตารางข้อความแอป)
 import { glyph } from '../shared/ui.js';
-import { SOM_MY_UI as M, MY_APP_CATS } from '../shared/config.js';
+import { SOM_MY_UI as M, MY_APP_TABS } from '../shared/config.js';
 import { escHtml, fillText } from '../shared/format.js';
 
 // ข้อความไทยที่มี <br> หรือขึ้นบรรทัด → แสดงเป็นหลายบรรทัด
@@ -14,7 +14,7 @@ export function myHeadHtml(state) {
     </nav>`;
 }
 
-// แถบค้นหา + ติ๊กเฉพาะที่ยังไม่แปล (+ ปุ่มเพิ่มคำของส่วนนับสต๊อก)
+// แถบค้นหา + ติ๊กเฉพาะที่ยังไม่แปล/ยังไม่ตรวจ (+ ปุ่มเพิ่มคำของส่วนนับสต๊อก)
 export function myToolsHtml(state, withAdd) {
   return `
     <div class="mtools">
@@ -24,13 +24,19 @@ export function myToolsHtml(state, withAdd) {
       </div>
       ${withAdd ? `<button class="sbtn sbtn--add mtools__add" type="button" data-my-add="1">${glyph('plus', 18)}<span>${M.add}</span></button>` : ''}
     </div>
-    <label class="mtodo"><input type="checkbox" id="my-todo"${state.todo ? ' checked' : ''}><span>${M.todo}</span></label>`;
+    <label class="mtodo"><input type="checkbox" id="my-todo"${state.todo ? ' checked' : ''}><span>${withAdd ? M.todo : M.todoAi}</span></label>`;
 }
 
 // แถบความคืบหน้า แปลแล้วกี่คำ
 export function myProgressHtml(done, all) {
   const pct = all ? Math.round(done / all * 100) : 0;
   return `<div class="mprog"><span>${fillText(M.progress, { done, all })}</span><b>${pct}%</b><i><s style="width:${pct}%"></s></i></div>`;
+}
+
+// ชิปเลือกแท็บ (ใช้ทั้งหมวดนับสต๊อกและแท็บแอป) list = [{ id, label, done, all }]
+export function myChipsHtml(list, active) {
+  return `<div class="mcats">${list.map(c => `
+    <button class="mcat${c.id === active ? ' is-on' : ''}" type="button" data-my-chip="${escHtml(c.id)}">${escHtml(c.label)}<i>${c.done}/${c.all}</i></button>`).join('')}</div>`;
 }
 
 // แถวคำของรายการนับ 1 คำ (ไทย → ชื่อพม่า + หน่วยพม่า)
@@ -47,7 +53,7 @@ function stockRowHtml(w, linkName) {
     </div>`;
 }
 
-// ตารางคำนับสต๊อก แยกตามหมวด
+// ตารางคำนับสต๊อก แยกตามหมวด (ปกติส่งมาหมวดเดียว · ตอนค้นหาอาจหลายหมวด)
 export function myStockHtml(words, itemName, emptyText) {
   if (!words.length) return `<p class="sempty">${emptyText}</p>`;
   const groups = {};
@@ -60,25 +66,36 @@ export function myStockHtml(words, itemName, emptyText) {
     </section>`).join('');
 }
 
-// ชิปหมวดของข้อความแอป (ตัวเลข = แปลแล้ว/ทั้งหมด)
-export function myCatsHtml(active, counts) {
-  return `<div class="mcats">${MY_APP_CATS.map(c => {
-    const n = counts[c.id] || { done: 0, all: 0 };
-    return `<button class="mcat${c.id === active ? ' is-on' : ''}" type="button" data-my-cat="${c.id}">${c.label}<i>${n.done}/${n.all}</i></button>`;
-  }).join('')}</div>`;
+// ป้ายอธิบายสีของคำแปล (Claude มั่นใจ / ไม่มั่นใจ / แก้แล้ว)
+export const myLegendHtml = () => `<div class="mlegend">${M.legend.map(l => `<span class="mlegend__i mlegend__i--${l.cls}"><i></i>${l.label}</span>`).join('')}</div>`;
+
+// แถวข้อความแอป 1 ข้อความ · สีตามว่า Claude แปล (มั่นใจ/ไม่มั่นใจ) หรือคนแก้แล้ว
+function appRowHtml(r) {
+  const tone = !r.my ? '' : r.ai ? ` is-ai-${r.ai}` : ' is-done';
+  return `
+    <div class="mrow mrow--app${tone}" data-app="${r.i}">
+      <span class="mrow__th"><b>${thHtml(r.th)}</b></span>
+      <textarea class="mrow__in mrow__in--area" rows="2" lang="my" placeholder="${M.phMy}" aria-label="${M.colMy}">${escHtml(r.my)}</textarea>
+    </div>`;
 }
 
-// ตารางข้อความแอปของหมวดที่เลือก (ไทย → พม่า ช่องละ 1 ข้อความ)
-export function myAppHtml(rows, emptyText) {
+// ข้อความแอปของแท็บที่เลือก แบ่งหมวดย่อยแบบกดเปิด/ปิด (open = ชุด id หมวดที่เปิดอยู่)
+export function myAppHtml(tabId, rows, counts, open, emptyText) {
+  const tab = MY_APP_TABS.find(t => t.id === tabId) || MY_APP_TABS[0];
   if (!rows.length) return `<p class="sempty">${emptyText}</p>`;
   return `
     <p class="mhint">${M.hint}</p>
-    <section class="mgroup" data-no-my="1">
-      <div class="mgroup__head"><b>${M.colTh}</b><b>${M.colMy}</b></div>
-      ${rows.map(r => `
-        <div class="mrow mrow--app${r.my ? ' is-done' : ''}" data-app="${r.i}">
-          <span class="mrow__th"><b>${thHtml(r.th)}</b></span>
-          <textarea class="mrow__in mrow__in--area" rows="2" lang="my" placeholder="${M.phMy}" aria-label="${M.colMy}">${escHtml(r.my)}</textarea>
-        </div>`).join('')}
-    </section>`;
+    ${myLegendHtml()}
+    ${tab.groups.map(g => {
+      const cat = `${tab.id}.${g.id}`, list = rows.filter(r => r.cat === cat), n = counts[cat] || { done: 0, all: 0 };
+      if (!list.length) return '';
+      const on = open.has(cat);
+      return `
+        <section class="mgroup mfold${on ? ' is-open' : ''}" data-no-my="1">
+          <button class="mfold__head" type="button" data-my-fold="${cat}" aria-expanded="${on}">
+            <b>${escHtml(g.label)}</b><span>${n.done}/${n.all}</span>${glyph('chevron', 18)}
+          </button>
+          ${on ? `<div class="mgroup__head"><b>${M.colTh}</b><b>${M.colMy}</b></div>${list.map(appRowHtml).join('')}` : ''}
+        </section>`;
+    }).join('')}`;
 }

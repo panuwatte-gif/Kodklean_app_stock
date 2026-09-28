@@ -104,6 +104,12 @@ export function money(value) {
   return Math.round(Number(value) || 0).toLocaleString('en-US');
 }
 
+// จำนวนเงินแบบย่อบนแกนกราฟ เช่น 25000 → 25k
+export function moneyK(value) {
+  const n = Number(value) || 0;
+  return Math.abs(n) >= 1000 ? `${Math.round(n / 100) / 10}k` : money(n);
+}
+
 // จำนวนเงินบาทแบบเก็บทศนิยม 2 ตำแหน่งเมื่อมีเศษ
 export function moneyFine(value) {
   const n = Number(value) || 0;
@@ -176,4 +182,18 @@ export function monthEndIso(ym) {
 export function days1(value) {
   const n = Math.round((Number(value) || 0) * 10) / 10;
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+// น้ำหนักแบบอ่านง่าย: ต่ำกว่า 1 กก. แสดงเป็นกรัม เช่น 350 ก. / 1.25 กก. (ไม่มีค่า = ขีด)
+export function kgOrG(value) {
+  if (value === null || value === undefined || !isFinite(value)) return '–';
+  const n = Math.abs(Number(value)) < 0.0005 ? 0 : Number(value);
+  return Math.abs(n) < 1 ? `${Math.round(n * 1000)} ก.` : `${n.toFixed(2)} กก.`;
+}
+
+// ส่วนต่างมีเครื่องหมาย เช่น +0.8 / −0.3 (ทศนิยม 2 ตำแหน่ง)
+export function signedKg(value) {
+  if (value === null || value === undefined || !isFinite(value)) return '–';
+  const n = Math.round(Number(value) * 100) / 100;
+  return `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(2)}`;
 }

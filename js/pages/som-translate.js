@@ -1,8 +1,8 @@
 // แท็บ "แปลภาษาพม่า" ในหน้างานของส้ม — ส่วนนับสต๊อก (kk_word_my) + ส่วนแปลแอป (kk_app_word_my)
 // พิมพ์เสร็จแล้วแตะที่อื่น = บันทึกคำนั้นลงฐานทันที (ไม่ต้องกดปุ่มบันทึก)
 import { getWordMyAll, saveWordMy, removeWordMy, getCountItemsBrief, getAppWordMy, saveAppWordMy } from '../shared/data.js';
-import { SOM_MY_UI as M, MY_APP_CATS, WORK_UI } from '../shared/config.js';
-import { myHeadHtml, myToolsHtml, myProgressHtml, myStockHtml, myCatsHtml, myAppHtml } from './som-translate-view.js';
+import { SOM_MY_UI as M, MY_APP_TABS, WORK_UI } from '../shared/config.js';
+import { myHeadHtml, myToolsHtml, myProgressHtml, myStockHtml, myChipsHtml, myAppHtml } from './som-translate-view.js';
 import { toast, pickerSheet, formSheet, confirmSheet, itemPhoto } from '../shared/ui.js';
 import { staffCode } from '../shared/auth.js';
 import { appThaiList, reloadMy } from '../shared/i18n.js';
@@ -12,30 +12,42 @@ const WORD_COLS = ['id', 'th_name', 'name_my', 'unit_th', 'unit_my', 'cat_th', '
 
 // วาดแท็บแปลภาษาพม่าลงกล่องที่ส่งมา
 export function mountSomTranslate(box) {
-  const state = { section: 'stock', q: '', todo: false, cat: MY_APP_CATS[0].id };
+  const state = { section: 'stock', q: '', todo: false, stockCat: '', tab: MY_APP_TABS[0].id, open: new Set() };
   let words = [], items = [], appList = appThaiList(), appMy = {}, loaded = false;
   box.innerHTML = `<div class="mwrap"><div id="my-head"></div><div id="my-tools"></div><div id="my-prog"></div><div id="my-list"><p class="sempty">${WORK_UI.loading}</p></div></div>`;
   const el = id => box.querySelector(id);
   const itemName = id => (items.find(i => i.id === id) || {}).name || '';
   const hit = (...texts) => !state.q || texts.some(t => t && String(t).includes(state.q));
 
-  // คำนับสต๊อกที่ตรงกับคำค้น/ตัวกรอง
-  const stockShown = () => words.filter(w => (!state.todo || !w.name_my) && hit(w.th_name, w.name_my, w.cat_th));
-  // ข้อความแอปของหมวดที่เลือกที่ตรงกับคำค้น/ตัวกรอง
-  const appShown = () => appList.map((r, i) => ({ ...r, i, my: appMy[r.th] || '' }))
-    .filter(r => r.cat === state.cat && (!state.todo || !r.my) && hit(r.th, r.my));
-  // นับว่าแต่ละหมวดแปลไปแล้วกี่ข้อความ
-  const appCounts = () => appList.reduce((o, r) => { const c = o[r.cat] = o[r.cat] || { done: 0, all: 0 }; c.all++; if (appMy[r.th]) c.done++; return o; }, {});
+  const catOf = w => w.cat_th || M.noCat;
+  // หมวดนับสต๊อกทั้งหมด (เรียงตามที่เจอ) + แปลแล้วกี่คำ
+  const stockCats = () => words.reduce((a, w) => { let c = a.find(x => x.id === catOf(w)); if (!c) a.push(c = { id: catOf(w), label: catOf(w), done: 0, all: 0 }); c.all++; if (w.name_my) c.done++; return a; }, []);
+  // คำนับสต๊อกของหมวดที่เลือก (ค้นหา = ค้นทุกหมวด)
+  const stockShown = () => words.filter(w => (state.q || catOf(w) === state.stockCat) && (!state.todo || !w.name_my) && hit(w.th_name, w.name_my, w.cat_th));
+  // ข้อความแอปของแท็บที่เลือก · ติ๊ก = เฉพาะที่ยังไม่แปล หรือ Claude แปลไว้แต่คนยังไม่ตรวจ
+  const appShown = () => appList.map((r, i) => ({ ...r, i, my: (appMy[r.th] || {}).my || '', ai: (appMy[r.th] || {}).ai || '' }))
+    .filter(r => r.cat.startsWith(state.tab + '.') && (!state.todo || !r.my || r.ai) && hit(r.th, r.my));
+  // นับว่าแต่ละหมวดคนตรวจ/แก้แล้วกี่ข้อความ (Claude แปลไว้ยังไม่นับ)
+  const appCounts = () => appList.reduce((o, r) => {
+    const k = [r.cat, r.cat.split('.')[0]], w = appMy[r.th];
+    k.forEach(x => { const c = o[x] = o[x] || { done: 0, all: 0 }; c.all++; if (w && w.my && !w.ai) c.done++; });
+    return o;
+  }, {});
 
   const drawList = () => {
     const empty = state.q ? M.emptyFind : (loaded ? M.empty : WORK_UI.loading);
     if (state.section === 'stock') {
-      el('#my-prog').innerHTML = myProgressHtml(words.filter(w => w.name_my).length, words.length);
+      const cats = stockCats();
+      if (!cats.some(c => c.id === state.stockCat) && cats.length) state.stockCat = cats[0].id;
+      const n = cats.find(c => c.id === state.stockCat) || { done: 0, all: 0 };
+      el('#my-prog').innerHTML = myChipsHtml(cats, state.q ? '' : state.stockCat) + myProgressHtml(n.done, n.all);
       el('#my-list').innerHTML = myStockHtml(stockShown(), itemName, empty);
     } else {
-      const counts = appCounts(), n = counts[state.cat] || { done: 0, all: 0 };
-      el('#my-prog').innerHTML = myCatsHtml(state.cat, counts) + myProgressHtml(n.done, n.all);
-      el('#my-list').innerHTML = myAppHtml(appShown(), empty);
+      const counts = appCounts(), n = counts[state.tab] || { done: 0, all: 0 };
+      const tabs = MY_APP_TABS.map(t => ({ id: t.id, label: t.label, ...(counts[t.id] || { done: 0, all: 0 }) }));
+      const open = state.q || state.todo ? new Set(appList.map(r => r.cat)) : state.open;
+      el('#my-prog').innerHTML = myChipsHtml(tabs, state.tab) + myProgressHtml(n.done, n.all);
+      el('#my-list').innerHTML = myAppHtml(state.tab, appShown(), counts, open, empty);
     }
   };
   const draw = () => {
@@ -49,7 +61,7 @@ export function mountSomTranslate(box) {
     try {
       const [w, it, app] = await Promise.all([getWordMyAll(), getCountItemsBrief(), getAppWordMy()]);
       words = w || []; items = it || [];
-      appMy = {}; (app || []).forEach(r => { if (r.my) appMy[r.th] = r.my; });
+      appMy = {}; (app || []).forEach(r => { if (r.my) appMy[r.th] = { my: r.my, ai: r.ai_level || '' }; });
       loaded = true;
       drawList();
     } catch { el('#my-list').innerHTML = `<p class="sempty">${WORK_UI.loadError}</p>`; }
@@ -108,10 +120,12 @@ export function mountSomTranslate(box) {
 
   box.addEventListener('click', event => {
     const sec = event.target.closest('[data-my-sec]');
-    const cat = event.target.closest('[data-my-cat]');
+    const chip = event.target.closest('[data-my-chip]');
+    const fold = event.target.closest('[data-my-fold]');
     const more = event.target.closest('[data-w-more]');
     if (sec) { state.section = sec.dataset.mySec; state.q = ''; return draw(); }
-    if (cat) { state.cat = cat.dataset.myCat; return drawList(); }
+    if (chip) { if (state.section === 'stock') { state.stockCat = chip.dataset.myChip; state.q = ''; el('#my-search').value = ''; } else state.tab = chip.dataset.myChip; return drawList(); }
+    if (fold) { const c = fold.dataset.myFold; state.open.has(c) ? state.open.delete(c) : state.open.add(c); return drawList(); }
     if (more) return moreWord(more.dataset.wMore);
     if (event.target.closest('[data-my-add]')) return addWord();
   });
@@ -134,7 +148,8 @@ export function mountSomTranslate(box) {
       } else if (aRow) {
         const r = appList[Number(aRow.dataset.app)], my = t.value.trim();
         await saveAppWordMy(r.th, my, r.cat, staffCode());
-        if (my) appMy[r.th] = my; else delete appMy[r.th];
+        if (my) appMy[r.th] = { my, ai: '' }; else delete appMy[r.th];
+        aRow.classList.remove('is-ai-sure', 'is-ai-unsure');
         aRow.classList.toggle('is-done', !!my);
       } else return;
       toast(M.saved);

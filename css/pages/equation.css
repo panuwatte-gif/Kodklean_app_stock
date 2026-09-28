@@ -224,3 +224,19 @@
 .eqs-btn { min-height: 44px; border-radius: 14px; border: 1px solid #CDB8F0; background: #fff; font-family: Mitr, sans-serif; font-size: 13px; color: #5E3FA8; cursor: pointer; }
 .eqs-btn--main { margin-top: 4px; color: #fff; border-color: transparent; background: linear-gradient(160deg, #1E7A3C, #125B2A); }
 .eqs-foot { margin: 4px 2px 12px; font-size: 11.5px; line-height: 1.5; color: #6B6380; }
+
+/* ตารางผลทดสอบกับข้อมูลจริง 6/30/90 วัน (หน้าสมการแบบง่าย) */
+.eqs-live { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 12px; background: #F7F4FC; }
+.eqs-live > small { font-size: 11.5px; color: #6B6380; margin-bottom: 4px; }
+.eqs-live__row { display: grid; grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr)); align-items: center; gap: 4px; padding: 5px 0; border-top: 1px solid #E8E1F4; font-size: 12.5px; color: #3D3468; }
+.eqs-live__row--head { border-top: 0; font-size: 11px; color: #6B6380; }
+.eqs-live__row span { display: flex; flex-direction: column; }
+.eqs-live__row small { font-size: 10.5px; color: #8A8398; }
+.eqs-live__row b { font-family: Mitr, sans-serif; font-weight: 600; font-size: 15px; }
+
+/* กล่องของเจ้าของบนหน้าสมการ: วันที่ตัดออก / วันที่น่าสงสัย / ชุดสูตร */
+.eqx__row { display: grid; grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr) 96px; gap: 6px; align-items: center; padding: 6px 0; border-top: 1px solid #EEEAE2; font-size: 11px; color: #3C3A34; overflow-wrap: anywhere; }
+.eqx__row--head { border-top: 0; font-weight: 700; color: #8A8172; font-size: 10px; }
+.eqx__row--susp { background: #FDF8EC; }
+.eqx__row .eql-btn { min-height: 30px; padding: 0 10px; font-size: 10.5px; }
+.ask__box .eqx__row { padding: 6px 4px; }

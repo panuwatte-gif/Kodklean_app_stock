@@ -1,7 +1,7 @@
 // คำเตือนของพยากรณ์ (ใช้ร่วม 2 ตาราง: ตารางพยากรณ์ในหน้าเตรียม-เหลือ + ตารางเตรียมวัตถุดิบในหน้าครัว)
 // แยก 2 ระดับ: เรื่องที่เกิดกับตั้งแต่ครึ่งหนึ่งของรายการ = แถบบนตารางครั้งเดียว · นอกนั้น = ป้ายสั้นใต้ชื่อรายการ
 import { PREP_FC_UI } from '../shared/config.js';
-import { dayShort, fillText } from '../shared/format.js';
+import { fillText } from '../shared/format.js';
 
 const I = PREP_FC_UI.issue;
 
@@ -10,9 +10,6 @@ const STATUS_KEY = {
   insufficient: 'insufficient', no_theo: 'noSales', no_model: 'noModel', no_formula: 'noModel', no_fixed: 'noFixed',
   map_later: 'modelNew', rice_unsupported: 'noRice', no_ctx: 'noCtx', no_fallback: 'noFallback', cfg_bad: 'cfgBad', error: 'error'
 };
-
-// เปลี่ยนวันที่แบบ 2026-09-22 ในข้อความเป็น 22 ก.ย.
-const thDates = s => String(s || '').replace(/\d{4}-\d{2}-\d{2}/g, d => dayShort(d));
 
 // คำเตือนทั้งหมดของรายการพยากรณ์ 1 รายการ (แยกเรื่องละ 1 ข้อ ไม่ซ้ำชนิด)
 export function fcIssues(row) {
@@ -24,8 +21,7 @@ export function fcIssues(row) {
   if (row.diff) add('modelNew');
   if (row.fallbackTrial) add('fallback');
   if (row.salesWarn) add('sales');
-  if (row.carry && row.carry.stale) add('carryOld', { d: thDates(row.carry.date) });
-  if (row.carry && row.carry.cookedMissing && row.grp === 'เนื้อสัตว์') add('noCooked');
+  if (row.fallbackAvg) add('fallbackAvg');
   return out;
 }
 
@@ -33,8 +29,7 @@ export function fcIssues(row) {
 export function splitIssues(rows, extra = []) {
   const per = {}, count = {};
   rows.forEach(r => { per[r.id] = fcIssues(r); per[r.id].forEach(x => { count[x.k] = (count[x.k] || 0) + 1; }); });
-  // ตัวหาร = รายการที่เรื่องนั้นเกิดได้ (อาหารสุกยกมาเกิดได้เฉพาะเนื้อสัตว์)
-  const base = k => (k === 'noCooked' ? rows.filter(r => r.grp === 'เนื้อสัตว์').length : rows.length);
+  const base = () => rows.length;
   const dayKeys = Object.keys(count).filter(k => base(k) > 1 && count[k] >= base(k) / 2);
   const day = [...extra];
   dayKeys.forEach(k => { const hit = rows.map(r => per[r.id].find(x => x.k === k)).find(Boolean); day.push(hit.day); });

@@ -1,7 +1,8 @@
 // ตารางเตรียมเนื้อสัตว์ (แท็บที่ 1) — วาดจากข้อมูลจริงของวันที่เลือก การบันทึกอยู่ที่ prep.js
-import { PREP_MEAT_COLS, PREP_GROUP_OF, PREP_UI } from '../shared/config.js';
+import { PREP_MEAT_COLS, PREP_UI, PREP_GROUP_NONE } from '../shared/config.js';
 import { weightBig, fillText, dayShort } from '../shared/format.js';
-import { itemPhoto, recHtml } from '../shared/ui.js';
+import { itemPhoto, fcHtml, prepGroupHeadHtml } from '../shared/ui.js';
+import { prepGroupRuns } from '../shared/calc.js';
 import { personPill } from './prep-view.js';
 import { assumeMeatHtml } from './prep-assume.js';
 
@@ -41,13 +42,11 @@ function stockLine(row) {
   return `<div class="ptab__stock">${text}${warn}</div>`;
 }
 
-// แถวรายการ 1 แถว (draft = ค่าร่างจากปุ่มคัดลอก ต้องกดยืนยันทีละแถวถึงจะบันทึก)
-function rowHtml(item, no, draft) {
+// แถวรายการ 1 แถว (ป้ายพยากรณ์ขึ้นบรรทัดใหม่ใต้ชื่อ เต็มความกว้างแถว)
+function rowHtml(item, no) {
   const cell = (f, tone) => `
     <div class="ptab__c${tone ? ` ptab__c--key ptab__c--${tone}` : ''}">${cellInput(item.id, f, item[f], tone)}${histDot('meat', item.id, f, item.name, item.revs[f])}</div>`;
-  const dv = draft && (item.prep === null || item.prep === undefined) ? draft.values[item.id] : undefined;
-  const draftBtn = dv !== undefined ? `<button class="ptab__draftbtn" type="button" data-apply-draft="1" data-id="${item.id}" data-v="${dv}">${fillText(PREP_UI.draftUse, { v: dv })}</button>` : '';
-  const rec = recHtml(item.rec, PREP_UI.recLabel);
+  const rec = fcHtml(item.fcDay, item.closed, item.fcWhy);
   return `
     <div class="ptab__row" data-id="${item.id}">
       <span class="ptab__no">${no}</span>
@@ -63,21 +62,12 @@ function rowHtml(item, no, draft) {
       <div class="ptab__c ptab__cooked" title="${PREP_UI.cookedNote}">${item.cooked ? weightBig(item.cooked) : '—'}</div>
       <div class="ptab__use">${item.use === null ? '—' : weightBig(item.use)}<small>กก.</small></div>
     </div>
-    ${draftBtn ? `<div class="ptab__draftrow">${draftBtn}</div>` : ''}
     ${stockLine(item)}`;
 }
 
-// ทั้งแท็บเตรียมอาหาร: ตาราง (จัดกลุ่มตามชนิดเนื้อ) + หมายเหตุ + การ์ด Assumption
-export function meatBodyHtml(rows, groups, model, draft) {
+// ทั้งแท็บเตรียมอาหาร: ตาราง (แบ่งหมวดย่อยตามลำดับในฐาน — ชุดเดียวกับหน้าครัวของพนักงาน) + การ์ด Assumption
+export function meatBodyHtml(rows, model) {
   let no = 0;
-  const body = groups.map(g => {
-    const list = rows.filter(i => (PREP_GROUP_OF[i.id] || 'meat') === g.id);
-    if (!list.length) return '';
-    return `
-      <div class="ptab__group"><img src="${g.icon}" alt="" width="20" height="20" loading="lazy" decoding="async">${g.label}</div>
-      ${list.map(i => rowHtml(i, ++no, draft)).join('')}`;
-  }).join('');
-  const sat = rows.some(r => r.rec && r.rec.sat);
-  return `<section class="ptab ptab--meat">${headHtml()}${body || '<p class="ptab__none">ไม่มีรายการของคนนี้</p>'}
-    <p class="ptab__footnote">${sat ? PREP_UI.satNote : PREP_UI.recOff}</p></section>${assumeMeatHtml(model)}`;
+  const body = prepGroupRuns(rows, PREP_GROUP_NONE).map(g => prepGroupHeadHtml(g.label) + g.rows.map(i => rowHtml(i, ++no)).join('')).join('');
+  return `<section class="ptab ptab--meat">${headHtml()}${body || '<p class="ptab__none">ไม่มีรายการของคนนี้</p>'}</section>${assumeMeatHtml(model)}`;
 }

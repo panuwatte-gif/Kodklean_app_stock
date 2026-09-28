@@ -83,7 +83,7 @@ export function prepUseBase(row) {
 }
 
 // ยอดใช้จริง (ที่เดียวของสูตรนี้ ใช้ทั้งช่องใช้ต่อวันและข้อมูลพยากรณ์ — คนละเรื่องกับการตัดสต๊อก):
-// เตรียม + เบิกเพิ่ม + คงเหลือใช้ต่อของวันเปิดก่อนหน้า (carry) − ทิ้ง − (คงเหลือสด + พระราม 9 ที่ต้องบวกกลับ r9) − อาหารปรุงสำเร็จเหลือทั้งก้อนของวันนี้ (cooked)
+// เตรียม + เบิกเพิ่ม + อาหารสุกยกมาจากวันเปิดก่อนหน้า (carry) − ทิ้ง − คงเหลือสด − อาหารปรุงสำเร็จเหลือวันนี้ (cooked) · ส่งพระราม 9 ไม่เกี่ยว (เอาออกจากตู้เย็น ไม่ใช่ของที่เตรียม) · สูตรเดียวกับ kk_view_use_daily ในฐาน
 // คืน { use, why } — use ว่างเมื่อข้อมูลไม่ครบ why = เหตุผล (no_prep / open / conflict / cooked_open / no_carry) · negative = ผลติดลบ
 function useCore(r) {
   if (blank(r.prep)) return { use: null, why: 'no_prep' };
@@ -92,7 +92,7 @@ function useCore(r) {
   if (r.cookedOpen) return { use: null, why: 'cooked_open' };
   if (r.carryMissing) return { use: null, why: 'no_carry' };
   const v = r1((Number(r.prep) || 0) + (Number(r.extra) || 0) + (Number(r.carry) || 0) - (Number(r.waste) || 0)
-    - ((Number(r.left) || 0) + (Number(r.r9) || 0)) - (Number(r.cooked) || 0));
+    - (Number(r.left) || 0) - (Number(r.cooked) || 0));
   return { use: v, why: v < 0 ? 'negative' : null };
 }
 
@@ -756,4 +756,63 @@ export function personalTax(income, set, T) {
   const minTax = inc >= T.minIncome ? inc * T.minRate : 0, useMin = minTax > T.minFloor && minTax > tax;
   const pay = useMin ? minTax : tax;
   return { income: inc, expense, net, steps, progressive: tax, minTax, useMin, pay, eff: inc ? pay / inc : 0 };
+}
+
+// ---------- หมวดย่อยของหน้าเตรียม (ใช้ร่วมหน้าเตรียม-เหลือ + หน้าครัวของพนักงาน) ----------
+
+// แบ่งแถวตามลำดับจริง (sort_order) เป็นช่วงๆ ของหมวดย่อย prep_group ที่ติดกัน — ขยับลำดับ/แก้หมวดในฐานแล้วทุกหน้าเปลี่ยนตามทันที
+export function prepGroupRuns(rows, noneLabel) {
+  const out = [];
+  (rows || []).forEach(r => {
+    const label = r.prep_group || noneLabel || '';
+    const last = out[out.length - 1];
+    if (last && last.label === label) last.rows.push(r);
+    else out.push({ label, rows: [r] });
+  });
+  return out;
+}
+
+// ---------- ประเมินผลการเตรียมวัตถุดิบของพนักงาน ----------
+
+// รวมสองแหล่งเป็นแถวเดียวต่อวัตถุดิบต่อวัน: taken_kg จาก kk_view_prep_eval · used_kg จากประวัติพยากรณ์ (ตัวเลขเดียวกับที่ใช้พยากรณ์ · ผ่าน markExcluded แล้ว)
+// วันที่ตัดออก (anomaly_excluded) = excluded true แต่ยังเก็บ used ไว้แสดง · ธงข้อมูลไม่ครบ = used ว่าง · ไม่รวมวันอาทิตย์
+export function prepEvalMerge(evalRows, histRows) {
+  const BAD = ['actual_missing', 'no_prep_record', 'incomplete'];
+  const map = {};
+  const at = (id, d) => (map[id + '|' + d] = map[id + '|' + d] || { item_id: id, use_date: d, taken_kg: null, used_kg: null, excluded: false });
+  (evalRows || []).forEach(r => { if (Number(r.dow_num) !== 0) at(r.item_id, r.use_date).taken_kg = r.taken_kg === null || r.taken_kg === undefined ? null : Number(r.taken_kg); });
+  (histRows || []).forEach(h => {
+    if (Number(h.dow_num) === 0) return;
+    const row = at(h.item_id, h.use_date);
+    row.excluded = h.flag === 'anomaly_excluded';
+    row.used_kg = h.used_kg === null || h.used_kg === undefined || BAD.includes(h.flag) ? null : Number(h.used_kg);
+  });
+  return Object.values(map).sort((a, b) => (a.use_date < b.use_date ? -1 : a.use_date > b.use_date ? 1 : 0));
+}
+
+// สรุปต่อวัตถุดิบต่อช่วง (n วันเปิดล่าสุดที่มีข้อมูลครบ ก่อนวันนี้ · ไม่นับวันที่ตัดออก): ต่างเฉลี่ย/วัน (เอาออกมา − ใช้จริง) · % เทียบใช้จริง · ต่างมากสุด
+export function prepEvalStats(rows, itemIds, windows, beforeIso) {
+  const r2 = n => Math.round(n * 100) / 100;
+  const out = {};
+  itemIds.forEach(id => {
+    const list = (rows || []).filter(r => r.item_id === id && r.use_date < beforeIso && !r.excluded && r.taken_kg !== null && r.taken_kg !== undefined && r.used_kg !== null && r.used_kg !== undefined)
+      .sort((a, b) => (a.use_date < b.use_date ? -1 : 1));
+    out[id] = {};
+    windows.forEach(w => {
+      const part = list.slice(-w);
+      if (!part.length) { out[id][w] = null; return; }
+      const diffs = part.map(r => Number(r.taken_kg) - Number(r.used_kg));
+      const sumD = diffs.reduce((s, v) => s + v, 0), sumU = part.reduce((s, r) => s + Number(r.used_kg), 0);
+      const max = diffs.reduce((m, v) => (Math.abs(v) > Math.abs(m) ? v : m), 0);
+      out[id][w] = { n: part.length, avg: r2(sumD / part.length), pct: sumU > 0 ? Math.round(sumD / sumU * 100) : null, max: r2(max) };
+    });
+  });
+  return out;
+}
+
+// ข้อมูลกราฟรายวัน 1 วัตถุดิบ ช่วง from–to (วันที่ไม่มีบันทึกไม่ใส่ ไม่เดา · ค่าว่างคงเป็น null ห้ามแปลงเป็น 0)
+export function prepEvalDaily(rows, itemId, from, to) {
+  return (rows || []).filter(r => r.item_id === itemId && r.use_date >= from && r.use_date <= to && (r.taken_kg !== null || r.used_kg !== null))
+    .sort((a, b) => (a.use_date < b.use_date ? -1 : 1))
+    .map(r => ({ date: r.use_date, taken: r.taken_kg, used: r.used_kg, excluded: !!r.excluded, diff: r.excluded || r.taken_kg === null || r.used_kg === null ? null : Math.round((r.taken_kg - r.used_kg) * 100) / 100 }));
 }

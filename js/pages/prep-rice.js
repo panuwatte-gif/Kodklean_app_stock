@@ -4,7 +4,7 @@ import { riceRaw, riceCooked, riceResale, riceToRaw } from '../shared/calc.js';
 import { weightBig, dayShort } from '../shared/format.js';
 import { personPill } from './prep-view.js';
 import { cellInput, histDot } from './prep-meat.js';
-import { recHtml } from '../shared/ui.js';
+import { fcHtml } from '../shared/ui.js';
 
 // หัวตาราง (คอลัมน์ตาม config)
 function headHtml(cols) {
@@ -27,22 +27,20 @@ function riceName(r, no, small, rec = '') {
 // ช่องกรอกของแท็บข้าว (บันทึกเข้า kk_prep_log ผ่าน prep.js)
 const rc = (id, f, v, revs) => `<div class="ptab__c">${cellInput(id, f, v, '', 'rice')}${histDot('rice', id, f, '', revs[f])}</div>`;
 
-// ตาราง 2.1 เตรียมหุงข้าว (ข้าวดิบ) — draft = ค่าร่างจากปุ่มคัดลอก กดยืนยันทีละแถว
-function cookTable(list, t, draft) {
+// ตาราง 2.1 เตรียมหุงข้าว (ข้าวดิบ)
+function cookTable(list, t) {
   const rows = list.map((r, i) => {
     const raw = riceRaw(r), cooked = riceCooked(r);
     const result = raw === null ? '—'
       : `${weightBig(raw)}<small>${cooked === null ? PREP_UI.noRatio : `≈สุก ${weightBig(cooked)} กก.`}</small>`;
-    const dv = draft && (r.cook === null || r.cook === undefined) ? draft.values[r.id] : undefined;
     return `
     <div class="ptab__row" data-id="${r.id}">
-      ${riceName(r, i + 1, false, recHtml(r.rec, PREP_UI.recRiceLabel))}
+      ${riceName(r, i + 1, false, fcHtml(r.fcDay, r.closed, r.fcWhy))}
       <div class="ptab__owners">${r.owners.map(personPill).join('<i>+</i>')}</div>
       ${rc(r.id, 'cook', r.cook, r.revs)}
       ${[0, 1, 2].map(k => rc(r.id, 'r' + k, r.rounds[k], r.revs)).join('')}
       <div class="ptab__use">${result}</div>
-    </div>
-    ${dv !== undefined ? `<div class="ptab__draftrow"><button class="ptab__draftbtn" type="button" data-apply-draft="1" data-id="${r.id}" data-v="${dv}">ใช้ ${dv} ✓</button></div>` : ''}`;
+    </div>`;
   }).join('');
   const sum = `
     <div class="ptab__sum">
@@ -109,7 +107,7 @@ function statsHtml(days) {
 }
 
 // ทั้งแท็บข้าว
-export function riceBodyHtml(list, totals, model, draft) {
+export function riceBodyHtml(list, totals, model) {
   if (!list.length) return '<p class="ptab__none">ไม่มีรายการของคนนี้</p>';
-  return cookTable(list, totals, draft) + leftTable(list) + eqHtml(totals) + ratioTable(list) + statsHtml(model.riceStats);
+  return cookTable(list, totals) + leftTable(list) + eqHtml(totals) + ratioTable(list) + statsHtml(model.riceStats);
 }

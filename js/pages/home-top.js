@@ -58,7 +58,7 @@ export function prepCard(prep, meta, ui) {
     <div class="hprep__row${who ? ' has-who' : ''}">
       <span class="hprep__rank">${r.rank ?? pg.from + i}</span>
       <span class="hprep__name"><img src="${r.photo}" alt="" loading="lazy" decoding="async">${r.name}</span>
-      <span class="hprep__qty"><b>${weight(r.qty)}</b><em>${r.unit}</em></span>
+      <span class="hprep__qty"><b>${weight(r.qty)}</b><em>${r.unit}</em>${r.range ? `<small class="hprep__range">${r.range}</small>` : ''}</span>
       ${who ? `<span class="hprep__who">${(r.staff || []).join(', ') || '–'}</span>` : ''}
     </div>`).join('');
   const last = pg.pages.length - 1;

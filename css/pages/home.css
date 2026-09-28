@@ -142,6 +142,7 @@
 .hprep__qty { font-family: Mitr, sans-serif; white-space: nowrap; }
 .hprep__qty b { font-weight: 500; font-size: 22px; color: var(--accent); }
 .hprep__qty em { font-style: normal; font-size: 14px; color: #4E6771; margin-left: 4px; }
+.hprep__range { display: block; font-size: 12px; line-height: 1.2; color: #6B8088; white-space: nowrap; }
 .hprep__who { font-size: 14px; color: #4E6771; }
 .hprep__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; font-size: 13.5px; color: #4E6771; }
 .hprep__pager { display: flex; gap: 6px; }
@@ -346,6 +347,34 @@
 .hstore__target { grid-area: target; font-size: 13.5px; text-align: right; white-space: nowrap; }
 .hstore__bar { grid-area: bar; height: 12px; margin: 0; border-radius: 6px; }
 .hstore__pct { grid-area: pct; font-size: 19px; }
+
+/* ---------- KodKlean Group + สัดส่วนรายได้: การ์ดคู่ กว้างเท่ากัน สูงเท่ากัน หัวสูงเท่ากัน ---------- */
+.hgroup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+.hgroup__card { display: flex; flex-direction: column; min-width: 0; }
+.hgroup__card > .hc__head { min-height: 104px; align-items: center; }
+.hgroup__card > .hc__body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.hgroup__logo { flex: none; width: 80px; height: 80px; object-fit: contain; }
+.hgroup__label { font-size: 14px; color: #4E6771; }
+.hgroup__big { font-family: Mitr, sans-serif; font-weight: 600; font-size: 30px; line-height: 1.15; color: #125B2A; }
+.hgroup__hint { min-height: 18px; font-size: 13px; color: #4E6771; }
+.hgroup__sub { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 8px; margin: 10px 0 2px; }
+.hgroup__sub b, .hgroup__sub small { white-space: nowrap; }
+.hgroup__sub b { font-size: 15px; }
+.hgroup__sub small { font-size: 12px; }
+.hgroup__legend { flex-wrap: wrap; gap: 4px 10px; margin-top: auto; padding-top: 6px; }
+
+.hmix__pie { position: relative; align-self: center; width: 150px; height: 150px; margin: 4px 0 10px; }
+.hmix__pie .donut { display: block; width: 150px; height: 150px; }
+.hmix__center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.hmix__center small { font-size: 12.5px; color: #4E6771; }
+.hmix__center b { font-family: Mitr, sans-serif; font-weight: 600; font-size: 22px; color: #3E2E05; }
+.hmix__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.hmix__list li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; grid-template-areas: 'dot name pct' '. amt amt'; gap: 0 8px; align-items: center; }
+.hmix__list i { grid-area: dot; width: 12px; height: 12px; border-radius: 4px; }
+.hmix__list span { grid-area: name; font-size: 14.5px; color: #123F35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hmix__list b { grid-area: pct; font-family: Mitr, sans-serif; font-weight: 500; font-size: 17px; color: #123F35; }
+.hmix__list small { grid-area: amt; font-size: 12.5px; color: #4E6771; }
+.hmix__note { margin-top: auto; padding-top: 8px; font-size: 12px; }
 
 /* ==========================================================================
    หน้าหลักเป็นมือถือเหมือนทุกหน้า

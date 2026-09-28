@@ -28,22 +28,20 @@ function liveOf(item, data) {
   if (m.model_type === 'fixed') return { code: null, label: `${EQ_LAB_UI.fixedModel}${m.fixed_kg ? ` ${m.fixed_kg} กก.` : ''}` };
   if (!m.formula_code) return null;
   const f = data.formulas.find(x => x.formula_code === m.formula_code);
-  return { code: m.formula_code, label: `${m.formula_code} — ${f ? f.name_th : ''} · กรอบ ${bandLabel(bandOf(data.cfg, m, f))}` };
+  return { code: m.formula_code, label: `${m.formula_code} — ${f ? f.name_th : ''} · กรอบ ${bandLabel(bandOf(data.cfg))}` };
 }
 
-// ค่าตั้งของรอบทดสอบ (แสดงให้เห็นบนจอทุกค่า: ช่วงข้อมูลของวัตถุดิบ + กรอบที่ตั้งรายวัตถุดิบ/ค่ากลาง)
+// ค่าตั้งของรอบทดสอบ (ช่วงข้อมูลของวัตถุดิบ · กรอบ = ค่ากลางจาก kk_forecast_config เสมอ เลือกเองไม่ได้)
 function formOf(item, series, data) {
   const key = item.id + '|' + state.src;
-  if (!state.form[key]) {
-    const b = bandOf(data.cfg, item.map, null);
-    state.form[key] = { from: series.length ? series[0].date : '', to: series.length ? series[series.length - 1].date : '', type: b.type || 'SD', value: b.value === null ? '' : String(b.value) };
-  }
-  return state.form[key];
+  if (!state.form[key]) state.form[key] = { from: series.length ? series[0].date : '', to: series.length ? series[series.length - 1].date : '' };
+  const b = bandOf(data.cfg);
+  return { ...state.form[key], type: b.type || 'SD', value: b.value === null ? '' : String(b.value) };
 }
 
 // รันทุกสูตรด้วยค่าที่เลือก (เรียกเมื่อกดปุ่มเท่านั้น)
 function run(item, series, data, form) {
-  const band = { type: form.type, value: Number(form.value), src: 'lab' };
+  const band = bandOf(data.cfg);   // กรอบกลาง ค่าเดียวกันทุกสูตรทุกวัตถุดิบ
   const lab = runLab(series.filter(s => s.date <= form.to), data.formulas, data.cfg, band, form.from, form.to);
   const live = lab.rows.find(r => r.code === (item.map || {}).formula_code) || null;
   lab.rows.forEach(r => { r.verdict = verdictOf(r, lab.ctrl, data.cfg, live); });
@@ -58,14 +56,15 @@ async function setLive(item, res, data, reload) {
   const row = res.lab.rows.find(r => r.code === state.picked[0]);
   if (!row) return;
   if (row.nowcast) return toast(EQ_LAB_UI.nowcastLive);
+  const j = row.judge || row;
   const ok = await confirmSheet({
     title: EQ_LAB_UI.liveAsk.title, okLabel: EQ_LAB_UI.liveAsk.ok,
-    text: `${item.name} → ${row.code} (${row.name})${row.enough ? ` · win rate ${row.winRate}% (กรอบ ${row.bandLabel}) จาก ${row.n} วัน` : ' · ข้อมูลยังไม่พอ ยังไม่ผ่านการตัดสิน'} · ${row.verdict.reason}`
+    text: `${item.name} → ${row.code} (${row.name}) · ส่วนตัดสิน ${j.n} วัน win rate ${j.winRate === null ? '—' : j.winRate + '%'} (กรอบ ${row.bandLabel}) · ${row.verdict.reason}`
   });
   if (!ok) return;
   const m = item.map || {};
-  const note = `เปลี่ยนเมื่อ ${todayIso()} จาก ${m.formula_code || (m.model_type === 'fixed' ? 'เตรียมคงที่' : '—')} เป็น ${row.code} (ห้องทดสอบ ช่วง ${res.lab.period.from}–${res.lab.period.to} กรอบ ${row.bandLabel} สถานการณ์ ${res.reg.regime || '—'} win rate ${row.winRate === null ? '—' : row.winRate + '%'})`;
-  const changes = { model_type: 'model', formula_code: row.code, band_type: row.bandType, band_value: row.band, note, backtest_win: row.winRate };
+  const note = `เปลี่ยนเมื่อ ${todayIso()} จาก ${m.formula_code || (m.model_type === 'fixed' ? 'เตรียมคงที่' : '—')} เป็น ${row.code} (ห้องทดสอบ ส่วนตัดสิน ${res.lab.judge.from}–${res.lab.judge.to} กรอบ ${row.bandLabel} สถานการณ์ ${res.reg.regime || '—'} win rate ${j.winRate === null ? '—' : j.winRate + '%'})`;
+  const changes = { model_type: 'model', formula_code: row.code, note, backtest_win: j.winRate };
   try {
     if (m.item_id) {
       if (!(await setFcModelSafe(item.id, m.updated_at, changes))) return toast(EQ_LAB_UI.mapChanged);
@@ -75,20 +74,20 @@ async function setLive(item, res, data, reload) {
   } catch { toast(EQ_LAB_UI.saveErr); }
 }
 
-// บันทึกผลทุกสูตรที่ประเมินลง kk_forecast_trial (period = ช่วงที่นับคะแนนจริง) แล้วนับรอบทดสอบเฉพาะเมื่อบันทึกสำเร็จ
+// บันทึกผลทุกสูตรที่ประเมินลง kk_forecast_trial (ตัวเลข = ส่วนตัดสิน · period = ช่วงส่วนตัดสิน) แล้วนับรอบทดสอบเฉพาะเมื่อบันทึกสำเร็จ
 async function saveTrials(item, res, data, reload) {
   if (!res) return toast(EQ_LAB_UI.runNeed);
   const { lab, reg } = res;
-  if (!lab.period.from) return toast(PREP_NONE);
+  if (!lab.judge.from) return toast(PREP_NONE);
   const at = new Date().toISOString();
-  const trials = lab.rows.map(r => ({
+  const trials = lab.rows.map(r => { const j = r.judge || r; return {
     formula_code: r.code, item_id: item.id, band_type: res.band.type, band_value: res.band.value,
-    period_from: lab.period.from, period_to: lab.period.to, regime: reg.regime, n: r.n,
-    win_rate: r.winRate, loss_min_kg: r.lossMin, loss_avg_kg: r.lossAvg, loss_max_kg: r.lossMax, loss_sum_kg: r.lossSum,
-    loss_avg_baht: item.price === null || r.lossAvg === null ? null : Math.round(r.lossAvg * item.price * 100) / 100,
+    period_from: lab.judge.from, period_to: lab.judge.to, regime: reg.regime, n: j.n,
+    win_rate: j.winRate, loss_min_kg: j.lossMin, loss_avg_kg: j.lossAvg, loss_max_kg: j.lossMax, loss_sum_kg: j.lossSum,
+    loss_avg_baht: item.price === null || j.lossAvg === null ? null : Math.round(j.lossAvg * item.price * 100) / 100,
     verdict: r.verdict.verdict, verdict_reason: r.verdict.reason, tested_at: at
-  }));
-  const ok = await confirmSheet({ title: `${EQ_LAB_UI.btnSave} ${trials.length} แถว?`, okLabel: EQ_LAB_UI.btnSave, text: `${item.name} · นับคะแนน ${lab.period.from} ถึง ${lab.period.to} (${lab.days} วัน) · กรอบ ${bandLabel(res.band)}` });
+  }; });
+  const ok = await confirmSheet({ title: `${EQ_LAB_UI.btnSave} ${trials.length} แถว?`, okLabel: EQ_LAB_UI.btnSave, text: `${item.name} · ส่วนตัดสิน ${lab.judge.from} ถึง ${lab.judge.to} (${lab.judge.n} วัน) · กรอบ ${bandLabel(res.band)}` });
   if (!ok) return;
   try {
     await saveFcTrials(trials);
@@ -138,7 +137,7 @@ export function mountLab(pane, data, reload) {
     + itemStripHtml(items, state.item)
     + srcHtml(state.src, liveN, data.cfg.min_days_to_judge)
     + stateHtml(st, regimeOf(series, data.cfg), live, item.price, res ? res.band : null)
-    + runFormHtml(form) + (res ? runInfoHtml(res.lab, res.reg) : '')
+    + runFormHtml(form) + (res ? runInfoHtml(res.lab, res.reg, data.cfg) : '')
     + subTabsHtml(state.sub) + body + actionsHtml();
 
   pane.onclick = event => {
@@ -148,12 +147,11 @@ export function mountLab(pane, data, reload) {
     if (sub) { state.sub = sub.dataset.sub; return mountLab(pane, data, reload); }
     if (event.target.closest('[data-run]')) {
       const v = k => (pane.querySelector(`[data-lab="${k}"]`) || {}).value || '';
-      const f = { from: v('from'), to: v('to'), type: v('type') === 'PCT' ? 'PCT' : 'SD', value: v('value') };
+      const f = { from: v('from'), to: v('to') };
       if (!f.from || !f.to || f.from > f.to) return toast(EQ_LAB_UI.runBadRange);
-      if (!/^\d+(\.\d+)?$/.test(f.value) || !(Number(f.value) > 0)) return toast(EQ_LAB_UI.runBadBand);
       state.form[item.id + '|' + state.src] = f;
       state.picked = [];
-      state.result = run(item, series, data, f);
+      state.result = run(item, series, data, { ...f, ...bandOf(data.cfg) });
       return mountLab(pane, data, reload);
     }
     if (event.target.closest('[data-set-live]')) return setLive(item, res, data, reload);

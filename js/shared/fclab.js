@@ -1,8 +1,26 @@
 // เอนจินห้องทดสอบสูตรพยากรณ์ — รันสูตรทุกตัวจาก kk_forecast_formula บนข้อมูลจริง kk_forecast_history
 // กติกาเหล็ก: เดินวันต่อวัน (walk-forward) ทำนายวันที่ t ใช้ได้เฉพาะข้อมูลก่อนวันที่ t · ห้ามเติมค่าแทนวันว่าง · กฎทุกข้ออ่านจาก kk_forecast_config
 
+import { FC_DISABLED_FAMILIES } from './config.js';
+
 // ธงที่ต้องข้ามทิ้ง (ข้อมูลผิดหรือไม่มีของจริง)
 const SKIP_FLAGS = ['anomaly_excluded', 'actual_missing', 'no_prep_record', 'incomplete'];
+
+// กรองคลังสูตร: ตัดสูตรที่ family ถูกปิดใช้ (FC_DISABLED_FAMILIES) และสูตรที่ base/mix อ้างถึงสูตรที่ถูกปิด — จุดเดียวที่กรอง ทุกที่ที่อ่านคลังสูตรผ่านตัวนี้
+export function allowedFormulas(list) {
+  const reg = {};
+  (list || []).forEach(f => { reg[f.formula_code] = f; });
+  const off = new Set(FC_DISABLED_FAMILIES || []);
+  const banned = (f, depth = 0) => {
+    if (!f || depth > 5) return false;
+    if (off.has(f.family)) return true;
+    const p = f.params || {};
+    if (p.base && (!reg[p.base] || banned(reg[p.base], depth + 1))) return true;
+    if (p.mix && p.mix.some(c => !reg[c] || banned(reg[c], depth + 1))) return true;
+    return false;
+  };
+  return (list || []).filter(f => !banned(f));
+}
 
 // ---------- วันที่ (คิดบนปฏิทินล้วน ไม่ขึ้นกับเขตเวลาเครื่อง · วันที่ในฐานเป็นวันตามเวลาไทยอยู่แล้ว) ----------
 
@@ -232,8 +250,25 @@ const FAMILY = {
   control: h => (h.length ? avg(vals(h)) : null)
 };
 
-// เลือกตัวคำนวณของสูตร — รองรับสูตรที่ระบบสร้างใหม่: ผสมสองสูตร (mix) · อ้างสูตรแม่ (base) · ชั้นแก้อคติรายวัน (bias)
+// ครึ่งเดือนของวันที่: 1–15 = ครึ่งแรก · 16 ถึงสิ้นเดือน = ครึ่งหลัง
+const halfOf = iso => (Number(iso.slice(8, 10)) <= 15 ? 1 : 2);
+
+// ตัวห่อชั้นนอกของทุกสูตร: since = ใช้เฉพาะประวัติตั้งแต่วันนั้น · half_month = ใช้เฉพาะประวัติครึ่งเดือนเดียวกับวันที่ทาย · กรองแล้วเหลือน้อยกว่า 3 วัน = null
+function withFilters(fn, p) {
+  if (!fn || (!p.since && !p.half_month)) return fn;
+  return (h, t, cp, code, cfg) => {
+    let hh = h;
+    if (p.since) hh = hh.filter(x => x.date >= p.since);
+    if (p.half_month) { const hm = halfOf(t.date); hh = hh.filter(x => halfOf(x.date) === hm); }
+    return hh.length < 3 ? null : fn(hh, t, cp, code, cfg);
+  };
+}
+
+// เลือกตัวคำนวณของสูตร — รองรับสูตรที่ระบบสร้างใหม่: ผสมสองสูตร (mix) · อ้างสูตรแม่ (base) · ชั้นแก้อคติรายวัน (bias) · ตัวกรอง since/half_month ครอบทุก family
 export function predictorOf(f, reg) {
+  return withFilters(predictorCore(f, reg), f.params || {});
+}
+function predictorCore(f, reg) {
   const p = f.params || {};
   if (p.mix && reg) {
     const A = reg[p.mix[0]], B = reg[p.mix[1]];
@@ -288,15 +323,11 @@ export function advanceFormulas(formulas) {
   });
 }
 
-// กรอบที่ใช้วัดผล: ค่ารายวัตถุดิบใน kk_forecast_model_map มาก่อน > ค่าของสูตรเอง (สูตรที่สร้างมาทดสอบกรอบ) > ค่ากลางใน kk_forecast_config — ลำดับเดียวกันทั้ง SD และ PCT
-export function bandOf(cfg, mapRow, f) {
-  const m = mapRow || {};
-  const t = m.band_type || cfg.band_type;
+// กรอบที่ใช้วัดผล: อ่านจาก kk_forecast_config เท่านั้น (band_type + band_value / band_pct) ค่าเดียวกันทุกสูตรทุกวัตถุดิบ — ไม่อ่านค่ารายวัตถุดิบใน kk_forecast_model_map และไม่อ่าน params.band_value ของสูตร
+export function bandOf(cfg) {
+  const t = cfg && cfg.band_type;
   if (!t) return { type: null, value: null, src: 'missing' };
   const type = String(t).toUpperCase() === 'PCT' ? 'PCT' : 'SD';
-  if (m.band_value !== null && m.band_value !== undefined && m.band_value !== '') return { type, value: Number(m.band_value), src: 'item' };
-  const own = ((f && f.params) || {}).band_value;
-  if (own !== undefined && own !== null && type === 'SD') return { type, value: Number(own), src: 'formula' };
   const v = type === 'PCT' ? cfg.band_pct : cfg.band_value;
   return { type, value: typeof v === 'number' ? v : null, src: typeof v === 'number' ? 'config' : 'missing' };
 }
@@ -371,7 +402,17 @@ function restrict(ev, days, cfg) {
   return out;
 }
 
-// ห้องแล็บ 1 รอบ: ทุกสูตรใช้ข้อมูลชุดเดียวกัน กรอบเดียวกัน นับคะแนนในช่วง from–to บนชุดวันที่ทุกสูตรมีผล (รวมตัวเทียบ fixed_mean)
+// จำนวนวันขั้นต่ำของส่วนตัดสิน (น้อยกว่านี้ = inconclusive)
+export const JUDGE_MIN_DAYS = 10;
+
+// แบ่งชุดวัน (เรียงแล้ว) เป็นส่วนคัด = 2/3 แรก · ส่วนตัดสิน = 1/3 หลัง
+export function splitDays(sorted) {
+  const cut = Math.floor(sorted.length * 2 / 3);
+  return { cut: sorted.slice(0, cut), judge: sorted.slice(cut) };
+}
+
+// ห้องแล็บ 1 รอบ: ทุกสูตรใช้ข้อมูลชุดเดียวกัน กรอบเดียวกัน บนชุดวันที่ทุกสูตรมีผล (รวมตัวเทียบ fixed_mean)
+// ชุดวันแบ่งเป็นส่วนคัด (2/3 แรก ใช้เรียงอันดับ) กับส่วนตัดสิน (1/3 หลัง ใช้ pass/fail) — แต่ละแถวมี r (ส่วนคัด) และ r.judge (ส่วนตัดสิน)
 export function runLab(series, formulas, cfg, band, from, to, ctrlCode = 'fixed_mean') {
   const reg = {};
   (formulas || []).forEach(f => { reg[f.formula_code] = f; });
@@ -381,25 +422,32 @@ export function runLab(series, formulas, cfg, band, from, to, ctrlCode = 'fixed_
   let days = null;
   withPts.forEach(e => { const d = new Set(e.pts.map(p => p.date)); days = days === null ? d : new Set([...days].filter(x => d.has(x))); });
   days = days || new Set();
-  const rows = withPts.map(e => restrict(e, days, cfg)).concat(none.map(e => restrict(e, days, cfg)))
+  const sorted = [...days].sort();
+  const parts = splitDays(sorted);
+  const cutSet = new Set(parts.cut), judgeSet = new Set(parts.judge);
+  const rows = withPts.concat(none).map(e => ({ ...restrict(e, cutSet, cfg), judge: restrict(e, judgeSet, cfg), judgeDays: parts.judge.length }))
     .sort((a, b) => {
       if (a.nowcast !== b.nowcast) return a.nowcast ? 1 : -1;
       const aw = a.winRate === null ? -1 : a.winRate, bw = b.winRate === null ? -1 : b.winRate;
       if (bw !== aw) return bw - aw;
       return (a.lossAvg === null ? 9e9 : a.lossAvg) - (b.lossAvg === null ? 9e9 : b.lossAvg);
     });
-  const sorted = [...days].sort();
   const fewest = withPts.length ? Math.min(...withPts.map(e => e.pts.length)) : 0;
   const limiting = withPts.filter(e => e.pts.length === fewest).map(e => `${e.code} (${fewest} วัน)`);
-  return { rows, days: sorted.length, limiting, period: { from: sorted[0] || null, to: sorted[sorted.length - 1] || null }, none: none.map(e => e.code), ctrl: rows.find(r => r.code === ctrlCode) || null };
+  return {
+    rows, days: sorted.length, limiting, none: none.map(e => e.code), ctrl: rows.find(r => r.code === ctrlCode) || null,
+    period: { from: sorted[0] || null, to: sorted[sorted.length - 1] || null },
+    cut: { n: parts.cut.length, from: parts.cut[0] || null, to: parts.cut[parts.cut.length - 1] || null },
+    judge: { n: parts.judge.length, from: parts.judge[0] || null, to: parts.judge[parts.judge.length - 1] || null }
+  };
 }
 
-// รันทุกสูตรที่ยังไม่ถูกคัดออก (กรอบตามวัตถุดิบ mapRow) แล้วเรียง: สูตรล่วงหน้าก่อน nowcast · win rate สูง→ต่ำ · แพ้เฉลี่ยน้อย→มาก
-export function runAll(series, formulas, cfg, mapRow) {
+// รันทุกสูตรที่ยังไม่ถูกคัดออก (กรอบกลางจาก kk_forecast_config) แล้วเรียง: สูตรล่วงหน้าก่อน nowcast · win rate สูง→ต่ำ · แพ้เฉลี่ยน้อย→มาก
+export function runAll(series, formulas, cfg) {
   const reg = {};
   (formulas || []).forEach(f => { reg[f.formula_code] = f; });
   return (formulas || []).filter(f => f.status !== 'dropped')
-    .map(f => evalFormula(series, f, cfg, reg, bandOf(cfg, mapRow, f)))
+    .map(f => evalFormula(series, f, cfg, reg, bandOf(cfg)))
     .sort((a, b) => {
       if (a.nowcast !== b.nowcast) return a.nowcast ? 1 : -1;
       const aw = a.winRate === null ? -1 : a.winRate, bw = b.winRate === null ? -1 : b.winRate;
@@ -439,20 +487,48 @@ export function itemState(series, cfg) {
   };
 }
 
-// ตัดสินผ่าน/ไม่ผ่าน (ctrl = ผลของ fixed_mean บนชุดวันเดียวกัน · live = ผลของสูตรใช้จริงของวัตถุดิบนี้ในรอบเดียวกัน)
-// pass = ครบทุกเกณฑ์และ win rate มากกว่า fixed_mean เท่านั้น · fail = ข้อมูลพอแต่ตก (เหตุผลเป็นข้อพร้อมค่าจริง/เกณฑ์) · inconclusive = วันไม่พอ หรือ fixed_mean ไม่มีผล
+// ตัดสินผ่าน/ไม่ผ่าน บนส่วนตัดสินเท่านั้น (row.judge / ctrl.judge = ผล 1/3 วันหลังของชุดวันเดียวกัน · live = สูตรใช้จริงของวัตถุดิบนี้ในรอบเดียวกัน)
+// pass = win rate ส่วนตัดสินมากกว่า fixed_mean (เท่ากัน = ตก) และถึงเกณฑ์ · fail = ตก (เหตุผลพร้อมค่าจริง/เกณฑ์) · inconclusive = ส่วนตัดสินไม่ถึง 10 วัน หรือ fixed_mean ไม่มีผล
 export function verdictOf(row, ctrl, cfg, live) {
-  const min = cfg.min_days_to_judge;
+  const j = row.judge || row, cj = ctrl && (ctrl.judge || ctrl), lj = live && (live.judge || live);
   if (row.nowcast) return { verdict: 'inconclusive', reason: 'สูตร nowcast ใช้ยอดขายของวันที่ทำนาย ไม่นับเป็นความแม่นยำล่วงหน้า' };
   if (ctrl && row.code === ctrl.code) return { verdict: 'inconclusive', reason: 'เป็นตัวเทียบ ไม่ตัดสินตัวเอง' };
-  if (!ctrl || ctrl.winRate === null) return { verdict: 'inconclusive', reason: 'ตัวเทียบ fixed_mean ไม่มีผลในช่วงเดียวกัน จึงตัดสินไม่ได้' };
-  if (!row.enough) return { verdict: 'inconclusive', reason: `วันที่นับคะแนน ${row.n} วัน ยังไม่ถึงขั้นต่ำ ${min} วัน` };
+  if ((row.judgeDays || 0) < JUDGE_MIN_DAYS) return { verdict: 'inconclusive', reason: `ส่วนตัดสินมี ${row.judgeDays || 0} วัน ต้องมีอย่างน้อย ${JUDGE_MIN_DAYS} วัน` };
+  if (!cj || cj.winRate === null) return { verdict: 'inconclusive', reason: 'ตัวเทียบ fixed_mean ไม่มีผลในส่วนตัดสิน จึงตัดสินไม่ได้' };
+  if (j.winRate === null) return { verdict: 'inconclusive', reason: 'สูตรนี้ไม่มีผลในส่วนตัดสิน' };
   const why = [];
-  if (!(row.winRate > ctrl.winRate)) why.push(`win rate ${row.winRate}% ไม่มากกว่า fixed_mean ${ctrl.winRate}% (ชุดวันเดียวกัน ${row.n} วัน)`);
-  if (row.winRate < cfg.elim_win_threshold) why.push(`win rate ${row.winRate}% ต่ำกว่าเกณฑ์ elim_win_threshold ${cfg.elim_win_threshold}%`);
-  if (live && live.code !== row.code && live.lossAvg !== null && row.lossAvg !== null && typeof cfg.elim_loss_vs_live_pct === 'number'
-    && row.lossAvg > live.lossAvg * (1 + cfg.elim_loss_vs_live_pct / 100))
-    why.push(`แพ้เฉลี่ย ${row.lossAvg} กก. สูงกว่าสูตรใช้จริง ${live.code} ${live.lossAvg} กก. เกิน ${cfg.elim_loss_vs_live_pct}%`);
+  if (!(j.winRate > cj.winRate)) why.push(`win rate ส่วนตัดสิน ${j.winRate}% ไม่มากกว่า fixed_mean ${cj.winRate}% (${j.n} วัน · เท่ากันถือว่าตก)`);
+  if (j.winRate < cfg.elim_win_threshold) why.push(`win rate ${j.winRate}% ต่ำกว่าเกณฑ์ elim_win_threshold ${cfg.elim_win_threshold}%`);
+  if (lj && live.code !== row.code && lj.lossAvg !== null && j.lossAvg !== null && typeof cfg.elim_loss_vs_live_pct === 'number'
+    && j.lossAvg > lj.lossAvg * (1 + cfg.elim_loss_vs_live_pct / 100))
+    why.push(`แพ้เฉลี่ย ${j.lossAvg} กก. สูงกว่าสูตรใช้จริง ${live.code} ${lj.lossAvg} กก. เกิน ${cfg.elim_loss_vs_live_pct}%`);
   if (why.length) return { verdict: 'fail', reason: why.map((w, i) => `${i + 1}) ${w}`).join(' ') };
-  return { verdict: 'pass', reason: `win rate ${row.winRate}% มากกว่า fixed_mean ${ctrl.winRate}% · ถึงเกณฑ์ ${cfg.elim_win_threshold}% · ${row.n} วัน` };
+  return { verdict: 'pass', reason: `ส่วนตัดสิน ${j.n} วัน: win rate ${j.winRate}% มากกว่า fixed_mean ${cj.winRate}% · ถึงเกณฑ์ ${cfg.elim_win_threshold}%` };
+}
+
+// วันที่น่าสงสัย = วันเปิดที่วัตถุดิบซึ่งมีข้อมูลตั้งแต่ 70% ขึ้นไป ใช้จริงต่ำกว่า 25% ของมัธยฐาน 28 วันเปิดก่อนหน้าที่ใช้ได้ (ดูย้อน lookback วัน · ไม่รวมวันที่ตัดแล้ว) — แค่ชี้ ไม่ตัดเอง
+export function suspiciousDays(history, lookback = 60) {
+  const ok = (history || []).filter(h => h.used_kg !== null && h.used_kg !== undefined && Number(h.dow_num) !== 0 && !SKIP_FLAGS.includes(h.flag));
+  const excluded = new Set((history || []).filter(h => h.flag === 'anomaly_excluded').map(h => h.use_date));
+  const dates = [...new Set(ok.map(h => h.use_date))].sort();
+  const from = dates.length ? addDaysIso(dates[dates.length - 1], -lookback) : null;
+  const byItem = {};
+  ok.forEach(h => { (byItem[h.item_id] = byItem[h.item_id] || []).push({ d: h.use_date, v: Number(h.used_kg) }); });
+  Object.values(byItem).forEach(a => a.sort((x, y) => (x.d < y.d ? -1 : 1)));
+  const out = [];
+  dates.filter(d => d >= from && !excluded.has(d)).forEach(d => {
+    let n = 0, low = 0;
+    const lowItems = [];
+    Object.keys(byItem).forEach(id => {
+      const a = byItem[id], i = a.findIndex(x => x.d === d);
+      if (i < 0) return;
+      const ref = a.slice(Math.max(0, i - 28), i).map(x => x.v);
+      if (ref.length < 10) return;
+      n += 1;
+      const m = med(ref);
+      if (m > 0 && a[i].v < 0.25 * m) { low += 1; lowItems.push(id); }
+    });
+    if (n >= 2 && low / n >= 0.7) out.push({ date: d, n, low, items: lowItems });
+  });
+  return out;
 }

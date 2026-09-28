@@ -44,8 +44,8 @@ export async function loadOverview(pane, data) {
   const box = pane.querySelector('#eq-ov');
   try {
     const today = todayIso();
-    const [items, logs] = await Promise.all([getPrepItems(), getPrepLogRange(shiftIso(today, -84), shiftIso(today, -1))]);
-    const fc = buildForecast(items, logs, today, data.cfg);
+    const items = await getPrepItems();
+    const fc = buildForecast(items, today, data.cfg);
     box.innerHTML = regHtml(fc) + measureHtml(fc);
   } catch {
     box.innerHTML = '<p class="ptab__none">ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง</p>';

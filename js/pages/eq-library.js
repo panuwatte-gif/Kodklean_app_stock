@@ -177,14 +177,14 @@ async function runEvolve(data, reload) {
   const mine = valid.filter(t => t.item_id === itemId);
   const { rows, skipped } = evolve({ series, formulas: data.formulas, trials: mine, cfg: data.cfg });
   if (!rows.length) return toast(`${EQ_LIB_UI.evolveNone}${skipped.length ? ` (ข้ามซ้ำ/ผิดกติกา ${skipped.length} ตัว)` : ''}`);
-  const pass = rows.filter(r => r.status === 'testing').length;
+  const pass = rows.filter(r => r.__beat).length;
   const ok = await confirmSheet({
     title: fillText(EQ_LIB_UI.evolveAsk.title, { n: rows.length }), okLabel: EQ_LIB_UI.evolveAsk.ok,
-    text: `ทดลองบน ${itemId}<br>${rows.slice(0, 8).map(r => `${r.formula_code} · ${r.status === 'testing' ? `เข้าทดสอบ (${r.__win}%)` : 'ตกด่านแรก'}`).join('<br>')}${rows.length > 8 ? `<br>…และอีก ${rows.length - 8} สูตร` : ''}`
+    text: `ทดลองบน ${itemId} · วัดบนส่วนตัดสินเท่านั้น · บันทึกเป็นผู้สมัคร (สำรอง) รอกดใช้เอง<br>${rows.slice(0, 8).map(r => `${r.formula_code} · ${r.__beat ? `ชนะตัวเทียบ (${r.__win}%)` : `ไม่ชนะ (${r.__win === null ? '—' : r.__win + '%'})`}`).join('<br>')}${rows.length > 8 ? `<br>…และอีก ${rows.length - 8} สูตร` : ''}`
   });
   if (!ok) return;
   try {
-    await addFcFormulas(rows.map(r => { const c = { ...r, status: r.status === 'dropped' ? 'bench' : r.status }; delete c.__win; delete c.__n; return c; }));   // ระบบเสนอได้อย่างเดียว ห้ามตั้ง dropped เอง
+    await addFcFormulas(rows.map(r => { const c = { ...r }; delete c.__win; delete c.__n; delete c.__beat; return c; }));   // ระบบเสนอได้อย่างเดียว ห้ามตั้ง testing/active เอง
     toast(fillText(EQ_LIB_UI.evolveDone, { n: rows.length, p: pass, d: rows.length - pass }));
     reload();
   } catch { toast('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง'); }
@@ -212,7 +212,7 @@ export function mountLibrary(pane, data, reload) {
   const matrix = matrixOf(data.trials.filter(t => !nc.has(t.formula_code)));
 
   const passItems = [...new Set(data.trials.filter(t => t.verdict === 'pass').map(t => t.item_id))].map(id => ({ id, name: names[id] || id }));
-  pane.innerHTML = `<p class="eq-sub">${EQ_LIB_UI.sub}</p>`
+  pane.innerHTML = `<p class="eq-sub">${EQ_LIB_UI.sub}</p><p class="eqs-intro" style="font-size:12.5px;line-height:1.55;color:#4F4868">${EQ_LIB_UI.help}</p>`
     + (isAdmin() ? importBtnHtml() : '')
     + passHtml(passGroups(data, names), nc, passItems, state)
     + sumHtml(data.formulas) + filterHtml(f) + countHtml(shown.length, data.formulas.length)

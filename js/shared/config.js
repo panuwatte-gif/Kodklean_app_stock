@@ -410,10 +410,10 @@ export const HOME_UI = {
   dateOnly: 'ข้อมูลตัวอย่างรอบนี้มีของวันที่ 10 ก.ย. 2569 เท่านั้น',
   noData: 'ยังไม่มีข้อมูล',
   prep: {
-    title: 'แนะนำเตรียมของพรุ่งนี้', sub: 'จัดเตรียมวัตถุดิบล่วงหน้า เพื่อการทำงานที่ราบรื่น',
-    rankLabel: 'อันดับ', rankHint: 'เลือกดูครั้งละ 3 อันดับ', cols: ['#', 'วัตถุดิบ', 'ปริมาณ', 'ผู้รับผิดชอบ'],
-    of: 'จาก', items: 'รายการ', closed: 'พรุ่งนี้ร้านปิด', unranked: 'รายการแนะนำที่ยังไม่จัดอันดับ',
-    basisNote: 'ปริมาณแนะนำจากระบบ • ยังไม่ระบุว่าเป็น "ต้องผลิตเพิ่ม" หรือ "เป้าสต๊อกรวม"',
+    title: 'พยากรณ์ใช้พรุ่งนี้', sub: 'ยอดใช้จริงที่คาดของวันเปิดถัดไป คนเตรียมตัดสินใจเองว่าจะเอาออกมาเท่าไหร่',
+    rankLabel: 'อันดับ', rankHint: 'เลือกดูครั้งละ 3 อันดับ', cols: ['#', 'วัตถุดิบ', 'ใช้ประมาณ', 'ผู้รับผิดชอบ'],
+    of: 'จาก', items: 'รายการ', closed: 'พรุ่งนี้ร้านปิด', unranked: 'รายการที่ยังไม่จัดอันดับ',
+    basisNote: 'ค่าพยากรณ์ใช้จริงจากสูตรที่ตั้งไว้ต่อรายการ',
     liveNote: 'พยากรณ์ด้วยสูตรที่ล็อกไว้ต่อรายการ • คำนวณจากบันทึกใช้จริงถึง {d}'
   },
   rice: {
@@ -456,6 +456,15 @@ export const HOME_UI = {
     setBtn: 'ตั้งเป้า', setTitle: 'ตั้งเป้ายอดขายรวมต่อวัน', setLabel: 'เป้ารวมทุกร้าน (บาท/วัน)',
     setSaved: 'บันทึกเป้าแล้ว', setFail: 'บันทึกเป้าไม่สำเร็จ ลองใหม่อีกครั้ง'
   },
+  group: {
+    title: 'KodKlean Group', sub: 'ยอดขายรวมทุกร้าน เดือนนี้', logo: 'assets/home/logo-kodklean-group.webp',
+    total: 'ยอดรวมเดือนนี้', avg: 'เฉลี่ย {v}/วัน • มีข้อมูล {n} วัน ถึง {d}',
+    chart: 'ยอดขายรายวัน (บาท)', mean: 'เส้นประ = ค่าเฉลี่ย'
+  },
+  mix: {
+    title: 'สัดส่วนรายได้', sub: 'เดือนนี้ แบ่งตามร้าน + ส่งพระราม 9', r9: 'ส่งพระราม 9',
+    center: 'รวม', note: 'ร้าน = ยอดขาย (Grab ที่ยังไม่ได้กรอกในรายได้ประจำวัน ใช้ยอดขายสุทธิจากรายงาน Grab) • พระราม 9 = มูลค่าส่งสะสมเดือนนี้'
+  },
   r9: {
     title: 'ส่งพระราม 9', sub: 'จัดส่งวัตถุดิบและซอส สำหรับสาขาพระราม 9',
     month: 'มูลค่าส่งสะสมเดือนนี้', rounds: 'รอบ', roundsLabel: 'จำนวนรอบ', typesLabel: 'ประเภท',
@@ -477,7 +486,8 @@ export const PREP_TABS = [
   { id: 'meat', label: 'เตรียมอาหาร<br>(เนื้อสัตว์)', icon: 'assets/prep/tab-meat.webp' },
   { id: 'rice', label: 'เตรียมข้าว', icon: 'assets/prep/tab-rice.webp' },
   { id: 'forecast', label: 'พยากรณ์', icon: 'assets/prep/tab-forecast.webp' },
-  { id: 'fahAll', label: 'อาหารปรุงสำเร็จเหลือ', icon: 'assets/prep/tab-all.webp' }
+  { id: 'fahAll', label: 'อาหารปรุงสำเร็จเหลือ', icon: 'assets/prep/tab-all.webp' },
+  { id: 'eval', label: 'ประเมินผลการเตรียม<br>วัตถุดิบของพนักงาน', icon: 'assets/prep/ic3d-history.webp' }
 ];
 
 // การ์ดหัวเรื่องของแต่ละแท็บ (มาสคอต + หัวข้อ + คนรับผิดชอบ)
@@ -485,7 +495,8 @@ export const PREP_HERO = {
   meat: { title: 'งานเตรียมอาหาร<br>(เนื้อสัตว์)', sub: 'บันทึก เตรียม + เบิกใช้เพิ่ม + ทิ้ง/เสีย + คงเหลือ = ใช้วัตถุดิบ/วัน', people: ['fah', 'emmy', 'ad'] },
   rice: { title: 'งานเตรียมข้าวประจำวัน', sub: 'หุงข้าวดิบ + บันทึกข้าวสุกคงเหลือ + แปลงค่าดิบ/สุก + ดูสถิติย้อนหลัง', people: ['fah', 'emmy', 'ad'] },
   forecast: { title: 'พยากรณ์วัตถุดิบ<br>รายรายการ', sub: 'ช่วยให้คุณเตรียมวัตถุดิบได้พอดี ลดการสูญเสีย และบริหารต้นทุนได้ดีขึ้น', people: ['fah', 'emmy', 'ad'] },
-  fahAll: { title: 'อาหารปรุงสำเร็จเหลือ', sub: 'จัดการของเหลือวันนี้ เพื่อพรุ่งนี้ที่ดีกว่า', people: ['fah'] }
+  fahAll: { title: 'อาหารปรุงสำเร็จเหลือ', sub: 'จัดการของเหลือวันนี้ เพื่อพรุ่งนี้ที่ดีกว่า', people: ['fah'] },
+  eval: { title: 'ประเมินผลการเตรียม<br>วัตถุดิบของพนักงาน', sub: 'เอาออกมาเตรียม เทียบกับที่ใช้ไปจริง ต่างกันเท่าไหร่', people: ['fah', 'emmy', 'ad'] }
 };
 
 // ชิปกรองตามผู้รับผิดชอบ (people = รหัสพนักงานใน kk_staff, ว่าง = ทั้งหมด) — เป็นการช่วยหา ไม่ใช่การจำกัดสิทธิ์
@@ -570,11 +581,41 @@ export const PREP_ENTRY = {
   fah: { left: 'เหลือ', waste: 'ทิ้ง', self: 'กินเอง', home: 'ห่อกลับบ้าน' }
 };
 
-// หมวดแสดงผลของเนื้อสัตว์แต่ละรายการ (id ใน kk_count_item → กลุ่มบนจอ)
-export const PREP_GROUP_OF = {
-  meat_chicken_mince: 'chicken', meat_chicken_soft: 'chicken', meat_chicken_tender: 'chicken',
-  meat_pork_soft: 'meat', meat_pork_mince: 'meat', meat_beef_mince: 'meat', meat_duck_mince: 'meat',
-  meat_salmon: 'sea', meat_hokke: 'sea', meat_shrimp_mid: 'sea', meat_shrimp_big: 'sea'
+// ไอคอนของหมวดย่อยบนหน้าเตรียม (ชื่อหมวดมาจาก kk_count_item.prep_group · หมวดใหม่ที่ไม่มีในนี้ = ไม่มีไอคอน)
+export const PREP_GROUP_ICONS = {
+  'ไก่': 'assets/cats/chicken.webp',
+  'เนื้อ / หมู / เป็ด': 'assets/cats/pork.webp',
+  'ปลาและอาหารทะเล': 'assets/cats/fish.webp'
+};
+export const PREP_GROUP_NONE = 'ยังไม่จัดหมวด';
+
+// แท็บประเมินผลการเตรียมวัตถุดิบของพนักงาน (หน้าเตรียม-เหลือ + หน้าครัวของพนักงาน ใช้ชุดเดียวกัน)
+export const PREP_EVAL_UI = {
+  title: 'ประเมินผลการเตรียมวัตถุดิบของพนักงาน',
+  how: 'เอาออกมา = เตรียม + เบิกเพิ่ม · ใช้จริง = ตัวเลขเดียวกับที่ใช้พยากรณ์ · ต่าง = เอาออก − ใช้จริง · ไม่นับวันที่ตัดออก',
+  windows: [6, 30, 90],
+  winHead: '{n} วัน',
+  colItem: 'วัตถุดิบ',
+  cellSub: 'ต่อวัน · {p}',
+  cellDays: 'มี {n} วัน',
+  noData: 'ยังไม่มีข้อมูล',
+  tableTitle: 'ต่างกันเฉลี่ยต่อวัน (กก.)',
+  tableNote: 'ตัวเลขใหญ่ = เอาออกมาเกินใช้จริงเฉลี่ยต่อวัน · % = เทียบกับที่ใช้จริง · สูงสุด = วันที่ต่างมากที่สุด',
+  maxLabel: 'สูงสุด {v}',
+  chartTitle: 'รายวัน 30 วันย้อนหลัง',
+  pick: 'เลือกวัตถุดิบ',
+  legTaken: 'เอาออกมาเตรียม',
+  legUsed: 'ใช้ไปจริง',
+  legDiff: 'ส่วนต่าง (เอาออก − ใช้จริง)',
+  legExcluded: 'วันที่ตัดออก',
+  excludedMark: 'ตัด',
+  dayLine: '{d} · เอาออก {a} · ใช้ {b} · ต่าง {c}',
+  dayLineExcluded: '{d} · ตัดออกจากการประเมิน · เอาออก {a} · ใช้ {b}',
+  dayNone: '—',
+  chartNone: 'ยังไม่มีข้อมูลของวัตถุดิบนี้ใน 30 วันล่าสุด',
+  sumLine: 'รวม {n} วันที่นับ: เอาออกมา {a} กก. · ใช้จริง {b} กก. · ต่าง {d} กก.',
+  loading: 'กำลังโหลดข้อมูลจากฐาน...',
+  loadError: 'โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง'
 };
 
 // รูปประจำเมนู (id ใน kk_menu)
@@ -615,12 +656,32 @@ export const PREP_UI = {
   histCur: '← ใช้อยู่',
   histClose: 'ปิด',
   histBadge: 'แก้แล้ว {n} ครั้ง · กดดูประวัติ',
-  rec: 'แนะนำ —',
-  recLabel: 'ควรเตรียม',
-  recRiceLabel: 'ควรหุง (ดิบ)',
-  recNone: 'ยังไม่มีข้อมูลพอพยากรณ์',
-  recSat: 'เสาร์ห้ามเผื่อ',
-  recOff: 'ยังไม่เปิดใช้การแนะนำปริมาณ',
+  // ป้ายพยากรณ์ใต้ชื่อรายการ (ทุกหน้าเตรียม): พยากรณ์ใช้ Y กก. (ต่ำ–สูง) · ป้ายสั้นไม่เกิน 15 ตัวอักษรเมื่อไม่มีค่า
+  fcLabel: 'พยากรณ์ใช้',
+  fcUnit: 'กก.',
+  fcClosed: 'ร้านปิด',
+  fcNoModel: 'ยังไม่ตั้งสูตร',
+  fcNoCalc: 'คำนวณไม่ได้',
+  fcFallback: 'สำรอง',
+  // ตัดวันผิดปกติออกจากพยากรณ์ (เจ้าของเท่านั้น · หน้าเตรียม-เหลือเมื่อเลือกวันที่ผ่านมาแล้ว)
+  exclBtn: 'ตัดวันนี้ออกจากพยากรณ์',
+  exclDone: 'ตัดออกแล้ว · {note}',
+  exclDoneSome: 'ตัดออกแล้ว ({n} รายการ) · {note}',
+  exclCancel: 'ยกเลิก',
+  exclSystem: 'ตั้งในระบบ',
+  exclReasonTitle: 'เหตุผลที่ตัดวันนี้ออก',
+  exclReasons: ['น้ำท่วม/ฝนหนัก', 'แอปเดลิเวอรี่ไม่ส่งออเดอร์', 'ปิดร้านบางช่วง', 'ออเดอร์พิเศษ/อีเวนต์'],
+  exclOther: 'อื่นๆ พิมพ์เอง',
+  exclOtherLabel: 'เหตุผล',
+  exclScopeTitle: 'ตัดวัตถุดิบไหนบ้าง',
+  exclScopeAll: 'ทุกวัตถุดิบ',
+  exclScopeSome: 'เลือกบางตัว',
+  exclPickTitle: 'เลือกวัตถุดิบที่จะตัด',
+  exclConfirm: 'ตัด {d} ออกจากพยากรณ์ ({scope}) · {note} — สูตรจะไม่เอาวันนี้ไปคิด และไม่นับแม่น/พลาดของวันนี้',
+  exclSaved: 'ตัด {d} ออกแล้ว · คำนวณค่าพยากรณ์ที่บันทึกไว้ใหม่ {n} แถว',
+  exclCancelled: 'ยกเลิกการตัด {d} แล้ว · คำนวณค่าพยากรณ์ที่บันทึกไว้ใหม่ {n} แถว',
+  exclFail: 'ตัดวันไม่สำเร็จ (ฐานตอบ): {e}',
+  exclRefreshFail: 'บันทึกการตัดแล้ว แต่คำนวณค่าพยากรณ์ใหม่ไม่สำเร็จ เปิดหน้านี้ใหม่อีกครั้ง',
   cookedNote: 'คงเหลืออาหารปรุงสำเร็จ (เทียบเป็นวัตถุดิบสด) มาจากแท็บบันทึกอาหารเหลือของวันเดียวกัน',
   stockCounted: 'สต๊อกครัวกลาง: มีนับจริง {d} = {q} กก. (ยึดยอดนับ)',
   stockEst: 'สต๊อกครัวกลาง ≈ {r} กก. (นับล่าสุด {d} = {q} − ใช้ไปเบื้องต้น)',
@@ -644,12 +705,27 @@ export const PREP_UI = {
   convTitle: 'แปลงเป็นวัตถุดิบ (หักในแท็บเตรียมอาหารวันเดียวกัน)',
   convEmpty: 'ยังไม่มีเมนูที่กรอกของเหลือและผูกเนื้อสัตว์ครบ',
   weekTitle: 'สถิติของเหลือ 7 วันย้อนหลัง (เฉพาะช่อง "เหลือ")',
-  statsTitle: 'สถิติข้าว 7 วันย้อนหลัง (คิดเฉพาะชนิดที่ตั้งอัตราหุงแล้ว)',
-  copyPrev: 'คัดลอกจากวันก่อนหน้า',
-  copyNone: 'ยังไม่มีวันที่เคยกรอกไว้ให้คัดลอก',
-  copyDrafted: 'ดึงค่าของ {d} มาเป็นร่างแล้ว กดยืนยันทีละแถว',
-  draftUse: 'ใช้ {v} ✓',
-  satNote: 'วันเสาร์ห้ามเผื่อ — อาทิตย์ร้านปิด อาหารสุกยกข้ามวันไม่ได้ (แนะเป้าใช้ค่าพยากรณ์ตรงๆ ไม่ใช่ขอบบน)'
+  statsTitle: 'สถิติข้าว 7 วันย้อนหลัง (คิดเฉพาะชนิดที่ตั้งอัตราหุงแล้ว)'
+};
+
+// ---------- พยากรณ์: วันผิดปกติที่ตัดออกจากโมเดลเสมอ (ชุดตั้งต้น · วันที่ตัดจากแอปเก็บใน kk_forecast_regime) ----------
+// items: 'all' = ทุกวัตถุดิบ หรือ [รหัสวัตถุดิบ]
+export const FC_EXCLUDED_DAYS = [
+  { date: '2026-09-26', items: 'all', note: 'น้ำท่วม ออเดอร์ไม่เข้า' }
+];
+
+// กลุ่มสูตรที่ปิดใช้ทุกที่ (พยากรณ์ · สูตรสำรอง · ห้องทดสอบ · ตัวสร้างสูตร) — สูตรที่ base/mix อ้างถึงกลุ่มนี้ก็ถูกตัดด้วย · แถวในฐานไม่ถูกแก้
+export const FC_DISABLED_FAMILIES = ['sales'];
+
+// ชุดสูตรใช้จริงรอบ 28 ก.ย. 2569 (เจ้าของกดใช้เองที่หน้าสมการ · วัตถุดิบอื่นไม่แตะ) — formula = แถวที่ต้องมีใน kk_forecast_formula (ไม่มี = เพิ่มให้)
+export const FC_MODEL_SET_20260928 = {
+  label: 'ใช้ชุดสูตร 28 ก.ย.',
+  rows: [
+    { item_id: 'meat_shrimp_mid', formula_code: 'WMA6_half', formula: { name_th: 'ถ่วงน้ำหนัก 6 วัน เฉพาะครึ่งเดือนเดียวกัน', family: 'mean', equation_th: 'ใช้เฉพาะวันที่อยู่ครึ่งเดือนเดียวกับวันที่ทาย (1–15 / 16–สิ้นเดือน) แล้วถ่วงน้ำหนัก 6 วันล่าสุด (6,5,4,3,2,1 ÷ 21)', params: { base: 'WMA6', window: 6, half_month: true } } },
+    { item_id: 'meat_chicken_tender', formula_code: 'EMA03_since0727', formula: { name_th: 'EMA α 0.3 นับตั้งแต่ 27 ก.ค. 69', family: 'ema', equation_th: 'ใช้เฉพาะประวัติตั้งแต่ 2026-07-27 แล้วเฉลี่ยถ่วงน้ำหนักแบบเอกซโพเนนเชียล α = 0.3', params: { alpha: 0.3, since: '2026-07-27' } } },
+    { item_id: 'meat_pork_soft', formula_code: 'WMA6' },
+    { item_id: 'meat_hokke', formula_code: 'sameday_lastwk' }
+  ]
 };
 
 // ---------- พยากรณ์: สูตรที่เคยล็อกไว้ต่อรายการ ----------
@@ -692,8 +768,6 @@ export const PREP_FC_UI = {
   accBand: 'กรอบ {b}',
   salesWarn: 'หลักฐานเดิมของสูตรนี้มาจากการรู้ยอดขายวันเดียวกัน ต้องทดสอบใหม่ก่อนเชื่อ (ตอนนี้คำนวณแบบล่วงหน้าด้วยยอดขายวันเปิดก่อนหน้า)',
   salesHead: 'สูตรยอดขายต้องทดสอบใหม่:',
-  carryStale: 'คงเหลือที่ใช้หักเป็นของวันที่ {d} อาจเก่าเกินไป',
-  carryNoCooked: 'ยังไม่รวมอาหารสุกที่ยกมา (วันเปิดก่อนหน้ายังไม่บันทึกคงเหลือใช้ต่อ)',
   modelDiff: 'สูตรต่างจากที่เคยใช้: เดิม {old} → ตอนนี้ (kk_forecast_model_map) {now}',
   fallback: 'สูตรที่ตั้งไว้ {set} คำนวณไม่ได้ ({why}) จึงใช้สูตรสำรอง {used} (ผ่านการทดสอบ {from}–{to} win rate {win}% กรอบ {band})',
   noFallback: 'สูตรที่ตั้งไว้ {set} คำนวณไม่ได้ ({why}) และไม่มีสูตรสำรองที่ผ่านการทดสอบกับวัตถุดิบนี้ในกรอบเดียวกัน — ยังพยากรณ์ไม่ได้',
@@ -743,8 +817,7 @@ export const PREP_FC_UI = {
     error: { t: 'คำนวณผิดพลาด', d: 'คำนวณรายการนี้ไม่สำเร็จ ลองเปิดหน้านี้ใหม่' },
     fallback: { t: 'ใช้สูตรสำรอง', d: 'สูตรหลักคำนวณไม่ได้วันนี้ จึงใช้สูตรสำรองที่ผ่านการทดสอบแทน' },
     sales: { t: 'ต้องทดสอบสูตรใหม่', d: 'สูตรนี้เคยทดสอบแบบรู้ยอดขายของวันเดียวกัน ตอนนี้ใช้ยอดขายวันก่อนหน้าแทน ควรทดสอบใหม่ก่อนเชื่อตัวเลข', day: 'สูตรที่ใช้ยอดขายต้องทดสอบใหม่ก่อนเชื่อตัวเลข' },
-    carryOld: { t: 'ของยกมาเก่า', d: 'ของที่ยกมาเป็นคงเหลือของวันที่ {d} ซึ่งเก่าเกินไป แนะเตรียมอาจหักไม่ตรง', day: 'ของที่ยกมาเป็นคงเหลือของวันเก่า แนะเตรียมอาจหักไม่ตรง' },
-    noCooked: { t: 'ยังไม่รวมอาหารสุก', d: 'วันเปิดก่อนหน้ายังไม่บันทึกอาหารปรุงสำเร็จเหลือ แนะเตรียมจึงยังไม่หักส่วนนี้', day: 'ยังไม่มีบันทึกอาหารปรุงสำเร็จเหลือของวันก่อนหน้า แนะเตรียมจึงยังไม่หักส่วนนี้' }
+    fallbackAvg: { t: 'ใช้ค่าสำรอง', d: 'สูตรที่ตั้งไว้คำนวณไม่ได้วันนี้ จึงใช้เฉลี่ย 6 วันเปิดล่าสุดแทน' }
   },
   needDays: 'ต้องมีวันวัดผล ≥{days} วัน'
 };
@@ -795,9 +868,20 @@ export const EQ_SIMPLE = {
   betterBy: 5,        // สูตรอื่นต้องแม่นกว่าสูตรที่ใช้อยู่อย่างน้อยกี่ % ถึงจะแนะนำให้เปลี่ยน
   modes: [{ id: 'simple', label: 'แบบง่าย' }, { id: 'detail', label: 'แบบละเอียด' }],
   groups: [{ grp: 'เนื้อสัตว์', label: 'เนื้อสัตว์' }, { grp: 'ข้าวหุง', label: 'ข้าว' }],
-  introHead: 'แต่ละวัตถุดิบใช้สูตรอะไร แม่นแค่ไหน',
-  intro: 'ระบบใช้สูตรคำนวณ 1 สูตรต่อวัตถุดิบ เพื่อแนะนำว่าควรเตรียมเท่าไหร่ "แม่น" คือวันที่ใช้จริงตกอยู่ในช่วงที่ระบบแนะนำ',
-  introEg: 'ตัวอย่าง: แนะนำ 5–7 กก. แล้ววันนั้นใช้จริง 6 กก. = แม่น',
+  introHead: 'หน้านี้ทำอะไร',
+  intro: 'วัตถุดิบละ 1 สูตร คิดว่าวันถัดไปน่าจะใช้เท่าไหร่ (ค่ากลาง) และช่วงที่รับได้ (กรอบ ต่ำสุด–สูงสุด) ค่าแนะนำเตรียมทุกหน้ามาจากสูตรนี้ การ์ดละวัตถุดิบบอกว่าสูตรที่ใช้อยู่ทายถูกแค่ไหน เมื่อเทียบกับที่ใช้จริง',
+  introEg: 'ตัวอย่าง: ค่ากลาง 6 กก. กรอบ 5–7 กก. วันนั้นใช้จริง 6.5 = win (loss 0) · ใช้จริง 8 = หลุดกรอบ loss = 8 − 6 = 2 กก.',
+  realHead: 'ใช้งานจริง real time (ค่าที่แนะนำจริงแต่ละวัน)',
+  realHow: 'ใช้งานจริง real time = ทุกวันที่แอปแนะนำค่าเตรียมของวันเปิดถัดไป ระบบเก็บค่ากลางและกรอบไว้ตอนนั้นเลย (แก้ย้อนหลังไม่ได้) พอวันนั้นปิดยอดแล้ว เอาใช้จริงมาเทียบ · เริ่มเก็บ 23 ก.ย. 69 ตัวเลขจึงยังน้อย',
+  liveHead: 'ทดสอบย้อนหลังกับข้อมูลเก่า (สูตรที่ใช้อยู่)',
+  liveHow: 'ทุกวันเปิดร้านย้อนหลัง ระบบเอาสูตรที่ใช้อยู่ทาย โดยใช้เฉพาะข้อมูลก่อนวันนั้น (เหมือนใช้จริงทุกเช้า) แล้วเทียบกับที่ใช้จริง = เตรียม + เบิกเพิ่ม − ทิ้ง − คงเหลือสด − อาหารปรุงสำเร็จเหลือ · อยู่ในกรอบ = win · หลุดกรอบ = loss คิดเป็น |ใช้จริง − ค่ากลาง| · ไม่นับวันอาทิตย์และวันหยุด · อัปเดตเองทุกวันเมื่อมีบันทึกใหม่',
+  liveWindows: [6, 30, 90],
+  liveCols: ['ช่วง', 'win', 'loss เฉลี่ย', 'loss สูงสุด'],
+  liveWin: '{n} วันล่าสุด',
+  liveGot: 'มีจริง {n} วัน',
+  liveNone: 'ยังไม่มีวันที่มีผลจริง',
+  liveNote: 'loss เฉลี่ย = เฉลี่ยเฉพาะวันที่หลุดกรอบ',
+  bandLabel: 'กรอบ {b}',
   pill: { good: 'แม่นดี', ok: 'พอใช้', bad: 'ควรเปลี่ยนสูตร', wait: 'กำลังเก็บข้อมูล' },
   nowLabel: 'สูตรที่ใช้อยู่',
   noFormula: 'ยังไม่ได้ตั้งสูตร',
@@ -825,7 +909,7 @@ export const EQ_SIMPLE = {
   saveErr: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',
   conflict: 'มีคนเปลี่ยนสูตรนี้จากเครื่องอื่นก่อน โหลดใหม่แล้วลองอีกครั้ง',
   empty: 'ยังไม่มีวัตถุดิบที่ตั้งสูตรในกลุ่มนี้',
-  foot: 'ตัวเลขทดสอบย้อนหลัง = ลองเอาสูตรไปทายวันในอดีตทีละวัน · ตัวเลขใช้จริง = ค่าที่ระบบแนะนำจริงแล้วเทียบกับที่ใช้จริง (เชื่อได้มากกว่า)'
+  foot: 'แบบละเอียด (สำหรับคนดูแลสูตร): ห้องทดสอบ = เลือกวัตถุดิบ + ช่วงวันเอง แล้วลองทุกสูตรพร้อมกันแบบเดียวกับด้านบน · คลังสูตร = รายชื่อสูตรทั้งหมดและสถานะ (ใช้จริง/กำลังทดสอบ/สำรอง/คัดออก) ไม่มีผลกับค่าแนะนำจนกว่าจะกด "ใช้สูตรนี้แทน" · ตั้งค่ากฎ = ขนาดกรอบ และจำนวนวันขั้นต่ำก่อนตัดสิน'
 };
 
 // ---------- หน้าสมการ Forecast: แท็บย่อย 4 หน้า ----------
@@ -847,6 +931,33 @@ export const FC_REGIME_TH = {
   decline: { label: 'ขาลง', arrow: '↘', color: '#1E7A3C', tint: '#EAF6EC' }
 };
 
+// กล่องของเจ้าของบนหน้าสมการ: วันที่ตัดออก / วันที่น่าสงสัย / ปุ่มใช้ชุดสูตร 28 ก.ย.
+export const EQ_ADMIN_UI = {
+  exclHead: 'วันที่ตัดออกจากพยากรณ์',
+  exclCols: ['วันที่', 'วัตถุดิบ', 'เหตุผล', 'ที่มา'],
+  exclAll: 'ทุกวัตถุดิบ',
+  exclSystem: 'ตั้งในระบบ',
+  exclDb: 'ตัดจากแอป',
+  exclNone: 'ยังไม่มีวันที่ตัดออก',
+  exclCancel: 'ยกเลิก',
+  exclCancelAsk: 'ยกเลิกการตัด {d} ({items})? สูตรจะกลับมาใช้วันนี้คิดอีกครั้ง',
+  suspHead: 'วันที่น่าสงสัย (ใช้จริงต่ำผิดปกติ — กดตัดเองเท่านั้น ระบบไม่ตัดให้)',
+  suspLine: '{d} · {low}/{n} รายการใช้จริงต่ำกว่า 25% ของมัธยฐาน 28 วันก่อนหน้า',
+  suspNone: 'ไม่พบวันที่น่าสงสัยใน 60 วันล่าสุด',
+  suspCut: 'ตัดวันนี้',
+  suspNote: 'ตัด {d} ออกจากพยากรณ์ (ทุกวัตถุดิบ) · เหตุผล: ใช้จริงต่ำผิดปกติ',
+  setBtn: 'ใช้ชุดสูตร 28 ก.ย.',
+  setHead: 'ตารางก่อนเปลี่ยน — กดยืนยันอีกครั้งจึงเขียนลงฐาน',
+  setCols: ['วัตถุดิบ', 'สูตรเดิม', 'สูตรใหม่'],
+  setOk: 'ยืนยันเปลี่ยน {n} รายการ',
+  setAlready: 'ใช้ชุดสูตร 28 ก.ย. อยู่แล้วทุกรายการ',
+  setDone: 'เปลี่ยนสำเร็จ {ok} รายการ{fail}',
+  setFailPart: ' · ไม่สำเร็จ: {list}',
+  setConflict: 'มีคนแก้แถวนี้ก่อน (updated_at ไม่ตรง)',
+  setAddFail: 'เพิ่มสูตร {code} ลงคลังไม่ได้: {e}',
+  saveErr: 'บันทึกไม่สำเร็จ: {e}'
+};
+
 // หน้าห้องทดสอบสูตร รายวัตถุดิบ
 export const EQ_LAB_UI = {
   sub: 'เอาทุกสูตรมาแข่งกันบนวัตถุดิบตัวเดียวกัน วัดผลเดินวันต่อวันจากข้อมูลจริง',
@@ -857,8 +968,9 @@ export const EQ_LAB_UI = {
   fixedModel: 'เตรียมคงที่ (ไม่พยากรณ์)',
   noLive: 'ยังไม่ได้ตั้งสูตรใช้จริง',
   subtabs: [['kg', 'ตารางปริมาณ'], ['baht', 'ตารางมูลค่า'], ['chart', 'กราฟเทียบสูตร']],
-  cols: ['รหัสสูตร', 'ชื่อสูตร', 'กลุ่ม', 'วันทดสอบ', 'win rate', 'ครั้งที่แพ้', 'แพ้เยอะสุด', 'แพ้เฉลี่ย', 'แพ้น้อยสุด', 'แพ้รวม', 'กรอบเฉลี่ย', 'สถานะ'],
-  colUnits: ['', '', '', 'วัน', '%', 'ครั้ง', 'กก.', 'กก.', 'กก.', 'กก.', 'กก.', ''],
+  cols: ['รหัสสูตร', 'ชื่อสูตร', 'กลุ่ม', 'วันคัด', 'win ส่วนคัด', 'แพ้เฉลี่ย คัด', 'วันตัดสิน', 'win ตัดสิน', 'ครั้งที่แพ้', 'แพ้เยอะสุด', 'แพ้เฉลี่ย', 'แพ้รวม', 'กรอบเฉลี่ย', 'สถานะ'],
+  colUnits: ['', '', '', 'วัน', '%', 'กก.', 'วัน', '%', 'ครั้ง', 'กก.', 'กก.', 'กก.', 'กก.', ''],
+  splitNote: 'ชุดวันแบ่งสองส่วน: ส่วนคัด = 2/3 แรก ({c} วัน {cf}–{ct}) ใช้เรียงอันดับ · ส่วนตัดสิน = 1/3 หลัง ({j} วัน {jf}–{jt}) ใช้ตัดสินผ่าน/ไม่ผ่าน ต้องมีอย่างน้อย {min} วัน · กรอบทุกสูตร = ค่ากลางใน kk_forecast_config',
   bahtCols: ['รหัสสูตร', 'ชื่อสูตร', 'แพ้เฉลี่ย/ครั้ง', 'แพ้รวมทั้งช่วง', 'แพ้รวมต่อเดือน'],
   noPrice: 'ไม่มีราคาต่อกิโลของวัตถุดิบนี้ในฐาน จึงคิดเป็นเงินไม่ได้',
   priceHead: 'ราคาต่อกิโล',
@@ -905,6 +1017,7 @@ export const EQ_LAB_UI = {
 // หน้าคลังสูตร และประวัติการทดสอบ
 export const EQ_LIB_UI = {
   sub: 'ทุกสูตรที่มี · เคยทดสอบแล้วผลเป็นยังไง · สูตรไหนเหมาะกับสถานการณ์ไหน',
+  help: 'สถานะในคลังไม่มีผลกับค่าแนะนำ · "ส่งเข้าทดสอบ" = ให้สูตรนั้นเข้าไปแข่งในการ์ดแต่ละวัตถุดิบของหน้าแบบง่าย (ระบบทายย้อนหลังทุกวันเปิดที่มีข้อมูล ด้วยข้อมูลก่อนวันนั้นเท่านั้น ทำใหม่ทุกครั้งที่เปิดหน้า) ถ้าแม่นกว่าสูตรที่ใช้อยู่จะขึ้น "มีสูตรที่แม่นกว่า" ให้กดใช้แทน · อยากเลือกช่วงวันเอง ใช้ห้องทดสอบ',
   sums: [['ทั้งหมด', 'all'], ['ใช้งานจริง', 'live'], ['กำลังทดสอบ', 'testing'], ['สำรอง', 'bench'], ['ถูกคัดออก', 'dropped'], ['ตัวเทียบ', 'control']],
   filterHeads: ['กลุ่มสูตร', 'สถานะ', 'สถานการณ์ที่เหมาะ', 'ผลล่าสุด'],
   all: 'ทั้งหมด',
@@ -1561,19 +1674,14 @@ export const KITCHEN_UI = {
   prep: {
     meatTitle: 'ตารางเตรียมวัตถุดิบวันนี้',
     riceTitle: 'ตารางบันทึกการหุงข้าว',
-    meatCols: ['รายการ', 'แนะเตรียม', 'เตรียม', 'เบิกเพิ่ม', 'ทิ้ง/เสีย', 'คงเหลือสด', 'ใช้ไป'],
-    fcRange: 'พยากรณ์ {lo}–{hi}',
-    fcOne: 'พยากรณ์ {v}',
-    riceCols: ['หุงข้าว', 'พยากรณ์', 'รอบที่ 1', 'รอบที่ 2', 'รอบที่ 3', 'หุงรวม'],
+    meatCols: ['รายการ', 'เตรียม', 'เบิกเพิ่ม', 'ทิ้ง/เสีย', 'คงเหลือสด', 'ใช้ไป'],
+    riceCols: ['หุงข้าว', 'พยากรณ์ใช้', 'รอบที่ 1', 'รอบที่ 2', 'รอบที่ 3', 'หุงรวม'],
     unit: 'กก.',
     none: '—',
-    useNote: 'ใช้ไป = เตรียม + เบิกเพิ่ม + คงเหลือใช้ต่อของวันเปิดก่อนหน้า − ทิ้ง/เสีย − (คงเหลือสด + พระราม 9 ที่บวกกลับ) − อาหารปรุงสำเร็จเหลือวันนี้',
+    useNote: 'ใช้ไป = เตรียม + เบิกเพิ่ม + อาหารสุกยกมาจากวันเปิดก่อนหน้า − ทิ้ง/เสีย − คงเหลือสด − อาหารปรุงสำเร็จเหลือวันนี้ (ส่งพระราม 9 ไม่หัก)',
     why: { no_prep: 'ยังไม่เตรียม', open: 'ยังไม่ปิดยอด', cooked_open: 'รอยอดอาหารสุก', no_carry: 'ไม่มีข้อมูลของยกมา', conflict: 'ข้อมูลขัดกัน' },
-    carryStale: 'คงเหลือที่ใช้หักพยากรณ์เก่าเกิน 2 วันเปิด',
-    carryNoCooked: 'แนะเป้ายังไม่รวมอาหารสุกที่ยกมา (วันเปิดก่อนหน้ายังไม่บันทึกคงเหลือใช้ต่อ)',
     warnUnbound: 'เมนูที่ยังไม่ผูกวัตถุดิบ (ไม่นำมาคิด): {names}',
     warnConflict: 'ทิ้ง + กินเอง + ห่อกลับบ้าน มากกว่าเหลือ (ข้อมูลขัดกัน): {names}',
-    warnR9Unit: 'ส่งพระราม 9 ที่ต้องบวกกลับแต่ไม่มีน้ำหนักต่อหน่วย จับคู่หน่วยไม่ได้: {names}',
     riceQuote: 'ข้าวดี อาหารอร่อย\nพลังดีทั้งวัน',
     noRows: 'ยังไม่มีรายการในตารางนี้',
     editTitle: 'แก้ไขรายการนี้',
@@ -1647,12 +1755,21 @@ export const KITCHEN_UI = {
       chibi: 'assets/kitchen/chibi-pair.webp',
       quote: 'ทีมเวิร์กดี\nอร่อยได้ทุกวัน', script: 'เตรียมพร้อม\nทุกวัน',
       search: 'ค้นหาวัตถุดิบ...', col: 'รายการ', addRow: ''
+    },
+    eval: {
+      id: 'eval', kind: 'eval', tab: 'ประเมินผลการเตรียม', icon: 'assets/prep/ic3d-history.webp',
+      accent: '#2F63C9', tint: 'rgba(160, 196, 245, .45)',
+      title: 'ประเมินผลการเตรียมวัตถุดิบของพนักงาน', sub: 'เอาออกมาเตรียม เทียบกับที่ใช้ไปจริง',
+      bubble: 'เตรียมพอดี\nไม่เหลือทิ้ง', hero: 'assets/kitchen/hero-pair-prep.webp',
+      chibi: 'assets/kitchen/chibi-pair.webp',
+      quote: 'เตรียมพอดี\nลดของเหลือ', script: 'พอดี\nทุกวัน',
+      search: '', col: 'รายการ', addRow: ''
     }
   },
   // หน้าจอของแต่ละคน: ใครเป็นเจ้าของ · มีแท็บอะไรบ้าง (แท็บเตรียมอาหารใช้ร่วมกัน)
   pages: {
-    'emmy-count': { owner: 'emmy', name: 'เอมมี่', avatar: 'assets/kitchen/av-emmy.webp', tabs: ['veg', 'season', 'sauce', 'prep'] },
-    'ad-count': { owner: 'ad', name: 'อัด', avatar: 'assets/kitchen/av-ad.webp', tabs: ['meat', 'prep'] }
+    'emmy-count': { owner: 'emmy', name: 'เอมมี่', avatar: 'assets/kitchen/av-emmy.webp', tabs: ['veg', 'season', 'sauce', 'prep', 'eval'] },
+    'ad-count': { owner: 'ad', name: 'อัด', avatar: 'assets/kitchen/av-ad.webp', tabs: ['meat', 'prep', 'eval'] }
   },
   pairName: 'เอมมี่ + อัด',
   pairAvatar: 'assets/kitchen/av-pair.webp'
@@ -1730,8 +1847,14 @@ export const SOM_MY_UI = {
   },
   sections: [
     { id: 'stock', label: 'ภาษาพม่าสำหรับนับสต๊อก' },
-    { id: 'app', label: 'ภาษาพม่าสำหรับแปลแอป' }
+    { id: 'app', label: 'ภาษาพม่าในแอป' }
   ],
+  legend: [
+    { cls: 'sure', label: 'Claude แปลให้ · มั่นใจ' },
+    { cls: 'unsure', label: 'Claude แปลให้ · ไม่มั่นใจ ช่วยตรวจ' },
+    { cls: 'human', label: 'แก้แล้ว' }
+  ],
+  todoAi: 'เฉพาะที่ยังไม่ได้ตรวจ',
   search: 'ค้นหาคำไทย หรือคำพม่า...',
   todo: 'เฉพาะที่ยังไม่แปล',
   progress: 'แปลแล้ว {done} จาก {all}',
@@ -1772,24 +1895,54 @@ export const MY_TOGGLE_UI = {
   off: 'กลับเป็นไทยล้วนแล้ว'
 };
 
-// หมวดของข้อความที่ให้แปลในแอป (from = ชื่อชุดข้อความในไฟล์นี้ · ไม่รวมเกม)
-export const MY_APP_CATS = [
-  { id: 'main', label: 'เมนูหลัก / ใช้ร่วมทุกหน้า', from: ['APP_NAV', 'APP_UI', 'OTHER_UI', 'OTHER_CARDS', 'SPECIAL_UI', 'SPECIAL_CARDS', 'DATE_UI', 'CHART_UI', 'WORK_UI', 'LIST_EDIT_UI', 'FC_SYNC_UI'] },
-  { id: 'home', label: 'หน้าหลัก', from: ['HOME_UI', 'HOME_RICE_GROUPS'] },
-  { id: 'stock', label: 'สต๊อก / นับสต๊อก', from: ['STOCK_TABS', 'STOCK_ACTIONS', 'CAT_ALL', 'CAT_ICON_CHOICES', 'STOCK_STATUS', 'STOCK_ROW_TOOLS', 'FOOD_PHOTOS', 'STOCK_UNITS', 'STOCK_GROUPS', 'STOCK_LOCATIONS', 'STOCK_COUNT_UNITS', 'STOCK_ITEM_ACTIONS', 'STOCK_COUNT_UI'] },
-  { id: 'prep', label: 'เตรียม-เหลือ', from: ['PREP_TABS', 'PREP_HERO', 'PREP_FILTERS', 'PREP_NOTES', 'PREP_KPI', 'PREP_MEAT_COLS', 'PREP_RICE_COLS', 'PREP_RICE_EQ', 'PREP_CHART_SERIES', 'PREP_TIPS', 'PREP_UI', 'PREP_PEOPLE_LOOK'] },
-  { id: 'forecast', label: 'พยากรณ์ / สมการ Forecast', from: ['PREP_FC_UI', 'EQ_UI', 'EQ_SIMPLE', 'EQ_TABS', 'FC_FAMILY_TH', 'FC_STATUS_TH', 'FC_VERDICT_TH', 'FC_SOURCE_TH', 'FC_REGIME_TH', 'EQ_LAB_UI', 'EQ_LIB_UI', 'EQ_CFG_UI'] },
-  { id: 'work', label: 'หน้างานพนักงาน', from: ['MYWORK_UI', 'WORK_PAGES', 'FAH_UI', 'PACK_UI', 'CHICKEN_UI', 'COOKED_UI', 'INCOME_UI', 'LEAVE_UI', 'KITCHEN_UI', 'SOM_UI', 'SOM_MY_UI'] },
-  { id: 'r9', label: 'แม่พัน / พระราม 9', from: ['MAEPAN_UI', 'R9_PLACE', 'R9_TABS', 'R9_KPI', 'R9_SEND_COLS', 'R9_ROW_TOOLS', 'R9_RANGES', 'R9_STATUS', 'R9_EXPORTS', 'R9_UNITS', 'R9_PHOTOS', 'R9_CAT_ICONS', 'R9_UI', 'R9_SETUP_UI'] },
-  { id: 'assign', label: 'แบ่งงาน', from: ['ASSIGN_TASKS', 'ASSIGN_PREP_GROUPS', 'ASSIGN_PREP_META', 'ASSIGN_MENU_GROUP', 'ASSIGN_UI'] },
-  { id: 'recipe', label: 'สูตรอาหาร', from: ['RECIPE_SECTIONS', 'RECIPE_UI'] },
-  { id: 'attend', label: 'การมาทำงาน / โบนัส', from: ['ATTEND_UI'] },
-  { id: 'grab', label: 'Grab', from: ['GRAB_SETS', 'GRAB_UI'] },
-  { id: 'setting', label: 'ตั้งค่า / บัญชี / เพลง', from: ['SETTINGS_UI', 'ACCOUNT_ROLES', 'ACCOUNT_UI', 'MUSIC_UI'] }
+// แท็บของข้อความที่ให้แปลในแอป เรียงตามเมนูล่าง · groups = หมวดย่อย (กดเปิด/ปิด) · from = ชื่อชุดข้อความในไฟล์นี้ · ไม่รวมเกม
+export const MY_APP_TABS = [
+  { id: 'home', label: 'หน้าหลัก', groups: [
+    { id: 'shared', label: 'เมนูและปุ่มที่ใช้ทุกหน้า', from: ['APP_NAV', 'APP_UI', 'MY_TOGGLE_UI', 'DATE_UI', 'CHART_UI', 'WORK_UI', 'LIST_EDIT_UI', 'FC_SYNC_UI'] },
+    { id: 'home', label: 'หน้าหลัก', from: ['HOME_UI', 'HOME_RICE_GROUPS'] }
+  ] },
+  { id: 'staff', label: 'พนักงาน', groups: [
+    { id: 'mywork', label: 'งานของฉัน', from: ['MYWORK_UI', 'WORK_PAGES'] },
+    { id: 'fah', label: 'งานของฟ้า (กล่อง · อกไก่ · อาหารเหลือ · รายได้)', from: ['FAH_UI', 'PACK_UI', 'CHICKEN_UI', 'COOKED_UI', 'INCOME_UI'] },
+    { id: 'som', label: 'งานของส้ม', from: ['SOM_UI'] },
+    { id: 'translate', label: 'หน้าแปลภาษาพม่า', from: ['SOM_MY_UI', 'MY_APP_TABS'] },
+    { id: 'kitchen', label: 'ครัวพนักงาน (อัด · เอมมี่)', from: ['KITCHEN_UI'] },
+    { id: 'maepan', label: 'งานของแม่พัน', from: ['MAEPAN_UI'] },
+    { id: 'leave', label: 'บันทึกวันลา', from: ['LEAVE_UI'] }
+  ] },
+  { id: 'stock', label: 'สต๊อก', groups: [
+    { id: 'main', label: 'แท็บ · ปุ่ม · สถานะ', from: ['STOCK_TABS', 'STOCK_ACTIONS', 'STOCK_STATUS', 'STOCK_ROW_TOOLS', 'STOCK_ITEM_ACTIONS'] },
+    { id: 'unit', label: 'หมวด · หน่วย · ที่เก็บ', from: ['CAT_ALL', 'CAT_ICON_CHOICES', 'STOCK_UNITS', 'STOCK_GROUPS', 'STOCK_LOCATIONS', 'STOCK_COUNT_UNITS', 'FOOD_PHOTOS'] },
+    { id: 'count', label: 'หน้านับสต๊อก', from: ['STOCK_COUNT_UI'] }
+  ] },
+  { id: 'special', label: 'พิเศษ', groups: [
+    { id: 'main', label: 'ปุ่มพิเศษ', from: ['SPECIAL_UI', 'SPECIAL_CARDS'] },
+    { id: 'music', label: 'เพลง', from: ['MUSIC_UI'] }
+  ] },
+  { id: 'prep', label: 'เตรียม-เหลือ', groups: [
+    { id: 'main', label: 'แท็บ · หัวหน้า · ตัวกรอง', from: ['PREP_TABS', 'PREP_HERO', 'PREP_FILTERS', 'PREP_NOTES', 'PREP_KPI', 'PREP_TIPS'] },
+    { id: 'table', label: 'ตารางเนื้อสัตว์ · ข้าว', from: ['PREP_MEAT_COLS', 'PREP_RICE_COLS', 'PREP_RICE_EQ', 'PREP_CHART_SERIES', 'PREP_UI', 'PREP_PEOPLE_LOOK'] },
+    { id: 'fc', label: 'ค่าแนะนำ / พยากรณ์', from: ['PREP_FC_UI'] },
+    { id: 'eval', label: 'ประเมินผลการเตรียม', from: ['PREP_EVAL_UI'] }
+  ] },
+  { id: 'rama9', label: 'พระราม9', groups: [
+    { id: 'main', label: 'แท็บ · สรุป · สถานะ', from: ['R9_PLACE', 'R9_TABS', 'R9_KPI', 'R9_STATUS', 'R9_RANGES'] },
+    { id: 'send', label: 'ตารางส่งของ', from: ['R9_SEND_COLS', 'R9_ROW_TOOLS', 'R9_UNITS', 'R9_UI', 'R9_EXPORTS'] },
+    { id: 'items', label: 'รายการของ · หมวด', from: ['R9_PHOTOS', 'R9_CAT_ICONS', 'R9_SETUP_UI'] }
+  ] },
+  { id: 'other', label: 'อื่นๆ', groups: [
+    { id: 'menu', label: 'เมนูอื่นๆ', from: ['OTHER_UI', 'OTHER_CARDS'] },
+    { id: 'assign', label: 'แบ่งงาน', from: ['ASSIGN_TASKS', 'ASSIGN_PREP_GROUPS', 'ASSIGN_PREP_META', 'ASSIGN_MENU_GROUP', 'ASSIGN_UI'] },
+    { id: 'recipe', label: 'สูตรอาหาร', from: ['RECIPE_SECTIONS', 'RECIPE_UI'] },
+    { id: 'attend', label: 'วันลา · โบนัส', from: ['ATTEND_UI'] },
+    { id: 'grab', label: 'Grab', from: ['GRAB_SETS', 'GRAB_UI'] },
+    { id: 'eq', label: 'สมการ Forecast', from: ['EQ_UI', 'EQ_SIMPLE', 'EQ_TABS', 'FC_FAMILY_TH', 'FC_STATUS_TH', 'FC_VERDICT_TH', 'FC_SOURCE_TH', 'FC_REGIME_TH', 'EQ_LAB_UI', 'EQ_LIB_UI', 'EQ_CFG_UI', 'EQ_ADMIN_UI'] },
+    { id: 'setting', label: 'ตั้งค่า · บัญชี', from: ['SETTINGS_UI', 'ACCOUNT_ROLES', 'ACCOUNT_UI'] }
+  ] }
 ];
 
 // ช่องในชุดข้อความที่เป็นรหัส/ค่าที่ใช้คำนวณ ไม่ใช่ข้อความบนจอ (ไม่เอามาให้แปล)
-export const MY_SKIP_KEYS = ['id', 'grp', 'job', 'value', 'owner', 'resp', 'responsibility', 'target', 'entry', 'source', 'type', 'page', 'goto', 'icon', 'photo', 'image', 'char', 'avatar', 'hero', 'noteChar', 'color', 'tint', 'border', 'key', 'item'];
+export const MY_SKIP_KEYS = ['id', 'grp', 'job', 'value', 'owner', 'resp', 'responsibility', 'target', 'entry', 'source', 'type', 'page', 'goto', 'icon', 'photo', 'image', 'char', 'avatar', 'hero', 'noteChar', 'color', 'tint', 'border', 'key', 'item', 're', 'side', 'addon'];
 
 // หน้าที่ไม่ใส่ภาษาพม่ากำกับ แม้เปิดสวิตช์ (เกม)
 export const MY_SKIP_PAGES = ['village'];
@@ -1823,7 +1976,6 @@ export const PACK_UI = {
 
 // หน้าเตรียมอกไก่นุ่ม
 export const CHICKEN_UI = {
-  recLabel: 'ควรเตรียม',
   item: 'meat_chicken_soft',
   fields: [
     { f: 'prep', label: 'เตรียม', icon: 'assets/prep/ic3d-prep.webp' },
@@ -1995,6 +2147,8 @@ export const LIST_EDIT_UI = {
   close: 'เสร็จ',
   fName: 'ชื่อ',
   fNameHint: 'เช่น อกไก่นุ่ม(ปรุงสำเร็จ)',
+  fGroup: 'หมวดย่อยบนหน้าเตรียม (พิมพ์ชื่อหมวดเดิม หรือชื่อใหม่เพื่อแยกหมวดเพิ่ม)',
+  fGroupHint: 'เช่น ไก่ · เนื้อ / หมู / เป็ด · ปลาและอาหารทะเล',
   fUnit: 'หน่วย',
   fProtein: 'วัตถุดิบหลักของเมนู',
   noProtein: '— ไม่ผูกวัตถุดิบ —',

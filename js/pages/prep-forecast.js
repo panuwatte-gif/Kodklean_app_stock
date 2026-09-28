@@ -14,7 +14,6 @@ const dash = v => (v === null || v === undefined ? '—' : weightBig(v));
 const banner = (t, tone) => `<p class="ptab__footnote" style="white-space:normal;border-radius:10px;padding:8px 10px;${tone === 'warn' ? 'color:#8A1F17;background:#FDECEA' : 'color:#8A5A12;background:#FDF3E2'}">${t}</p>`;
 
 let seq = 0;               // กันผลของคำขอเก่ามาทับเมื่อเปลี่ยนวันระหว่างโหลด
-const written = new Set(); // วันที่เขียนผลพยากรณ์ไปแล้วในรอบเปิดแอปนี้
 
 // การ์ดตัวชี้วัด 4 ใบ (ความแม่นยำมาจาก kk_forecast_daily เท่านั้น เติมทีหลังเมื่อโหลดเสร็จ)
 function kpiHtml(fc, date) {
@@ -22,7 +21,7 @@ function kpiHtml(fc, date) {
     { label: PREP_FC_UI.kpi.count, big: String(fc.rows.length), sub: 'รายการ', c: '#1E7A3C', t: '#EAF6EC', b: '#CFE8D3' },
     { id: 'fc-acc', label: PREP_FC_UI.kpi.accuracy, big: '…', sub: PREP_FC_UI.liveLoading, small: true, c: '#B4741B', t: '#FDF3E2', b: '#F3E0BD' },
     { label: PREP_FC_UI.kpi.days, big: '10 วัน', sub: 'วันเปิดร้านล่าสุด', c: '#2F63C9', t: '#EAF1FD', b: '#CFDDF5' },
-    { label: PREP_FC_UI.kpi.date, big: dayLongTh(date), sub: 'ตามวันที่เลือกด้านบน', small: true, c: '#2F63C9', t: '#EAF1FD', b: '#CFDDF5' }
+    { label: PREP_FC_UI.kpi.date, big: dayLongTh(date), sub: 'วันเปิดถัดไปของวันที่เลือก', small: true, c: '#2F63C9', t: '#EAF1FD', b: '#CFDDF5' }
   ];
   return `<div class="fc-kpi">${cards.map(k => `
     <div class="fc-kpi__card"${k.id ? ` id="${k.id}"` : ''} style="--c:${k.c};--t:${k.t};--b:${k.b}">
@@ -96,13 +95,12 @@ function paintLive(fc, st, notes) {
     + (a.n ? '' : backtestHtml(fc));
 }
 
-// บันทึกผลพยากรณ์ของวันนี้/วันเปิดถัดไปครั้งเดียวต่อรอบเปิดแอป (หน้าเตรียมเรียกทุกครั้งที่โหลด ไม่ต้องเปิดแท็บพยากรณ์) — คืนข้อความแจ้ง
+// บันทึกผลพยากรณ์ของวันนี้/วันเปิดถัดไป (ทีละวัตถุดิบ เฉพาะตัวที่วันเปิดก่อนหน้ามีใช้จริงแล้ว · data.recordFcDaily กันซ้ำเอง) — คืนข้อความแจ้ง
 export async function saveFcDailyOnce(fc, date) {
   const notes = [], today = todayIso();
-  if (!fc || !(date === today || date === nextOpenIso(today)) || written.has(date) || fc.cfgBad.length) return notes;
+  if (!fc || fc.closed || date < today || date > nextOpenIso(today) || fc.cfgBad.length) return notes;
   try {
     const { added, noBand } = await recordFcDaily(fc, date, SCENARIO);
-    written.add(date);
     if (noBand.length) notes.push(banner(fillText(PREP_FC_UI.liveNoBand, { names: noBand.join(', ') })));
     if (added.length) notes.push(banner(fillText(PREP_FC_UI.liveSaved, { d: dayShort(date), n: added.length })));
   } catch { notes.push(banner(PREP_FC_UI.liveFail, 'warn')); }

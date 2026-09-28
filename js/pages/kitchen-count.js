@@ -4,7 +4,8 @@ import { todayIso, getCountItemsByGroup, getCountHistory, saveStockCounts, getSt
 import { KITCHEN_UI as T } from '../shared/config.js';
 import { ktTopHtml, ktHeroHtml, ktTabsHtml, ktToolsHtml, ktTableHtml, ktQuoteHtml, ktFootHtml } from './kitchen-rows.js';
 import { loadPrepDay, prepBodyHtml, savePrepCell } from './kitchen-prep.js';
-import { toast, pickerSheet, handleDatePick, formSheet } from '../shared/ui.js';
+import { toast, pickerSheet, handleDatePick, handleDateClick, formSheet } from '../shared/ui.js';
+import { evalBodyHtml, mountEval } from '../shared/prep-eval.js';
 import { itemActions } from './stock-form.js';
 import { staffCode } from '../shared/auth.js';
 import { fillText } from '../shared/format.js';
@@ -20,7 +21,7 @@ export function mountKitchenPage(root, onGo, pageId) {
   let person = { name: page.name, avatar: page.avatar };
 
   // แท็บเตรียมอาหารเป็นงานร่วมของสองคน จึงขึ้นชื่อคู่
-  const whoOf = () => (tabOf().kind === 'prep' ? { name: T.pairName, avatar: T.pairAvatar } : person);
+  const whoOf = () => (tabOf().kind === 'prep' || tabOf().kind === 'eval' ? { name: T.pairName, avatar: T.pairAvatar } : person);
   const shown = () => rows.filter(r => !state.q || r.name.includes(state.q));
   const filled = () => rows.filter(r => r.qty !== null && r.qty !== undefined && r.qty !== '').length;
 
@@ -30,12 +31,16 @@ export function mountKitchenPage(root, onGo, pageId) {
       ? { done: 0, total: 0, dirty: Object.keys(dirty).length }
       : { done: filled(), total: rows.length, dirty: Object.keys(dirty).length };
     el('#k-foot').innerHTML = ktFootHtml(stat, tab.kind === 'prep' ? T.savePrep : T.save);
+    el('#k-foot').hidden = tab.kind === 'eval';   // แท็บประเมินผลอ่านอย่างเดียว
   };
 
   const drawBody = () => {
     const tab = tabOf();
     if (tab.kind === 'prep') {
-      el('#k-body').innerHTML = model ? prepBodyHtml(model, state.q) : `<p class="kempty">${loaded ? T.loadError : T.loading}</p>`;
+      el('#k-body').innerHTML = model ? prepBodyHtml(model, state.q, state.date) : `<p class="kempty">${loaded ? T.loadError : T.loading}</p>`;
+    } else if (tab.kind === 'eval') {
+      el('#k-body').innerHTML = model ? evalBodyHtml() : `<p class="kempty">${loaded ? T.loadError : T.loading}</p>`;
+      if (model) mountEval(el('#k-body'), [...model.meatRows, ...model.riceRows]);   // ลำดับเดียวกับตารางเตรียม
     } else {
       el('#k-body').innerHTML = ktTableHtml(shown(), tab, rows.length ? T.emptyFind : (loaded ? T.empty : T.loading));
     }
@@ -50,7 +55,7 @@ export function mountKitchenPage(root, onGo, pageId) {
     el('#k-hero').innerHTML = ktHeroHtml(tab, state.date);
     el('#k-tabs').innerHTML = ktTabsHtml(tabs, state.tab);
     el('#k-tools').innerHTML = ktToolsHtml(state, tab);
-    el('#k-tools').hidden = tab.kind === 'prep';
+    el('#k-tools').hidden = tab.kind === 'prep' || tab.kind === 'eval';
     el('#k-quote').innerHTML = ktQuoteHtml(tab);
     drawBody();
   };
@@ -59,7 +64,7 @@ export function mountKitchenPage(root, onGo, pageId) {
   const load = async () => {
     const tab = tabOf();
     try {
-      if (tab.kind === 'prep') { model = await loadPrepDay(state.date); }
+      if (tab.kind === 'prep' || tab.kind === 'eval') { model = await loadPrepDay(state.date); }
       else {
         const all = await getCountItemsByGroup(tab.grp);
         const items = tab.pick ? all.filter(i => i.id.startsWith(tab.pick)) : all;
@@ -161,6 +166,7 @@ export function mountKitchenPage(root, onGo, pageId) {
     if (row) return more(row.dataset.more);
     if (event.target.closest('[data-save]')) return save();
     if (event.target.closest('[data-back]')) return onGo('staff');
+    if (await handleDateClick(event, state)) { model = null; dirty = {}; loaded = false; draw(); return load(); }
   });
 
   root.addEventListener('input', event => {
@@ -177,7 +183,7 @@ export function mountKitchenPage(root, onGo, pageId) {
   });
 
   root.addEventListener('change', async event => {
-    if (event.target.matches('#kt-date-pick') && await handleDatePick(event.target.value, state)) { draw(); load(); }
+    if (event.target.matches('#kt-date-pick, #kp-date-pick') && await handleDatePick(event.target.value, state)) { model = null; dirty = {}; loaded = false; draw(); load(); }
   });
 }
 

@@ -8,6 +8,7 @@ import { dayLongTh, shiftIso } from '../shared/format.js';
 import { heroHtml, noticesHtml, prepCard, riceCard } from './home-top.js';
 import { usageCard, leftoverCard } from './home-usage.js';
 import { savingsCard, salesCard, r9Card } from './home-money.js';
+import { groupRow } from './home-group.js';
 
 // หน้าหลักวางเลย์เอาต์ที่ความกว้าง 794 (= แบบอ้างอิง 2x) แล้วย่อทั้งหน้าลงให้เท่าความกว้างจอจริง
 function fitHomeWidth(root) {
@@ -45,6 +46,7 @@ export async function mountHomePage(root, onGo) {
     usage: () => usageCard(data.usage, ui),
     left: () => leftoverCard(data.left, meta, ui),
     save: () => savingsCard(data.save),
+    group: () => groupRow(data.sales, data.r9),
     sales: () => salesCard(data.sales, ui, !!live && isAdmin()),
     r9: () => r9Card(data.r9)
   };

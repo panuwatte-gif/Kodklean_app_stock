@@ -1,16 +1,17 @@
 // ชิ้นส่วนหน้าจอที่ใช้ซ้ำทั้งแอป — เมนูล่าง 7 ปุ่ม + การ์ดกระจก + แผงถาม + ชุดไอคอนเส้น
-import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, DATE_UI, CHART_UI, MENU_PHOTOS, PREP_UI } from './config.js';
-import { fillText, dayLongTh, shiftIso } from './format.js';
+import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, DATE_UI, CHART_UI, MENU_PHOTOS, PREP_UI, PREP_GROUP_ICONS } from './config.js';
+import { fillText, dayLongTh, shiftIso, dayShort } from './format.js';
 import { todayIso } from './data.js';
 
 // รูปประจำรายการวัตถุดิบ (ชุดเดียวกันทุกหน้า)
 export const itemPhoto = item => (item && item.photo) || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
 
-// ป้ายค่าแนะนำใต้ชื่อ (ใช้ทั้งแท็บเนื้อสัตว์และข้าว): ตัวเลขใหญ่ชัด + ช่วง · ยังพยากรณ์ไม่ได้ = บอกตรงๆ
-export function recHtml(rec, label) {
-  if (!rec) return `<span class="ptab__rec ptab__rec--none">${PREP_UI.recNone}</span>`;
-  const range = !rec.sat && rec.lo !== null && rec.lo !== undefined && rec.lo !== rec.hi ? ` <i>(${rec.lo}–${rec.hi})</i>` : '';
-  return `<span class="ptab__rec">${label} <b>${rec.t}</b> กก.${range}${rec.sat ? ` <i>· ${PREP_UI.recSat}</i>` : ''}</span>`;
+// ป้ายพยากรณ์ใต้ชื่อรายการ (ใช้ทุกหน้าเตรียม): พยากรณ์ใช้ Y กก. (ต่ำ–สูง) · ไม่มีกรอบ = แสดงแค่ Y · วันอาทิตย์ = ร้านปิด · ไม่มีค่า = ป้ายสั้นตามเหตุ (why)
+export function fcHtml(day, closed, why) {
+  if (closed) return `<span class="ptab__rec ptab__rec--none">${PREP_UI.fcClosed}</span>`;
+  if (!day) return `<span class="ptab__rec ptab__rec--none">${why || PREP_UI.fcNoCalc}</span>`;
+  const band = day.lo !== null && day.lo !== undefined && day.hi !== null && day.hi !== undefined && day.lo !== day.hi ? ` <i>(${day.lo}–${day.hi})</i>` : '';
+  return `<span class="ptab__rec ptab__rec--line">${PREP_UI.fcLabel} <b class="ptab__rec-fc">${day.fc}</b> ${PREP_UI.fcUnit}${band}</span>`;
 }
 
 // รูปประจำเมนู: รูปที่อัพไว้ในฐาน > รูปตั้งต้นของเมนู > รูปจานกลาง
@@ -473,6 +474,27 @@ export function axisBarChart({ labels, series, ticks, unit = '', mean = null, me
     <div class="ch__x">${labels.map(l => `<em>${l}</em>`).join('')}</div></div>`;
 }
 
+// กราฟแท่งซ้อนรายวัน (SVG): labels = ป้ายแกน X, stacks = [{ color, values }] ค่าต่อวัน (days[i] = null ทั้งวัน = ไม่มีข้อมูล ไม่วาดแท่ง), mean = เส้นประค่าเฉลี่ย
+export function stackBarChart({ labels, stacks, ticks, fmt = v => String(v), every = 5, mean = null }) {
+  if (!labels.length || !stacks.some(s => s.values.some(v => v))) return `<div class="ch ch--empty">${CHART_UI.noData}</div>`;
+  const W = 340, H = 168, L = 34, R = 4, T = 8, B = 22, n = labels.length, bw = (W - L - R) / n;
+  const top = ticks[ticks.length - 1] || 1, y = v => T + (H - T - B) * (1 - Math.min(v, top) / top);
+  const grid = ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}" stroke="#E6ECE9"/><text x="${L - 5}" y="${(y(t) + 3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#667B83">${fmt(t)}</text>`).join('');
+  const bars = labels.map((l, i) => {
+    let acc = 0;
+    return stacks.map(s => {
+      const v = Number(s.values[i]) || 0;
+      if (v <= 0) return '';
+      const r = `<rect x="${(L + i * bw + bw * 0.14).toFixed(1)}" y="${y(acc + v).toFixed(1)}" width="${(bw * 0.72).toFixed(1)}" height="${(y(acc) - y(acc + v)).toFixed(1)}" fill="${s.color}"><title>${l} · ${s.name || ''} ${fmt(v)}</title></rect>`;
+      acc += v;
+      return r;
+    }).join('');
+  }).join('');
+  const xs = labels.map((l, i) => (i % every === 0 || i === n - 1) && (i === n - 1 || n - 1 - i >= every / 2) ? `<text x="${(L + (i + 0.5) * bw).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="#667B83">${l}</text>` : '').join('');
+  const m = mean === null ? '' : `<line x1="${L}" x2="${W - R}" y1="${y(mean).toFixed(1)}" y2="${y(mean).toFixed(1)}" stroke="#123F35" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  return `<div class="ch"><svg class="lc" viewBox="0 0 ${W} ${H}" role="img" font-family="Sarabun, sans-serif">${grid}${bars}${m}${xs}</svg></div>`;
+}
+
 // กราฟเส้นสะสมมีแกน Y (SVG): labels = แกน X, series = [{ name, color, values }], ticks = ค่าแกน Y, fmt = แปลงตัวเลขบนป้าย
 export function axisLineChart({ labels, series, ticks, unit = '', fmt = v => String(v) }) {
   // ยังไม่มีข้อมูลสักจุด = ไม่วาดกราฟ (บอกตรงๆ ว่ายังไม่มี ห้ามวาดเส้นศูนย์)
@@ -727,4 +749,10 @@ export function enableDragScroll(host = document) {
     box.scrollLeft += e.deltaY;
     e.preventDefault();
   }, { passive: false });
+}
+
+// หัวหมวดย่อยในตารางเตรียม (ชื่อหมวดจาก kk_count_item.prep_group · ไอคอนจาก config ถ้ามี)
+export function prepGroupHeadHtml(label, cls = 'ptab__group') {
+  const icon = PREP_GROUP_ICONS[label];
+  return `<div class="${cls}">${icon ? `<img src="${icon}" alt="" width="20" height="20" loading="lazy" decoding="async">` : ''}${label}</div>`;
 }

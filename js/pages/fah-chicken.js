@@ -1,10 +1,8 @@
 // หน้าเตรียมอกไก่นุ่ม — ใช้ข้อมูลและสูตรชุดเดียวกับหน้าเตรียม-เหลือ (kk_prep_log ผ่าน calc.js)
-import { todayIso, getPrepBundle, savePrep, getPrepHistory } from '../shared/data.js';
+import { todayIso, getPrepRecs, savePrep, getPrepHistory } from '../shared/data.js';
 import { WORK_UI, CHICKEN_UI as T, PREP_ENTRY } from '../shared/config.js';
 import { workFrame, workDateHtml, workStatsHtml, workNoteHtml, workHistorySheet } from '../shared/work-ui.js';
-import { itemPhoto, toast, handleDateClick, handleDatePick, glyph, recHtml } from '../shared/ui.js';
-import { buildPrepModel } from '../shared/calc.js';
-import { buildForecast, applyRecs } from '../shared/forecast.js';
+import { itemPhoto, toast, handleDateClick, handleDatePick, glyph, fcHtml } from '../shared/ui.js';
 import { manageList, manageBtnHtml } from '../shared/list-edit.js';
 import { staffCode } from '../shared/auth.js';
 import { weightOrDash, dayShort } from '../shared/format.js';
@@ -30,7 +28,7 @@ function itemHtml(row) {
   return `
     <section class="wcard wrow">
       <span class="wrow__thumb"><img src="${itemPhoto(row)}" alt="" width="46" height="46" decoding="async"></span>
-      <span class="wrow__name">${row.name}${recHtml(row.rec, T.recLabel)}</span>
+      <span class="wrow__name">${row.name}${fcHtml(row.fcDay, row.closed, row.fcWhy)}</span>
       <span class="wrow__unit">${row.unit}</span>
     </section>`;
 }
@@ -70,8 +68,7 @@ export function mountChickenPage(root, onGo) {
 
   const load = async () => {
     try {
-      const b = await getPrepBundle(state.date);
-      const model = applyRecs(buildPrepModel(b), buildForecast(b.items, b.logsFc, state.date, b.cfg), b.logsFc, state.date);
+      const { model } = await getPrepRecs(state.date);   // ชุดเดียวกับหน้าเตรียม-เหลือ
       row = model.meatRows.find(r => r.id === T.item) || null;
       hasLeft = model.conv.filled > 0;   // มีเมนูที่กรอกของเหลือแล้วอย่างน้อย 1 เมนู
       draft = {};

@@ -1,11 +1,11 @@
 // หน้าสมการ Forecast แบบอ่านง่าย: วัตถุดิบละ 1 การ์ด — ใช้สูตรอะไร แม่นแค่ไหน มีสูตรที่แม่นกว่าไหม กดเปลี่ยนได้ทันที
 import { EQ_SIMPLE as T } from '../shared/config.js';
-import { buildSeries, runAll, evalFormula, bandOf } from '../shared/fclab.js';
-import { dailyStats } from '../shared/forecast.js';
+import { buildSeries, runAll, bandOf, bandLabel, advanceFormulas } from '../shared/fclab.js';
+import { liveTestOf, liveDailyOf } from '../shared/forecast.js';
 import { setFcModelSafe, addFcFormulas, refreshFcDaily } from '../shared/data.js';
 import { itemPhoto, pickerSheet, confirmSheet, formSheet, toast } from '../shared/ui.js';
 import { isAdmin } from '../shared/auth.js';
-import { fillText, escHtml } from '../shared/format.js';
+import { fillText, escHtml, kgOrG } from '../shared/format.js';
 
 const view = { grp: 'เนื้อสัตว์' };
 const cache = {};   // ผลทดสอบทุกสูตรต่อวัตถุดิบ (คิดครั้งเดียวต่อการโหลดข้อมูล)
@@ -16,14 +16,22 @@ function pillOf(pct, enough) {
   return pct >= T.good ? { cls: 'good', text: T.pill.good } : pct >= T.ok ? { cls: 'ok', text: T.pill.ok } : { cls: 'bad', text: T.pill.bad };
 }
 
-// ตัวเลข % + คำอธิบายใต้ตัวเลข (ยังไม่มีผล = ขีด)
-const scoreBox = (pct, sub) => `<div class="eqs-score__box"><b>${pct === null || pct === undefined ? '–' : pct + '%'}</b><small>${sub}</small></div>`;
+// ตารางผลทดสอบกับข้อมูลจริง 6/30/90 วันเปิดล่าสุด: win % · loss เฉลี่ย (วันที่หลุดกรอบ) · loss สูงสุด
+function liveTableHtml(it, res, head) {
+  const cell = v => `<span style="text-align:center">${v}</span>`;
+  const headRow = `<div class="eqs-live__row eqs-live__row--head">${T.liveCols.map(cell).join('')}</div>`;
+  const rows = T.liveWindows.map(w => {
+    const r = res && res[w];
+    const label = `${fillText(T.liveWin, { n: w })}${r && r.n < w ? `<small>${fillText(T.liveGot, { n: r.n })}</small>` : ''}`;
+    return `<div class="eqs-live__row"><span>${label}</span>${r ? cell(`<b>${r.win}%</b>`) + cell(kgOrG(r.lossAvg)) + cell(kgOrG(r.lossMax)) : `<span style="grid-column:span 3;text-align:center;color:#A9AFB8">${T.liveNone}</span>`}</div>`;
+  }).join('');
+  return `<div class="eqs-live"><small>${head}${it.bandText ? ' · ' + fillText(T.bandLabel, { b: it.bandText }) : ''}</small>${headRow}${rows}</div>`;
+}
 
-// การ์ดวัตถุดิบ 1 ใบ (ส่วน "มีสูตรที่แม่นกว่า" เติมทีหลังเมื่อคิดเสร็จ)
+// การ์ดวัตถุดิบ 1 ใบ (ส่วน "มีสูตรที่แม่นกว่า" เติมทีหลังเมื่อคิดเสร็จ) · ป้ายสถานะดูจากผล 30 วัน
 function cardHtml(it) {
-  const bt = it.back, lv = it.live;
-  const liveOk = lv && lv.enough;
-  const p = pillOf(liveOk ? lv.win : bt.winRate, liveOk || bt.enough);
+  const r30 = it.test && it.test[30];
+  const p = pillOf(r30 ? r30.win : null, !!r30 && r30.n >= T.liveWindows[1]);
   return `
     <article class="eqs-card" data-item="${it.id}">
       <header class="eqs-card__head">
@@ -32,10 +40,8 @@ function cardHtml(it) {
         <span class="eqs-pill eqs-pill--${p.cls}">${p.text}</span>
       </header>
       <div class="eqs-now"><small>${T.nowLabel}</small><b>${escHtml(it.f ? it.f.name_th : T.noFormula)}</b></div>
-      <div class="eqs-score">
-        ${scoreBox(bt.winRate, bt.n ? fillText(T.backSub, { n: bt.n }) : T.noBack)}
-        ${scoreBox(lv && lv.n ? lv.win : null, lv && lv.n ? fillText(T.liveSub, { n: lv.n }) : T.noLive)}
-      </div>
+      ${liveTableHtml(it, it.real, T.realHead)}
+      ${liveTableHtml(it, it.test, T.liveHead)}
       <div class="eqs-better" data-better="${it.id}"><small>${T.checking}</small></div>
       ${isAdmin() ? `<button class="eqs-btn" type="button" data-pick-f="${it.id}">${T.pickBtn}</button>` : ''}
     </article>`;
@@ -53,28 +59,31 @@ function betterHtml(it, rows) {
   }
   return `<small class="eqs-better__ok">${bt(it) ? T.bestNow : T.notEnough}</small>`;
 }
-const bt = it => it.back.enough;
+const bt = it => !!(it.test && it.test[30] && it.test[30].n >= 20);
 
 // ข้อมูลของทุกวัตถุดิบที่มีสูตร (กลุ่มตาม kk_count_item.grp)
-function itemsOf(data, stats) {
-  const reg = {};
+function itemsOf(data, daily) {
+  const reg = {}, adv = {};
   data.formulas.forEach(f => { reg[f.formula_code] = f; });
+  advanceFormulas(data.formulas).forEach(f => { adv[f.formula_code] = f; });   // สูตรยอดขายใช้โหมดล่วงหน้า เหมือนตอนแนะนำจริง
   return data.map.filter(m => m.active !== false && m.model_type === 'model').map(m => {
     const info = data.prices[m.item_id] || {};
     const series = buildSeries(data.history, m.item_id, data.cfg);
     const f = reg[m.formula_code] || null;
-    const back = f ? evalFormula(series, f, data.cfg, reg, bandOf(data.cfg, m, f)) : { winRate: null, n: 0, enough: false };
-    return { id: m.item_id, name: info.name || m.item_name_th, grp: info.grp, code: m.formula_code, f, m, series, back, live: stats.items[m.item_id] || null };
+    const band = bandOf(data.cfg);
+    const test = f ? liveTestOf(series, adv[m.formula_code] || f, data.cfg, adv, band, T.liveWindows) : null;
+    const real = daily ? liveDailyOf(daily, m.item_id, T.liveWindows) : null;
+    return { id: m.item_id, name: info.name || m.item_name_th, grp: info.grp, code: m.formula_code, f, m, series, test, real, bandText: bandLabel(band) };
   });
 }
 
 // วาดทั้งหน้า แล้วคิดสูตรที่แม่นกว่าทีละวัตถุดิบ (ไม่ให้จอค้าง)
 export async function mountSimple(pane, data, reload) {
-  let stats = { items: {} };
+  let daily = null;
   const draw = () => {
-    const items = itemsOf(data, stats).filter(i => i.grp === view.grp);
+    const items = itemsOf(data, daily).filter(i => i.grp === view.grp);
     pane.innerHTML = `
-      <section class="eqs-intro"><b>${T.introHead}</b><p>${T.intro}</p><p class="eqs-intro__eg">${T.introEg}</p></section>
+      <section class="eqs-intro"><b>${T.introHead}</b><p>${T.intro}</p><p class="eqs-intro__eg">${T.introEg}</p><p>${T.realHow}</p><p>${T.liveHow}</p><p class="eqs-intro__eg">${T.liveNote}</p></section>
       <div class="eqs-seg">${T.groups.map(g => `<button type="button" class="${g.grp === view.grp ? 'is-on' : ''}" data-grp="${g.grp}">${g.label}</button>`).join('')}</div>
       ${items.length ? items.map(cardHtml).join('') : `<p class="ptab__none">${T.empty}</p>`}
       <p class="eqs-foot">${T.foot}</p>`;
@@ -82,7 +91,7 @@ export async function mountSimple(pane, data, reload) {
     const next = () => {
       if (i >= items.length || !pane.isConnected) return;
       const it = items[i++];
-      cache[it.id] = cache[it.id] || runAll(it.series, data.formulas, data.cfg, it.m);
+      cache[it.id] = cache[it.id] || runAll(it.series, data.formulas, data.cfg);
       const box = pane.querySelector(`[data-better="${it.id}"]`);
       if (box) box.innerHTML = betterHtml(it, cache[it.id]);
       setTimeout(next, 0);
@@ -91,7 +100,7 @@ export async function mountSimple(pane, data, reload) {
     return items;
   };
   let items = draw();
-  refreshFcDaily(data.cfg).then(daily => { stats = dailyStats(daily, data.cfg); items = draw(); }).catch(() => {});
+  refreshFcDaily(data.cfg).then(rows => { daily = rows; items = draw(); }).catch(() => {});   // ผลใช้งานจริง (เติมผลจริงล่าสุดก่อนอ่าน)
 
   // เปลี่ยนสูตรของวัตถุดิบ (กันชนด้วยเวลาที่อ่านมา) แล้วโหลดใหม่ทุกแท็บ
   const apply = async (it, code) => {
@@ -108,7 +117,7 @@ export async function mountSimple(pane, data, reload) {
 
   // เลือกสูตรเอง: เรียงตาม % แม่นย้อนหลัง · สูตรเฉลี่ยกลุ่มวัน ปรับจำนวนวันย้อนหลังได้ (สร้างสูตรลูกให้อัตโนมัติ)
   const pick = async it => {
-    const rows = cache[it.id] || (cache[it.id] = runAll(it.series, data.formulas, data.cfg, it.m));
+    const rows = cache[it.id] || (cache[it.id] = runAll(it.series, data.formulas, data.cfg));
     const code = await pickerSheet({ title: fillText(T.pickTitle, { item: it.name }), options: rows.filter(r => !r.nowcast).map(r => ({
       value: r.code, label: `${r.code === it.code ? '✓ ' : ''}${r.name} · ${r.winRate === null ? T.noScore : fillText(T.pickScore, { w: r.winRate, n: r.n })}`
     })) });

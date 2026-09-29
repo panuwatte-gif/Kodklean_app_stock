@@ -6,12 +6,13 @@ import { todayIso } from './data.js';
 // รูปประจำรายการวัตถุดิบ (ชุดเดียวกันทุกหน้า)
 export const itemPhoto = item => (item && item.photo) || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
 
-// ป้ายพยากรณ์ใต้ชื่อรายการ (ใช้ทุกหน้าเตรียม): พยากรณ์ใช้ Y กก. (ต่ำ–สูง) · ไม่มีกรอบ = แสดงแค่ Y · วันอาทิตย์ = ร้านปิด · ไม่มีค่า = ป้ายสั้นตามเหตุ (why)
+// ป้ายพยากรณ์เหนือช่องกรอก (ใช้ทุกหน้าเตรียม): แนะนำเตรียมในช่วง ต่ำ–สูง กก. · แนะนำ Y กก. · ไม่มีกรอบ = แสดงแค่ Y · วันอาทิตย์ = ร้านปิด · ไม่มีค่า = ป้ายสั้นตามเหตุ (why)
 export function fcHtml(day, closed, why) {
   if (closed) return `<span class="ptab__rec ptab__rec--none">${PREP_UI.fcClosed}</span>`;
   if (!day) return `<span class="ptab__rec ptab__rec--none">${why || PREP_UI.fcNoCalc}</span>`;
-  const band = day.lo !== null && day.lo !== undefined && day.hi !== null && day.hi !== undefined && day.lo !== day.hi ? ` <i>(${day.lo}–${day.hi})</i>` : '';
-  return `<span class="ptab__rec ptab__rec--line">${PREP_UI.fcLabel} <b class="ptab__rec-fc">${day.fc}</b> ${PREP_UI.fcUnit}${band}</span>`;
+  const hasBand = day.lo !== null && day.lo !== undefined && day.hi !== null && day.hi !== undefined && day.lo !== day.hi;
+  const band = hasBand ? `<span>${PREP_UI.fcRange} <b>${day.lo}–${day.hi}</b> ${PREP_UI.fcUnit}</span><i>·</i>` : '';
+  return `<span class="ptab__rec ptab__rec--line">${band}<span>${PREP_UI.fcLabel} <b class="ptab__rec-fc">${day.fc}</b> ${PREP_UI.fcUnit}</span></span>`;
 }
 
 // รูปประจำเมนู: รูปที่อัพไว้ในฐาน > รูปตั้งต้นของเมนู > รูปจานกลาง

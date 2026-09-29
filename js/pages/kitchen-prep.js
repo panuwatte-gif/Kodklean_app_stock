@@ -31,20 +31,20 @@ function itemCell(item, fit = false) {
 const useCell = item => (item.use === null || item.use === undefined
   ? `<small style="color:#B4741B;font-weight:700">${P.why[item.useWhy] || P.none}</small>` : weightBig(item.use));
 
-// ความกว้างคอลัมน์ตารางเนื้อสัตว์ (ป้ายพยากรณ์เป็นบรรทัดเต็มความกว้างใต้ชื่อ อ่านได้ในบรรทัดเดียว)
+// ความกว้างคอลัมน์ตารางเนื้อสัตว์ (ป้ายพยากรณ์อยู่บรรทัดบนเหนือช่องกรอก เหมือนหน้าเตรียม-เหลือ)
 const MEAT_GRID = 'grid-template-columns:88px repeat(4, minmax(0, 1fr)) 40px';
 
 // แถวเนื้อสัตว์ 1 แถว: ใช้ไปมาจาก prepUse ใน calc.js (สูตรเดียวกับหน้าเตรียม-เหลือและข้อมูลพยากรณ์)
 function meatRow(item, issues) {
   return `
     <div class="kp__row" data-id="${item.id}" style="${MEAT_GRID};row-gap:3px">
-      <div style="min-width:0">${itemCell(item, true)}${itemTagHtml(issues)}</div>
+      <div style="min-width:0;grid-column:1;grid-row:1 / span 2;align-self:center">${itemCell(item, true)}${itemTagHtml(issues)}</div>
+      <div class="kp__recline" style="grid-column:2 / -1;grid-row:1;display:flex;min-width:0;flex-wrap:wrap">${fcHtml(item.fcDay, item.closed, item.fcWhy)}</div>
       ${cell('meat', item.id, 'prep', item.prep)}
       ${cell('meat', item.id, 'extra', item.extra)}
       ${cell('meat', item.id, 'waste', item.waste)}
       ${cell('meat', item.id, 'left', item.left)}
       <span class="kp__sum">${useCell(item)}</span>
-      <div class="kp__recline" style="grid-column:1 / -1;display:flex;min-width:0;flex-wrap:wrap">${fcHtml(item.fcDay, item.closed, item.fcWhy)}</div>
     </div>`;
 }
 

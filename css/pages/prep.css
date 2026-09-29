@@ -969,10 +969,10 @@
 .eq-list { margin: 0; padding: 0 2px 0 16px; display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: #5C6470; line-height: 1.5; }
 
 /* ป้ายพยากรณ์ใต้ชื่อวัตถุดิบ (เนื้อสัตว์/ข้าว) — ขึ้นบรรทัดใหม่เต็มความกว้างแถว ห้ามล้น/เลื่อนข้าง */
-.ptab__rec { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 3px; align-self: flex-start; margin-top: 3px; padding: 2px 8px; border-radius: 999px; background: #EFE8FB; color: #4A2F8F; font-family: Sarabun, sans-serif; font-size: 10.5px; line-height: 1.3; max-width: 100%; white-space: normal !important; overflow: visible !important; }
-.ptab__rec b { font-family: Mitr, sans-serif; font-size: 13px; font-weight: 600; color: #3B1F80; }
-.ptab__rec i { font-style: normal; font-size: 10px; color: #5E4A91; }
-.ptab__rec--none { background: #F1EFEA; color: #6B6153; }
+.ptab__rec { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 3px; align-self: flex-start; margin-top: 3px; padding: 3px 10px; border-radius: 999px; background: #5B34C9; color: #FFFFFF; box-shadow: 0 2px 6px rgba(91, 52, 201, .28); font-family: Sarabun, sans-serif; font-size: 11px; font-weight: 600; line-height: 1.3; max-width: 100%; white-space: normal !important; overflow: visible !important; }
+.ptab__rec b { font-family: Mitr, sans-serif; font-size: 13px; font-weight: 600; color: #FFFFFF; }
+.ptab__rec i { font-style: normal; font-size: 11px; color: #D9CCFF; }
+.ptab__rec--none { background: #F1EFEA; color: #6B6153; box-shadow: none; }
 
 /* ---------- จอมือถือ: แถวเตรียมเนื้อสัตว์/หุงข้าว 2 บรรทัด (บน = ชื่อ + ผู้รับผิดชอบ + ค่าแนะนำเต็มความกว้าง · ล่าง = ช่องกรอก) ---------- */
 .ptab--meat { --cols: 16px repeat(4, minmax(0, 1fr)) 40px 46px; }
@@ -997,7 +997,7 @@
 /* ป้ายพยากรณ์บรรทัดเดียว (ตัวเลขหนา ช่วงตัวปกติ) */
 .ptab__rec.ptab__rec--line { display: inline-flex; flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 3px; }
 .ptab__rec.ptab__rec--none { flex-direction: row; }
-.ptab__rec-fc { font-size: 13px !important; color: #3B1F80 !important; }
+.ptab__rec-fc { font-size: 15px !important; color: #FFE27A !important; }
 .kp__recline .ptab__rec { margin: 0; font-size: 11px; }
 
 /* ปุ่ม/ป้าย "ตัดวันนี้ออกจากพยากรณ์" ใต้แถบวันที่ (เจ้าของ · วันที่ผ่านมาแล้ว) */

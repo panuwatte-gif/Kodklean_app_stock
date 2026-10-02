@@ -448,22 +448,22 @@ export const HOME_UI = {
   },
   sales: {
     title: 'ยอดขายเทียบเป้าหมาย', periodLabel: 'ช่วง',
-    periods: [{ id: 'month', label: 'เดือนนี้' }, { id: 'today', label: 'วันนี้' }],
-    subMonth: 'ยอดสะสมถึง {d} • เทียบเป้าทั้งเดือน', subToday: 'ยอดขายวันนี้ • เทียบเป้ารายวัน',
+    periods: [{ id: 'month', label: 'ทั้งเดือน' }, { id: 'today', label: 'วันล่าสุด' }],
+    subMonth: 'ยอดสะสม {m} ถึง {d} • เทียบเป้าทั้งเดือน', subToday: 'ยอดขาย {d} • เทียบเป้ารายวัน',
     target: 'เป้า', noTarget: 'ยังไม่ตั้งเป้า', updated: 'อัปเดต',
-    totalToday: 'ยอดรวมวันนี้', totalMonth: 'ยอดรวมเดือนนี้', dailyTarget: 'เป้าวันละ {v}',
-    monthTarget: 'เป้าถึงวันนี้ {v} ({n} วันเปิด) • ทั้งเดือน {m}', share: 'สัดส่วน {p}% ของยอดรวม',
+    totalToday: 'ยอดรวม {d}', totalMonth: 'ยอดรวม {m}', dailyTarget: 'เป้าวันละ {v}',
+    monthTarget: 'เป้าสะสม {v} ({n} วันเปิด ถึง {d}) • ทั้งเดือน {t}', share: 'สัดส่วน {p}% ของยอดรวม',
     setBtn: 'ตั้งเป้า', setTitle: 'ตั้งเป้ายอดขายรวมต่อวัน', setLabel: 'เป้ารวมทุกร้าน (บาท/วัน)',
     setSaved: 'บันทึกเป้าแล้ว', setFail: 'บันทึกเป้าไม่สำเร็จ ลองใหม่อีกครั้ง'
   },
   group: {
-    title: 'KodKlean Group', sub: 'ยอดขายรวมทุกร้าน เดือนนี้', logo: 'assets/home/logo-kodklean-group.webp',
-    total: 'ยอดรวมเดือนนี้', avg: 'เฉลี่ย {v}/วัน • มีข้อมูล {n} วัน ถึง {d}',
+    title: 'KodKlean Group', sub: 'ยอดขายรวมทุกร้าน {m}', logo: 'assets/home/logo-kodklean-group.webp',
+    total: 'ยอดรวม {m}', avg: 'เฉลี่ย {v}/วัน • มีข้อมูล {n} วัน ถึง {d}',
     chart: 'ยอดขายรายวัน (บาท)', mean: 'เส้นประ = ค่าเฉลี่ย'
   },
   mix: {
-    title: 'สัดส่วนรายได้', sub: 'เดือนนี้ แบ่งตามร้าน + ส่งพระราม 9', r9: 'ส่งพระราม 9',
-    center: 'รวม', note: 'ร้าน = ยอดขาย (Grab ที่ยังไม่ได้กรอกในรายได้ประจำวัน ใช้ยอดขายสุทธิจากรายงาน Grab) • พระราม 9 = มูลค่าส่งสะสมเดือนนี้'
+    title: 'สัดส่วนรายได้', sub: '{m} แบ่งตามร้าน + ส่งพระราม 9', r9: 'ส่งพระราม 9',
+    center: 'รวม', note: 'ร้าน = ยอดขาย (Grab ที่ยังไม่ได้กรอกในรายได้ประจำวัน ใช้ยอดขายสุทธิจากรายงาน Grab) • พระราม 9 = มูลค่าส่งสะสมเดือนเดียวกัน'
   },
   r9: {
     title: 'ส่งพระราม 9', sub: 'จัดส่งวัตถุดิบและซอส สำหรับสาขาพระราม 9',
@@ -588,6 +588,67 @@ export const PREP_GROUP_ICONS = {
   'ปลาและอาหารทะเล': 'assets/cats/fish.webp'
 };
 export const PREP_GROUP_NONE = 'ยังไม่จัดหมวด';
+
+// การ์ดวัตถุดิบ 1 ใบต่อรายการ (แท็บเตรียมอาหาร หน้าเตรียม-เหลือ) + แถบนับสถานะด้านบน
+export const PREP_CARD_UI = {
+  stTotal: 'รายการทั้งหมด',
+  stDone: 'บันทึกแล้ว',
+  stTodo: 'ยังไม่ได้บันทึก',
+  stFc: 'อัปเดต',
+  stFcSub: 'พยากรณ์แล้ว',
+  stFcWait: 'รอ',
+  stFcWaitSub: 'ยังไม่มีพยากรณ์',
+  saved: 'บันทึกแล้ว',
+  notSaved: 'ยังไม่ได้บันทึก',
+  recTitle: 'ควรเตรียมวันนี้',
+  recRange: 'ช่วง {lo}–{hi}',
+  unit: 'กก.',
+  fields: {
+    prep: ['1. เตรียมต้นวัน', ''],
+    extra: ['2. เบิกเพิ่มระหว่างวัน', ''],
+    waste: ['3. ทิ้ง/เสีย', ''],
+    left: ['4. เหลือสิ้นวัน', '(วัตถุดิบดิบ)'],
+    cooked: ['5. อาหารปรุงสำเร็จเหลือ', '(เทียบวัตถุดิบ)']
+  },
+  useTitle: 'ใช้จริงวันนี้',
+  useInfo: 'ใช้จริง = เตรียม + เบิกเพิ่ม + อาหารสุกยกมา − ทิ้ง/เสีย − เหลือสิ้นวัน − อาหารปรุงสำเร็จเหลือ',
+  graphBtn: 'ดูกราฟ'
+};
+
+// หน้ากราฟการใช้วัตถุดิบ 1 รายการ (เปิดจากการ์ดหน้าเตรียม-เหลือ และตารางเตรียมหน้าครัวพนักงาน)
+export const PREP_CHART_UI = {
+  back: 'กลับ',
+  trendTitle: 'แนวโน้มการใช้ย้อนหลัง {n} วัน',
+  dayChoices: [7, 15, 30, 60],
+  dayDefault: 15,
+  dayMax: 120,
+  dayUnit: 'วัน',
+  dayCustom: 'กำหนดเอง',
+  dayCustomTitle: 'ย้อนหลังกี่วัน (1–{max})',
+  legUsed: 'ใช้จริง',
+  legTaken: 'เตรียมจริง',
+  legFc: 'ควรเตรียม',
+  statUsed: 'ใช้จริงวันนี้',
+  statTaken: 'เตรียมจริง',
+  statDiff: 'ความต่าง',
+  statDay: 'ใช้จริง {d}',
+  nextTitle: 'แนะนำพรุ่งนี้',
+  nextSub: 'จากสูตรพยากรณ์ที่ใช้อยู่ของวัตถุดิบนี้ · ช่วง {lo}–{hi} กก.',
+  nextSubNoBand: 'จากสูตรพยากรณ์ที่ใช้อยู่ของวัตถุดิบนี้',
+  nextVs: 'เทียบใช้จริงวันนี้',
+  nextClosed: 'พรุ่งนี้ร้านปิด',
+  histTitle: 'ประวัติการบันทึกล่าสุด',
+  histAll: 'ดูทั้งหมด',
+  histLess: 'ย่อ',
+  histLine: 'เตรียม {a} · ใช้จริง {b} กก.',
+  excluded: 'ตัดออก',
+  dayLine: '{d} · เตรียม {a} · ใช้จริง {b} · ควรเตรียม {c} กก.',
+  none: 'ยังไม่มีข้อมูลในช่วงนี้',
+  foot: 'ข้อมูลการเตรียมและการใช้จริงนี้ ถูกนำไปปรับแบบพยากรณ์ (Forecast Model) ให้แม่นยำขึ้นในวันถัดไป',
+  loading: 'กำลังโหลดข้อมูลจากฐาน...',
+  loadError: 'โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง',
+  unit: 'กก.'
+};
 
 // แท็บประเมินผลการเตรียมวัตถุดิบของพนักงาน (หน้าเตรียม-เหลือ + หน้าครัวของพนักงาน ใช้ชุดเดียวกัน)
 export const PREP_EVAL_UI = {
@@ -1203,6 +1264,25 @@ export const R9_KPI = {
 // หัวตารางรายการส่งของ
 export const R9_SEND_COLS = ['รายการส่งของ', 'ปริมาณ', 'ราคา', 'รวม', ''];
 
+// หัวตารางส่งของแบบมีต้นทุน (หน้าพระราม 9 + หน้าแม่พัน) แถวละบรรทัดเดียว
+export const R9_COST_COLS = ['รายการ', 'ต้นทุน', 'mk %', 'ปริมาณ', 'ราคา', 'รวม', ''];
+export const R9_COST_UI = {
+  vendorHint: 'ต้นทุนจากราคากลาง (ราคาซื้อสูงสุดจากทุกร้าน)',
+  help: 'ใส่ ต้นทุน + mark up % ระบบคิดราคาให้ · หรือใส่ราคาก่อน ระบบคิด mark up ย้อนให้ · ออกจากช่องแล้วบันทึกลงฐานทันที'
+};
+
+// แตะรูป = เปลี่ยนรูป · ปุ่ม ⋯ ท้ายแถว = รวมคำสั่งจัดการรายการ
+export const R9_ROW_MENU = {
+  label: 'จัดการรายการ',
+  photo: 'แตะเพื่อเปลี่ยนรูป',
+  options: [
+    { value: 'up', label: 'ย้ายขึ้น' },
+    { value: 'down', label: 'ย้ายลง' },
+    { value: 'edit', label: 'แก้ไขรายการ' },
+    { value: 'delete', label: 'ลบรายการ' }
+  ]
+};
+
 // ปุ่มไอคอนท้ายแถวของตารางส่งของ
 export const R9_ROW_TOOLS = [
   { id: 'photo', glyph: 'image', color: '#3B7FD4', tint: '#EAF2FD', label: 'เปลี่ยนรูป' },
@@ -1325,6 +1405,7 @@ export const R9_UI = {
   saveError: 'บันทึกไม่สำเร็จ ยังไม่มีรอบใหม่เกิดขึ้น กดบันทึกอีกครั้งได้',
   noLines: 'ยังไม่ได้กรอกปริมาณรายการใด',
   noPrice: 'ยังไม่ได้ใส่ราคา: {names} — ใส่ราคาก่อนจึงบันทึกได้',
+  priceSaveError: 'บันทึกต้นทุน/ราคาไม่สำเร็จ ลองใหม่อีกครั้ง',
   saved: 'บันทึกและส่งเรียบร้อย (รอบ #{no})',
   savedEdit: 'แก้รอบ #{no} แล้ว รอบเก่าเก็บไว้เป็นประวัติแล้ว',
   edit: 'แก้ไขรอบนี้',
@@ -1924,11 +2005,12 @@ export const MY_APP_TABS = [
     { id: 'main', label: 'แท็บ · หัวหน้า · ตัวกรอง', from: ['PREP_TABS', 'PREP_HERO', 'PREP_FILTERS', 'PREP_NOTES', 'PREP_KPI', 'PREP_TIPS'] },
     { id: 'table', label: 'ตารางเนื้อสัตว์ · ข้าว', from: ['PREP_MEAT_COLS', 'PREP_RICE_COLS', 'PREP_RICE_EQ', 'PREP_CHART_SERIES', 'PREP_UI', 'PREP_PEOPLE_LOOK'] },
     { id: 'fc', label: 'ค่าแนะนำ / พยากรณ์', from: ['PREP_FC_UI'] },
-    { id: 'eval', label: 'ประเมินผลการเตรียม', from: ['PREP_EVAL_UI'] }
+    { id: 'eval', label: 'ประเมินผลการเตรียม', from: ['PREP_EVAL_UI'] },
+    { id: 'card', label: 'การ์ดวัตถุดิบ · หน้ากราฟ', from: ['PREP_CARD_UI', 'PREP_CHART_UI'] }
   ] },
   { id: 'rama9', label: 'พระราม9', groups: [
     { id: 'main', label: 'แท็บ · สรุป · สถานะ', from: ['R9_PLACE', 'R9_TABS', 'R9_KPI', 'R9_STATUS', 'R9_RANGES'] },
-    { id: 'send', label: 'ตารางส่งของ', from: ['R9_SEND_COLS', 'R9_ROW_TOOLS', 'R9_UNITS', 'R9_UI', 'R9_EXPORTS'] },
+    { id: 'send', label: 'ตารางส่งของ', from: ['R9_SEND_COLS', 'R9_COST_COLS', 'R9_COST_UI', 'R9_ROW_MENU', 'R9_ROW_TOOLS', 'R9_UNITS', 'R9_UI', 'R9_EXPORTS'] },
     { id: 'items', label: 'รายการของ · หมวด', from: ['R9_PHOTOS', 'R9_CAT_ICONS', 'R9_SETUP_UI'] }
   ] },
   { id: 'other', label: 'อื่นๆ', groups: [

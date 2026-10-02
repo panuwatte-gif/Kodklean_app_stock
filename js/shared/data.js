@@ -143,6 +143,10 @@ export const getPrepItems = () =>
 export const getPrepEval = (from, to) =>
   dbGet(`kk_view_prep_eval?use_date=gte.${from}&use_date=lte.${to}&select=item_id,use_date,taken_kg,used_kg&order=use_date,item_id`);
 
+// ค่าพยากรณ์ที่บันทึกไว้ของช่วงวัน (ชุดที่ใช้จริง S1) — เส้น "ควรเตรียม" ในกราฟรายวัตถุดิบ
+export const getFcDailyRange = (from, to) =>
+  dbGet(`kk_forecast_daily?scenario_code=eq.S1&forecast_date=gte.${from}&forecast_date=lte.${to}&select=forecast_date,item_id,forecast_kg&order=forecast_date`);
+
 // บันทึกเตรียม/ข้าวของวันที่เลือก (เฉพาะค่าล่าสุด)
 export const getPrepLogs = date =>
   dbGet(`kk_prep_log?log_date=eq.${date}&is_current=is.true&select=count_item_id,entry_type,seq,qty,rev_no,logged_by,edited_by`);
@@ -532,12 +536,13 @@ export async function getFcBundle() {
 const numOrNull = v => (v === null || v === undefined || v === '' ? null : Number(v));
 const toR9Item = r => ({
   id: r.id, name: r.name, cat: r.cat_id, unit: r.unit, price: numOrNull(r.price), photo: r.photo,
-  kind: r.kind, sortOrder: r.sort_order, active: r.active, used: Number(r.used_rounds) || 0, qty: 0
+  kind: r.kind, sortOrder: r.sort_order, active: r.active, used: Number(r.used_rounds) || 0, qty: 0,
+  cost: numOrNull(r.cost), markup: numOrNull(r.markup_pct), vendorCost: numOrNull(r.vendor_cost)
 });
 const toR9Round = r => ({
   id: r.id, no: r.no, date: r.date, time: r.time, status: r.status, fee: Number(r.fee) || 0, note: r.note || '',
   rev: r.rev_no, rootId: r.root_id, sentBy: r.sent_by, editedBy: r.edited_by, createdAt: r.created_at,
-  lines: (r.lines || []).map(l => ({ id: l.id, qty: Number(l.qty), price: numOrNull(l.price) }))
+  lines: (r.lines || []).map(l => ({ id: l.id, qty: Number(l.qty), price: numOrNull(l.price), cost: numOrNull(l.cost), markup: numOrNull(l.markup) }))
 });
 
 // หมวดสินค้า (ส่งมาทั้งที่ปิดไว้ เพื่อให้หน้าตั้งค่าเปิดกลับได้)
@@ -546,7 +551,11 @@ export const getR9Cats = () =>
 
 // รายการสินค้า + จำนวนรอบที่เคยถูกส่ง (ฐานนับมาให้จากวิว หน้าจอไม่ต้องนับเอง)
 export const getR9Items = () =>
-  dbGet('kk_r9_item?select=id,name,cat_id,unit,price,photo,kind,note,sort_order,active,used_rounds&order=sort_order,id');
+  dbGet('kk_r9_item?select=id,name,cat_id,unit,price,photo,kind,note,sort_order,active,used_rounds,cost,markup_pct,vendor_cost&order=sort_order,id');
+
+// บันทึกต้นทุน / mark up % / ราคาส่งของรายการเดียวลง kk_rama9_item ทันที (ราคากลางของพระราม 9)
+export const saveR9Price = ({ id, cost, markup, price, by }) =>
+  dbPost('rpc/kk_r9_price_save', { p_item: id, p_cost: cost, p_markup: markup, p_price: price, p_by: by });
 
 // รอบส่งที่เป็นค่าล่าสุด (แถวที่ถูกแก้ไปแล้วไม่ส่งมา จึงไม่มียอดเบิ้ล)
 export const getR9Rounds = () =>
@@ -615,7 +624,7 @@ export const removeAccount = code => dbDelete(`game_users?emp_code=eq.${enc(code
 // ร่างที่กำลังกรอกของรอบนี้ (เก็บในเครื่อง ยังไม่ขึ้นฐานจนกดบันทึก)
 export function getR9Draft() {
   const store = readStore();
-  return copy(store.r9Draft) || { date: '', qty: {}, price: {}, fee: '', note: '', editing: null, key: null };
+  return copy(store.r9Draft) || { date: '', qty: {}, price: {}, cost: {}, mk: {}, fee: '', note: '', editing: null, key: null };
 }
 export function saveR9Draft(draft) {
   const store = readStore();
@@ -710,9 +719,9 @@ export async function getHomeBundle(date) {
     getHomeNotices(), getFcHistory(), getPrepItems(), getMenus(),
     getLeftoverAll(shiftIso(d, -37), d), getR9Rounds(), getR9Items(),
     getFcModelMap(), getFcFormulas(), getFcRules(), getStaff(), getStaffDuties(), getAssigns(),
-    getIncomeBrands(), getIncomeHistory(d.slice(0, 7) + '-01', d), getFcTrials(),
+    getIncomeBrands(), getIncomeHistory(prevStart, d), getFcTrials(),   // รายได้ตั้งแต่ต้นเดือนก่อน (ต้นเดือนยังไม่มีใครกรอก จะได้แสดงเดือนก่อนได้)
     getSalesTarget().catch(() => null), getWasteRange(prevStart, d), getFcPrices(),
-    getGrabDaySales(d.slice(0, 7) + '-01', d).catch(() => []), getIncomeChannels().catch(() => [])
+    getGrabDaySales(prevStart, d).catch(() => []), getIncomeChannels().catch(() => [])
   ]);
   withFcCtx(cfg, { history, map, formulas, trials });
   const recRows = recs ? [...recs.model.meatRows, ...recs.model.riceRows] : [];

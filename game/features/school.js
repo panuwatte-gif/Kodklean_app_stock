@@ -6,8 +6,6 @@ import * as api from '../core/api.js';
 import { RULES } from '../config.js';
 import { ASSETS } from '../sprite_config.js';
 
-const LEVEL_NAMES = ['', 'L1 นับ', 'L2 บวก-ลบ', 'L3 บวกเงิน', 'L4 ทอนเงิน', 'L5 คูณ', 'L6 หาร', 'L7 หน้างาน'];
-
 export async function mountSchool(root, go) {
   root.innerHTML = topBar() + '<p class="sub" style="padding:16px 14px">' + t('loading') + '</p>';
   await loadProgress();
@@ -30,7 +28,7 @@ export async function mountSchool(root, go) {
       t('dailyLeft', { a: P.daily.questions_done, b: RULES.dailyQuestions }), 'quiz',
       left ? t('actStart') : t('doneToday'), !left) +
     card(ASSETS.icons + 'wp.webp', t('actMath'),
-      LEVEL_NAMES[P.math.level] + ' · ' + t(P.daily.math_sets_done ? 'setDone' : 'setOpen'), 'math', t('actStart')) +
+      t('mathS' + P.math.level) + ' · ' + t(P.daily.math_sets_done ? 'setDone' : 'setOpen'), 'math', t('actStart')) +
     card(ASSETS.icons + 'food.webp', t('actMenu'), t('actMenuSub'), 'quiz-menu', t('actStart')) +
     card(ASSETS.village + 'board.webp', t('actMenuMy'), t('actMenuMySub'), 'quiz-menumy', t('actStart')) +
     card(ASSETS.icons + 'bell.webp', t('actVocab'), t('actVocabSub'), 'quiz-vocab', t('actStart')) +

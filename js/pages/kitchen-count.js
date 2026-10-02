@@ -6,6 +6,7 @@ import { ktTopHtml, ktHeroHtml, ktTabsHtml, ktToolsHtml, ktTableHtml, ktQuoteHtm
 import { loadPrepDay, prepBodyHtml, savePrepCell } from './kitchen-prep.js';
 import { toast, pickerSheet, handleDatePick, handleDateClick, formSheet } from '../shared/ui.js';
 import { evalBodyHtml, mountEval } from '../shared/prep-eval.js';
+import { openPrepChart } from '../shared/prep-chart.js';
 import { itemActions } from './stock-form.js';
 import { staffCode } from '../shared/auth.js';
 import { fillText } from '../shared/format.js';
@@ -155,6 +156,8 @@ export function mountKitchenPage(root, onGo, pageId) {
     const act = event.target.closest('[data-act]');
     const row = event.target.closest('[data-more]');
     const edit = event.target.closest('[data-edit]');
+    const graph = event.target.closest('[data-graph]');
+    if (graph) return openPrepChart(model && model.meatRows.find(r => r.id === graph.dataset.graph), state.date);
     if (edit) return editPrepItem(edit.dataset.edit);
     if (tab) { state.tab = tab.dataset.tab; state.q = ''; rows = []; model = null; dirty = {}; loaded = false; draw(); return load(); }
     if (act && act.dataset.act === 'add') return acts.add();

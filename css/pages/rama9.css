@@ -663,3 +663,19 @@
 .r9-sw.is-on { background: #3FB073; }
 .r9-sw.is-on i { transform: translateX(17px); }
 
+
+/* ---------- ตารางส่งของแบบมีต้นทุน + mark up (แถวละบรรทัดเดียว · หน้าพระราม 9 + หน้าแม่พัน) ---------- */
+.r9-row--cost { grid-template-columns: minmax(0, 1fr) 42px 38px 40px 44px 44px 24px; gap: 3px; padding: 0 6px 0 8px; }
+.r9-row--costslim { grid-template-columns: minmax(0, 1fr) 44px 40px 42px 46px 46px; }
+.r9-thead.r9-row--cost span { font-size: 10.5px; }
+.r9-row--cost.r9-item { min-height: 44px; }
+.r9-row--cost .r9-in { height: 32px; padding: 0 2px; font-size: 11.5px; }
+.r9-row--cost .r9-item__sum { font-size: 11px; }
+.r9-in--cost { background: #F6F8FB; }
+.r9-in--cost.is-vendor { background: #EEF6E4; border-color: #CFE3B5; }
+.r9-in--mk { color: #B4541B; }
+.r9-photo { flex: none; display: grid; place-items: center; width: 28px; height: 32px; margin: 0 -3px; padding: 0; border: 0; background: none; cursor: pointer; }
+.r9-photo:active { transform: scale(.9); }
+.r9-more { display: grid; place-items: center; width: 24px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: #EEF3F8; color: #5B6B7E; cursor: pointer; }
+.r9-more:active { transform: scale(.9); }
+.r9-costhelp { margin: 0 10px 8px; padding: 7px 10px; border-radius: 10px; background: #EAF1FD; color: #1F3F6E; font-size: 11px; line-height: 1.5; }

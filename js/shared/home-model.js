@@ -1,7 +1,7 @@
 // แปลงแถวดิบจากฐาน → ข้อมูลการ์ดของหน้าหลัก (ไฟล์นี้ไม่ยิงฐานเอง data.js เป็นคนดึงมาส่งให้)
 import { STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, MENU_PHOTOS, PREP_ENTRY, HOME_RICE_GROUPS } from './config.js';
 import { namesOf } from './assign.js';
-import { shiftIso, dayLongTh } from './format.js';
+import { shiftIso, dayLongTh, monthLongTh } from './format.js';
 
 const U = PREP_ENTRY.fah.left;    // ประเภทแถว "เหลือ" ในตาราง kk_cooked_leftover
 const W = PREP_ENTRY.fah.waste;   // ประเภทแถว "ทิ้ง"
@@ -162,7 +162,7 @@ function mergeIncome(income, grab) {
   return [...map.values()].map(x => ({ ...x, total: Object.values(x.ch).reduce((s, v) => s + v, 0) }));
 }
 
-// การ์ด KodKlean Group + สัดส่วนรายได้: ยอดรวมทุกร้านรายวัน (แยกสีร้าน) ตั้งแต่วันที่ 1 ถึงวันนี้ + ยอดต่อร้าน/ต่อช่องทางทั้งเดือน
+// การ์ด KodKlean Group + สัดส่วนรายได้: ยอดรวมทุกร้านรายวัน (แยกสีร้าน) ตั้งแต่วันที่ 1 ถึงวันอ้างอิง (วันล่าสุดที่มีข้อมูล) + ยอดต่อร้าน/ต่อช่องทางทั้งเดือน
 function groupOf(stores, rows, channels, date) {
   const month = date.slice(0, 7), mine = rows.filter(r => r.date.slice(0, 7) === month);
   const labels = Array.from({ length: Number(date.slice(8)) }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`);
@@ -181,27 +181,31 @@ function groupOf(stores, rows, channels, date) {
   };
 }
 
+// รายได้ส่วนใหญ่บันทึกหลังปิดร้าน (หรือหลังเที่ยงคืน) จึงยึด "วันล่าสุดที่มีข้อมูล" เป็นวันอ้างอิง ไม่ใช่วันนี้
+// เช่น วันที่ 1 ต.ค. ยังไม่มีใครกรอก → การ์ดรายได้แสดงเดือน ก.ย. ถึงวันที่ 30 แทนที่จะว่างทั้งการ์ด
 function salesOf(brands, rawIncome, date, target, grab, channels) {
-  const month = date.slice(0, 7), income = mergeIncome(rawIncome, grab);
+  const income = mergeIncome(rawIncome, grab).filter(r => r.date <= date);
+  const dates = income.map(r => r.date).sort();
+  const ref = dates.length ? dates[dates.length - 1] : date;   // วันล่าสุดที่มีรายได้
+  const month = ref.slice(0, 7);
   const sum = rows => (rows.length ? Math.round(rows.reduce((s, r) => s + (Number(r.total) || 0), 0)) : null);
   const stores = (brands || []).map(b => {
     const mine = (income || []).filter(r => r.brand === b.id);
     return {
       id: b.id, name: b.name, logo: b.logo, color: b.color || '#125B2A',
       month: sum(mine.filter(r => r.date.slice(0, 7) === month)),
-      today: sum(mine.filter(r => r.date === date)),
+      today: sum(mine.filter(r => r.date === ref)),
       target: b.monthly_target === null || b.monthly_target === undefined ? null : Number(b.monthly_target)
     };
   });
-  const dates = (income || []).map(r => r.date).sort();
   const all = rows => sum(rows);
   const total = {
-    today: all((income || []).filter(r => r.date === date)),
-    month: all((income || []).filter(r => r.date.slice(0, 7) === date.slice(0, 7))),
+    today: all(income.filter(r => r.date === ref)),
+    month: all(income.filter(r => r.date.slice(0, 7) === month)),
     daily: target === null || target === undefined ? null : Number(target),
-    openSoFar: openDaysInMonth(date), openMonth: openDaysInMonth(date, true)
+    openSoFar: openDaysInMonth(ref), openMonth: openDaysInMonth(ref, true)
   };
-  return { through: dates.length ? dates[dates.length - 1] : date, updatedAt: dayLongTh(date), stores, total, group: groupOf(stores, income, channels, date) };
+  return { through: ref, month, monthLabel: monthLongTh(month), updatedAt: dayLongTh(date), stores, total, group: groupOf(stores, income, channels, ref) };
 }
 
 // รวมทุกการ์ดที่ต่อฐานได้แล้ว (การ์ดข้าว / ลดของเหลือ ยังไม่มีตารางในฐาน — หน้าจอใช้ข้อมูลตั้งต้นต่อไป)

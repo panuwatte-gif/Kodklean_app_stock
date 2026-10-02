@@ -10,7 +10,8 @@ import { heroHtml, kpisHtml, tabsHtml } from './rama9-view.js';
 import { dateHtml, tableHtml, sumHtml, footHtml, sendInput } from './rama9-send.js';
 import { filterHtml, roundsHtml, briefHtml } from './rama9-history.js';
 import { pickHtml, reportHtml } from './rama9-report.js';
-import { setupHtml, handleSetupClick, editR9Item, deleteR9Item, changeR9Photo, moveR9Item, addR9ItemTo } from './rama9-setup.js';
+import { setupHtml, handleSetupClick, addR9ItemTo } from './rama9-setup.js';
+import { rowTool, priceChange } from './rama9-cost.js';
 
 // สิ่งที่ผู้ใช้เลือกอยู่บนหน้านี้ (ไม่แชร์ข้ามหน้า)
 const view = {
@@ -140,8 +141,8 @@ export function mountRama9Page(root) {
   // ทำซ้ำ / แก้รอบเดิม: ดึงปริมาณและราคาของรอบนั้นมาเป็นร่างของวันที่เลือก (ต้องกดบันทึกเองอีกที)
   const toDraft = (id, editing) => {
     const rd = view.rounds.find(r => r.id === id);
-    view.draft = { date: view.date, qty: {}, price: {}, fee: rd.fee || '', note: rd.note || '', editing: editing ? { id: rd.id, no: rd.no } : null, key: null };
-    (rd.lines || []).forEach(l => { view.draft.qty[l.id] = l.qty; view.draft.price[l.id] = l.price; });
+    view.draft = { date: view.date, qty: {}, price: {}, cost: {}, mk: {}, fee: rd.fee || '', note: rd.note || '', editing: editing ? { id: rd.id, no: rd.no } : null, key: null };
+    (rd.lines || []).forEach(l => { view.draft.qty[l.id] = l.qty; view.draft.price[l.id] = l.price; if (l.cost !== null) view.draft.cost[l.id] = l.cost; if (l.markup !== null) view.draft.mk[l.id] = l.markup; });
     keepDraft();
     view.tab = 'send';
     draw();
@@ -212,16 +213,8 @@ export function mountRama9Page(root) {
     else if (rgrp) { const k = rgrp.dataset.rgroup; view.rClosed[k] = !view.rClosed[k]; draw(); }
     else if (grp) { const k = grp.dataset.group; view.closed[k] = !view.closed[k]; draw(); }
     else if (tool) {
-      const it = view.items.find(i => i.id === hit('.r9-item[data-id]').dataset.id), kind = tool.dataset.tool;
-      let res = null;
-      if (kind === 'photo') res = await changeR9Photo(it);
-      else if (kind === 'edit') res = await editR9Item(it, view.cats);
-      else if (kind === 'delete') res = await deleteR9Item(it);
-      else if (kind === 'move') {
-        const dir = await pickerSheet({ title: 'จัดลำดับรายการ', options: [{ value: 'up', label: 'ย้ายขึ้น' }, { value: 'down', label: 'ย้ายลง' }] });
-        if (dir) res = await moveR9Item(view.items, it.id, dir === 'up' ? -1 : 1);
-      }
-      if (res) load();
+      const it = view.items.find(i => i.id === hit('.r9-item[data-id]').dataset.id);
+      if (await rowTool(tool.dataset.tool, it, view.items, view.cats)) load();
     }
     else if (addin) { if (await addR9ItemTo(view.items, view.cats, addin.dataset.addin)) load(); }
     else if (act) {
@@ -253,6 +246,7 @@ export function mountRama9Page(root) {
 
   root.addEventListener('change', async event => {
     const elm = event.target;
+    if (await priceChange(event, view.items, view.draft)) return;
     if (elm.matches('[data-from]')) { view.from = elm.value; draw(); }
     else if (elm.matches('[data-to]')) { view.to = elm.value; draw(); }
     else if (elm.matches('#r9-date-pick') && await handleDatePick(elm.value, view)) draw();

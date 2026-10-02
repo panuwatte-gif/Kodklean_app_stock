@@ -1,8 +1,8 @@
 // แท็บเตรียมอาหาร (เอมมี่ + อัด ใช้ร่วมกัน) — ใช้ข้อมูลชุดเดียวกับหน้าเตรียม-เหลือ (kk_prep_log)
 import { getPrepRecs, savePrep } from '../shared/data.js';
 import { prepGroupRuns } from '../shared/calc.js';
-import { KITCHEN_UI as T, PREP_ENTRY, PREP_GROUP_NONE } from '../shared/config.js';
-import { itemPhoto, fcHtml, prepGroupHeadHtml, dateBarHtml, dateBandHtml } from '../shared/ui.js';
+import { KITCHEN_UI as T, PREP_ENTRY, PREP_GROUP_NONE, PREP_CARD_UI } from '../shared/config.js';
+import { itemPhoto, fcHtml, prepGroupHeadHtml, dateBarHtml, dateBandHtml, glyph } from '../shared/ui.js';
 import { weightBig, fillText } from '../shared/format.js';
 import { splitIssues, dayBarHtml, itemTagHtml } from './prep-fc-issues.js';
 
@@ -39,7 +39,7 @@ function meatRow(item, issues) {
   return `
     <div class="kp__row" data-id="${item.id}" style="${MEAT_GRID};row-gap:3px">
       <div style="min-width:0;grid-column:1;grid-row:1 / span 2;align-self:center">${itemCell(item, true)}${itemTagHtml(issues)}</div>
-      <div class="kp__recline" style="grid-column:2 / -1;grid-row:1;display:flex;min-width:0;flex-wrap:wrap">${fcHtml(item.fcDay, item.closed, item.fcWhy)}</div>
+      <div class="kp__recline" style="grid-column:2 / -1;grid-row:1;display:flex;min-width:0;flex-wrap:wrap;align-items:center;gap:6px">${fcHtml(item.fcDay, item.closed, item.fcWhy)}<button class="kp__graph" type="button" data-graph="${item.id}">${glyph('chart', 15)}<span>${PREP_CARD_UI.graphBtn}</span></button></div>
       ${cell('meat', item.id, 'prep', item.prep)}
       ${cell('meat', item.id, 'extra', item.extra)}
       ${cell('meat', item.id, 'waste', item.waste)}

@@ -7,6 +7,7 @@ import { r9DraftItems, r9RoundTotals } from '../shared/calc.js';
 import { r9SendProblem, r9SendRound, r9EmptyDraft } from '../shared/r9-send.js';
 import { tableHtml, sumHtml, sendInput } from './rama9-send.js';
 import { reportCardHtml, reportHtml, reportFile } from './maepan-report.js';
+import { priceChange } from './rama9-cost.js';
 import { money, dayLongTh } from '../shared/format.js';
 
 // เนื้อหาทั้งแท็บ: ตารางกรอกรายการ → ยอดรอบนี้ → หมายเหตุ → การ์ดสร้างรายงาน → รายงานที่สร้างไว้
@@ -71,6 +72,9 @@ export function r9Click(event, ctx) {
   else if (kind === 'csv') { const f = reportFile(state, r9); downloadText(f.name, f.text); }
   return true;
 }
+
+// ออกจากช่องต้นทุน/mk/ราคา → บันทึกราคากลางลงฐาน (ชุดเดียวกับหน้าพระราม 9) · คืน true = จัดการแล้ว
+export const r9Change = (event, ctx) => priceChange(event, ctx.r9.items, ctx.r9.draft);
 
 // กรอกปริมาณ/ราคา/ค่าส่ง/หมายเหตุลงร่าง (ยังไม่ขึ้นฐานจนกดยืนยัน)
 export function r9Input(event, ctx) {

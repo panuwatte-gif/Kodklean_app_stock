@@ -4,8 +4,11 @@ import { R9_UI } from './config.js';
 import { fillText } from './format.js';
 import { staffCode } from './auth.js';
 
+// ค่าว่าง = null (ห้ามแปลงเป็น 0)
+const numOr = v => (v === null || v === undefined || v === '' ? null : Number(v));
+
 // ร่างเปล่าของรอบส่งวันนั้น
-export const r9EmptyDraft = date => ({ date, qty: {}, price: {}, fee: '', note: '', editing: null, key: null });
+export const r9EmptyDraft = date => ({ date, qty: {}, price: {}, cost: {}, mk: {}, fee: '', note: '', editing: null, key: null });
 
 // ตรวจก่อนบันทึก: ต้องมีรายการที่กรอกปริมาณ และรายการที่กรอกต้องมีราคาครบ (คืนข้อความเตือน · ผ่าน = null)
 export function r9SendProblem(items) {
@@ -18,7 +21,7 @@ export function r9SendProblem(items) {
 
 // บันทึกรอบส่ง 1 รอบ (กุญแจกันกดเบิ้ลเก็บในร่าง ส่งซ้ำกุญแจเดิมไม่เกิดรอบซ้ำ)
 export async function r9SendRound({ date, items, draft }) {
-  const lines = items.filter(i => Number(i.qty) > 0).map(i => ({ item_id: i.id, qty: Number(i.qty), price: Number(i.price) }));
+  const lines = items.filter(i => Number(i.qty) > 0).map(i => ({ item_id: i.id, qty: Number(i.qty), price: Number(i.price), cost: numOr(i.cost), markup: numOr(i.mk) }));
   if (!draft.key) { draft.key = newR9Key(date); saveR9Draft(draft); }
   await saveR9Round({
     date, fee: Number(draft.fee) || 0, note: draft.note, by: staffCode(),

@@ -1,4 +1,5 @@
-// สร้างโจทย์คณิตตามระดับ — ตัวเลขล้วน ไม่ต้องอ่านไทย (กติกาข้อ 4)
+// สร้างโจทย์คณิตตามระดับ — ตัวเลขล้วน ไม่ต้องอ่านไทย (กติกาข้อ 4) · ข้อความคำใบ้มาจาก i18n (ไทย/พม่า)
+import { t } from '../../core/i18n.js';
 const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 const ITEMS = ['rice', 'noodle', 'chicken', 'pork', 'beef', 'shrimp', 'salmon'];
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -22,7 +23,7 @@ export function makeTask(level) {
   }
   if (level === 5) { const r = rnd(2, 5), c = rnd(3, 6); return { level, item, rows: r, cols: c, answer: r * c }; }
   if (level === 6) { const cups = rnd(2, 4), per = rnd(2, 5); return { level, item, cups, n: cups * per, answer: per }; }
-  const menus = [['ชาเย็น', 2], ['นมเย็น', 1], ['โอเลี้ยง', 3]].filter(() => true);
+  const menus = [['drinkTea', 2], ['drinkMilk', 1], ['drinkOliang', 3]];   // รหัสเมนู → ชื่อใน i18n
   const bills = [[], [], []];
   menus.forEach(([name, n]) => { for (let k = 0; k < n; k++) bills[rnd(0, 2)].push(name); });
   const distinct = [...new Set(bills.flat())].length;
@@ -31,21 +32,14 @@ export function makeTask(level) {
 
 // คำใบ้ 3 ขั้น: ไฮไลต์ → ทำขั้นแรกให้ → เฉลยทีละขั้น
 export function hintText(task, step) {
-  const L = task.level;
-  if (step === 1) return L === 1 ? 'แตะของทีละชิ้นให้ครบทุกชิ้น'
-    : L === 2 ? (task.op === 'add' ? 'ย้ายของทั้งสองกองมารวมในตะกร้า' : 'เอาของออกไปในถังตามจำนวนที่กำหนด')
-    : L === 3 ? 'กดปุ่มกระโดดให้ครบทุกก้อน'
-    : L === 4 ? 'หยิบเงินเพิ่มจากราคาอาหารไปจนถึงเงินที่ลูกค้าจ่าย'
-    : L === 5 ? 'แตะทีละแถว ดูตัวเลขนับข้ามแถว'
-    : L === 6 ? 'ลากของใส่ถ้วยวนไปเรื่อยๆ จนของหมด'
-    : 'แก้วเมนูเดียวกันปั่นรอบเดียวได้ แม้จะมาจากบิลต่างกัน';
-  if (step === 2) return L === 1 ? `ของมี ${task.n} ชิ้น แตะไล่ไปทีละชิ้น จนครบ`
-    : L === 2 ? (task.op === 'add' ? `กองแรกมี ${task.a} ชิ้น เริ่มนับต่อจาก ${task.a}`
-                              : `เอาออก ${task.b} ชิ้น จากทั้งหมด ${task.a} ชิ้น`)
-    : L === 3 ? `เริ่มที่ ${task.start} กระโดด +${task.jumps[0]} ได้ ${task.start + task.jumps[0]}`
-    : L === 4 ? `ราคา ${task.price} → หยิบให้ถึง ${task.paid}`
-    : L === 5 ? `แถวละ ${task.cols} ชิ้น แถวแรกได้ ${task.cols}`
-    : L === 6 ? `ของ ${task.n} ชิ้น แบ่ง ${task.cups} ถ้วย`
-    : 'นับว่ามีเมนูต่างกันกี่ชนิด';
-  return `คำตอบคือ ${task.answer}`;
+  const L = task.level, op = task.op === 'add' ? 'add' : 'sub';
+  if (step === 1) return t(L === 2 ? 'mh1_2' + op : 'mh1_' + L);
+  if (step === 2) return L === 1 ? t('mh2_1', { n: task.n })
+    : L === 2 ? t('mh2_2' + op, { a: task.a, b: task.b })
+    : L === 3 ? t('mh2_3', { s: task.start, j: task.jumps[0], r: task.start + task.jumps[0] })
+    : L === 4 ? t('mh2_4', { p: task.price, q: task.paid })
+    : L === 5 ? t('mh2_5', { c: task.cols })
+    : L === 6 ? t('mh2_6', { n: task.n, c: task.cups })
+    : t('mh2_7');
+  return t('mh3', { n: task.answer });
 }

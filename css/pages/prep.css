@@ -1004,3 +1004,105 @@
 .prep-excl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 0; }
 .prep-excl button { min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(180, 84, 27, .4); background: #FFF6EC; font-family: Mitr, sans-serif; font-size: 11px; color: #8A4B0F; }
 .prep-excl__done { display: inline-flex; align-items: center; min-height: 30px; padding: 0 10px; border-radius: 999px; background: #EEF0F3; font-size: 11px; color: #4B5563; }
+
+/* ---------- แท็บเตรียมอาหาร: แถบนับสถานะ + การ์ดวัตถุดิบ 1 ใบต่อรายการ ---------- */
+.prep__kpi[data-tab="meat"] { display: block; }
+.pstats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 8px; border-radius: 20px; background: var(--glass); border: 1px solid var(--glass-line); box-shadow: var(--glass-shadow); }
+.pstat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 58px; padding: 6px 2px; border-radius: 14px; text-align: center; }
+.pstat__top { display: flex; align-items: center; gap: 4px; }
+.pstat__top b { font: 600 20px/1 Mitr, sans-serif; }
+.pstat__lb { font-size: 10.5px; line-height: 1.2; color: var(--ink-soft); }
+.pstat--blue { color: #2F63C9; }
+.pstat--green { color: #1E7A3C; }
+.pstat--orange { color: #C0651B; background: #FDF1E3; }
+.pstat--plain { color: #2F63C9; }
+.pstat--plain .pstat__top b { font-size: 14px; color: var(--ink); }
+
+.pcards { display: flex; flex-direction: column; gap: 12px; margin: 0 12px; }
+.pcards .ptab__group { margin: 6px 2px -4px; }
+.pcard { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 22px; background: rgba(255, 255, 255, .92); border: 1px solid rgba(255, 255, 255, .9); box-shadow: 0 8px 22px rgba(46, 63, 92, .10); }
+.pcard__top { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.pcard__photo { width: 60px; height: 60px; border-radius: 50%; background: #F3F6F2; display: grid; place-items: center; overflow: hidden; }
+.pcard__photo img { width: 54px; height: 54px; object-fit: contain; }
+.pcard__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pcard__name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.pcard__name b { font: 600 17px/1.2 Mitr, sans-serif; color: var(--ink); overflow-wrap: anywhere; }
+.pcard__st { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #FDF1E3; color: #B4541B; white-space: nowrap; }
+.pcard__st.is-done { background: #E6F5EA; color: #1E7A3C; }
+.pcard__grp { font-size: 12px; color: var(--ink-soft); }
+.pcard__owners { display: flex; flex-wrap: wrap; gap: 3px; }
+.pcard__rec { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 104px; min-height: 64px; padding: 6px 10px; border: 0; border-radius: 16px; background: #EAF6EC; color: #1E7A3C; font-family: inherit; cursor: pointer; }
+.pcard__rec em { display: flex; align-items: center; gap: 4px; font-style: normal; font-size: 11.5px; color: #2E5B3A; }
+.pcard__rec b { font: 600 24px/1.1 Mitr, sans-serif; }
+.pcard__rec b small { font-size: 13px; font-weight: 500; }
+.pcard__rec > small { font-size: 10.5px; color: #3E6B4A; }
+.pcard__recnone { font-size: 12px; color: #6B6153; padding-top: 4px; }
+.pcard__g3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.pcard__g2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.pcard__f { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 7px; border-radius: 14px; background: #F5F7F6; }
+.pcard__lb { font-size: 11.5px; line-height: 1.25; color: #3C4653; }
+.pcard__lb small { display: block; font-size: 10.5px; color: #7C8493; }
+.pcard__box { display: flex; align-items: center; gap: 4px; }
+.pcard__box i { font-style: normal; font-size: 12px; color: var(--ink-soft); flex: none; }
+.pcard__in { flex: 1; min-width: 0; width: 100%; height: 44px; padding: 0 8px; border: 1.5px solid #DDE3E0; border-radius: 12px; background: #fff; font: 500 18px Mitr, sans-serif; color: var(--ink); text-align: center; display: flex; align-items: center; justify-content: center; }
+.pcard__in:focus { outline: none; border-color: #2FA35B; box-shadow: 0 0 0 3px rgba(47, 163, 91, .18); }
+.pcard__box--ro .pcard__in { background: #F4F1FB; border-color: #E4DDF5; color: #5E3FA8; }
+.pcard .ptab__stock { padding: 0 4px; background: none; border: 0; font-size: 10.5px; }
+.pcard .ptab__dot { top: 4px; right: 4px; }
+.pcard__foot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.pcard__use { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 16px; background: #E4F3E4; }
+.pcard__use em { display: flex; align-items: center; gap: 4px; font-style: normal; font-size: 13px; color: #2E5B3A; }
+.pcard__use b { font: 600 28px/1.1 Mitr, sans-serif; color: #1E7A3C; }
+.pcard__use b small { font-size: 15px; font-weight: 500; }
+.pcard.is-todo .pcard__use { background: #FDF1E3; }
+.pcard.is-todo .pcard__use b, .pcard.is-todo .pcard__use em { color: #C0651B; }
+.pcard__graph { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 104px; min-height: 48px; padding: 0 14px; border: 1px solid #DDE8E0; border-radius: 16px; background: #fff; color: #1E7A3C; font: 500 15px Mitr, sans-serif; box-shadow: 0 3px 8px rgba(46, 63, 92, .08); cursor: pointer; }
+
+/* ปุ่มดูกราฟในตารางเตรียมหน้าครัวพนักงาน */
+.kp__graph { display: inline-flex; align-items: center; gap: 3px; min-height: 30px; padding: 0 9px; border: 1px solid #CFE8D3; border-radius: 999px; background: #fff; color: #1E7A3C; font: 500 11.5px Mitr, sans-serif; cursor: pointer; }
+
+/* ---------- หน้ากราฟการใช้วัตถุดิบ (เปิดทับ กว้างเท่ากรอบแอป 430px) ---------- */
+.pgr { position: fixed; top: 0; bottom: 0; left: 50%; z-index: 950; width: 100%; max-width: 430px; transform: translateX(-50%); overflow-y: auto; -webkit-overflow-scrolling: touch; background: linear-gradient(180deg, #EFF8F2 0%, #F7FAF8 40%, #F4F6FB 100%); }
+.pgr__page { display: flex; flex-direction: column; gap: 10px; padding: 0 12px calc(20px + env(safe-area-inset-bottom)); }
+.pgr__bar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 6px; margin: 0 -12px; padding: calc(8px + env(safe-area-inset-top)) 12px 8px; background: rgba(239, 248, 242, .94); backdrop-filter: blur(10px); }
+.pgr__bar h2 { margin: 0; font: 600 19px Mitr, sans-serif; color: #1E4D30; }
+.pgr__back { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: #fff; color: #1E4D30; box-shadow: 0 2px 6px rgba(46, 63, 92, .1); cursor: pointer; }
+.pgr__item, .pgr__card, .pgr__next, .pgr__foot { border-radius: 20px; background: rgba(255, 255, 255, .95); box-shadow: 0 6px 18px rgba(46, 63, 92, .08); }
+.pgr__item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
+.pgr__item img { width: 64px; height: 64px; object-fit: contain; }
+.pgr__item b { display: block; font: 600 18px Mitr, sans-serif; color: var(--ink, #26313F); }
+.pgr__item span { font-size: 12.5px; color: #5E6675; }
+.pgr__card { padding: 12px; }
+.pgr__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pgr__head b { font: 600 15px Mitr, sans-serif; color: #26313F; }
+.pgr__link { min-height: 36px; padding: 0 4px; border: 0; background: none; color: #2F63C9; font: 500 13px Mitr, sans-serif; cursor: pointer; }
+.pgr__days { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pgr__chip { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border: 1px solid #DDE3E0; border-radius: 999px; background: #fff; color: #3C4653; font: 500 13px Mitr, sans-serif; cursor: pointer; }
+.pgr__chip.is-on { background: #1E7A3C; border-color: #1E7A3C; color: #fff; }
+.pgr__chip--in input { width: 44px; height: 26px; border: 1px solid #DDE3E0; border-radius: 8px; text-align: center; font: 500 13px Mitr, sans-serif; color: #26313F; background: #fff; }
+.pgr__legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 4px; font-size: 12px; color: #4B5563; }
+.pgr__legend span { display: inline-flex; align-items: center; gap: 5px; }
+.pgr__legend i { width: 10px; height: 10px; border-radius: 3px; }
+.pgr__dayline { margin: 6px 0 0; padding: 7px 10px; border-radius: 10px; background: #F4F6F9; font: 500 12.5px Mitr, sans-serif; color: #26313F; }
+.pgr__muted { margin: 12px 0; text-align: center; font-size: 13px; color: #8A9199; }
+.pgr__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pgr__stat { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 4px; border-radius: 16px; background: #EAF6EC; text-align: center; }
+.pgr__stat--blue { background: #EAF1FD; }
+.pgr__stat--red { background: #FDECEA; }
+.pgr__stat em { font-style: normal; font-size: 12px; color: #3C4653; }
+.pgr__stat b { font: 600 24px/1.1 Mitr, sans-serif; }
+.pgr__stat small { font-size: 11.5px; color: #5E6675; }
+.pgr__next { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 14px; background: #EEF8F0; }
+.pgr__next img { width: 40px; height: 40px; object-fit: contain; }
+.pgr__next em { font-style: normal; font-size: 13px; color: #2E5B3A; }
+.pgr__next b { display: block; font: 600 28px/1.15 Mitr, sans-serif; color: #1E7A3C; }
+.pgr__next b small { font-size: 15px; font-weight: 500; }
+.pgr__next p { margin: 2px 0 0; font-size: 11.5px; line-height: 1.4; color: #5E6675; }
+.pgr__next .pgr__muted { margin: 4px 0; text-align: left; }
+.pgr__pct { align-self: start; padding: 3px 9px; border-radius: 999px; background: #D8F0DE; color: #1E7A3C; font: 600 13px Mitr, sans-serif; white-space: nowrap; }
+.pgr__pct.is-down { background: #EAF1FD; color: #2F63C9; }
+.pgr__hrow { display: flex; justify-content: space-between; gap: 8px; padding: 9px 2px; border-top: 1px solid #EEF1F5; font-size: 13px; color: #3C4653; }
+.pgr__hrow:first-of-type { border-top: 0; }
+.pgr__foot { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #EEF8F0; }
+.pgr__foot img { width: 44px; height: auto; flex: none; }
+.pgr__foot p { margin: 0; font-size: 12px; line-height: 1.5; color: #3C4653; }

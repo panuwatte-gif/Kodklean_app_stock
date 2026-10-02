@@ -6,8 +6,9 @@ import { makeTask, hintText } from './math/gen.js';
 import * as tools from './math/tools.js';
 import { ASSETS } from '../sprite_config.js';
 
-const NAMES = ['', 'L1 นับ 1-20', 'L2 บวก-ลบ ไม่เกิน 10', 'L3 บวกเงิน', 'L4 ทอนเงิน',
-  'L5 คูณ (นับข้าม)', 'L6 หาร แบ่งเท่าๆ กัน', 'L7 หน้างาน จัดคิวปั่น'];
+const LEVELS = [1, 2, 3, 4, 5, 6, 7];
+// ชื่อระดับตามภาษาที่เลือก (ไทย/พม่า)
+const nameOf = lv => t('mathL' + lv);
 const SET = 10;
 
 export async function mountMath(root, go) {
@@ -31,8 +32,8 @@ export async function mountMath(root, go) {
         <p class="h">${t('actMath')}</p>
         <p class="sub">${t('mathSkill', { a: recent.reduce((a, b) => a + b, 0), b: recent.length })}</p>
       </div>
-      <div class="card">${NAMES.slice(1).map((n, k) => {
-        const lv = k + 1, locked = lv > P.math.level;
+      <div class="card">${LEVELS.map(lv => {
+        const n = nameOf(lv), locked = lv > P.math.level;
         return `<div class="row">
           <span style="flex:1${locked ? ';color:var(--muted)' : ''}">${n}</span>
           ${lv === P.math.level ? '<span class="lang" style="background:var(--gold);color:#4A3E30">' + t('mathNow') + '</span>' : ''}
@@ -45,7 +46,7 @@ export async function mountMath(root, go) {
   function lesson() {
     return `<div class="card" style="text-align:center">
         <p class="sub">${t('lessonTitle')}</p>
-        <p class="h">${NAMES[level]}</p>
+        <p class="h">${nameOf(level)}</p>
         <p class="sub" style="background:var(--cream);border-radius:14px;padding:12px;color:var(--ink);line-height:1.7;text-align:left">
           ${hintText(task, 1)}<br>${hintText(task, 2)}</p>
       </div>
@@ -55,7 +56,7 @@ export async function mountMath(root, go) {
 
   function play() {
     return `<div class="card">
-        <p class="sub">${NAMES[level]} · ${t('qOf', { a: idx + 1, b: SET })}</p>
+        <p class="sub">${nameOf(level)} · ${t('qOf', { a: idx + 1, b: SET })}</p>
         ${tools.render(task, st, hint)}
         ${hint > 0 ? `<p class="sub" style="background:var(--cream);border-radius:14px;padding:10px;margin-top:10px;color:var(--ink);line-height:1.6">${hintText(task, hint)}</p>` : ''}
         ${checked === true ? `<p class="h" style="color:var(--green);margin-top:10px">${t('correct')}</p>` : ''}

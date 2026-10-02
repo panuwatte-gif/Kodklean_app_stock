@@ -491,8 +491,35 @@ export function r9DraftItems(items, draft) {
   return items.filter(i => i.active).map(i => ({
     ...i,
     qty: i.id in draft.qty ? draft.qty[i.id] : '',
-    price: i.id in draft.price ? draft.price[i.id] : i.price
+    price: i.id in draft.price ? draft.price[i.id] : i.price,
+    cost: i.id in (draft.cost || {}) ? draft.cost[i.id] : i.cost ?? i.vendorCost ?? null,
+    costFromVendor: !(i.id in (draft.cost || {})) && (i.cost === null || i.cost === undefined) && i.vendorCost !== null && i.vendorCost !== undefined,
+    mk: i.id in (draft.mk || {}) ? draft.mk[i.id] : i.markup ?? r9MarkupOf(i.cost ?? i.vendorCost, i.price)
   }));
+}
+
+// mark up % จากต้นทุนกับราคา (ต้นทุนว่าง/0 หรือราคาว่าง = null)
+export function r9MarkupOf(cost, price) {
+  if (cost === null || cost === undefined || cost === '' || !(Number(cost) > 0) || price === null || price === undefined || price === '') return null;
+  return Math.round((Number(price) / Number(cost) - 1) * 1000) / 10;
+}
+
+// คิดราคาหลายทิศทาง: แก้ช่องไหน (field = cost/mk/price) อีกช่องที่ขาดคิดให้ · ต้นทุน+mk → ราคา · ราคา+ต้นทุน → mk · ราคา+mk → ต้นทุน
+export function r9PriceSolve(v, field) {
+  const n = x => (x === null || x === undefined || x === '' ? null : Number(x));
+  let cost = n(v.cost), mk = n(v.mk), price = n(v.price);
+  const up = m => 1 + m / 100;
+  if (field === 'cost' && cost !== null) {
+    if (mk !== null) price = r2(cost * up(mk));
+    else if (price !== null) mk = r9MarkupOf(cost, price);
+  } else if (field === 'mk' && mk !== null) {
+    if (cost !== null) price = r2(cost * up(mk));
+    else if (price !== null && up(mk) > 0) cost = r2(price / up(mk));
+  } else if (field === 'price' && price !== null) {
+    if (cost !== null && cost > 0) mk = r9MarkupOf(cost, price);
+    else if (mk !== null && up(mk) > 0) cost = r2(price / up(mk));
+  }
+  return { cost, mk, price };
 }
 
 // รวมของ 1 แถว = ปริมาณ × ราคา

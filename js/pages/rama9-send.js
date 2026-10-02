@@ -1,36 +1,19 @@
 // แท็บส่งของ — วาดแถบวันที่ ตารางรายการ ยอดรวม และปุ่มท้ายหน้า (การกดปุ่มอยู่ที่ rama9.js)
-import { R9_UI, R9_SEND_COLS, R9_ROW_TOOLS } from '../shared/config.js';
-import { glyph, dateBarHtml, dateBandHtml, r9Photo } from '../shared/ui.js';
+import { R9_UI, R9_COST_COLS, R9_COST_UI } from '../shared/config.js';
+import { costItemHtml, val } from './rama9-cost.js';
+import { glyph, dateBarHtml, dateBandHtml } from '../shared/ui.js';
 import { money, moneyFine, fillText } from '../shared/format.js';
-import { r9Row, r9Totals, r9ByCat, r9DraftItems } from '../shared/calc.js';
+import { r9Row, r9Totals, r9ByCat, r9DraftItems, r9PriceSolve } from '../shared/calc.js';
 
 // แถบวันที่ของรอบส่ง + แถบเตือนเมื่อไม่ใช่วันนี้ (บันทึกด้วยวันที่นี้ ไม่ใช่วันที่ของเครื่อง)
 export function dateHtml(date) {
   return `<div class="r9-datewrap">${dateBarHtml(date, 'r9-date-pick')}${dateBandHtml(date, R9_UI.dateBand)}</div>`;
 }
 
-// ปุ่มไอคอนท้ายแถว 4 ปุ่ม
-function toolsHtml() {
-  return R9_ROW_TOOLS.map(t => `
-    <button class="r9-tool" type="button" data-tool="${t.id}" aria-label="${t.label}" style="--c:${t.color};--tint:${t.tint}">${glyph(t.glyph, 13)}</button>`).join('');
-}
-
-// แถวรายการ 1 แถว: ชื่อ + ปริมาณ + ราคา + รวม + ปุ่มจัดการ (ราคายังไม่ตั้ง = ว่างไว้ ห้ามเป็น 0)
-// tools = false คือหน้าที่กรอกอย่างเดียว (หน้าแม่พัน) — การแก้รายการอยู่ที่แท็บตั้งค่าของหน้าพระราม 9
+// แถวรายการ 1 แถว (ชุดเดียวกันทั้งหน้าพระราม 9 และหน้าแม่พัน · tools = false ไม่มีปุ่มแก้รายการ)
 function itemHtml(item, tools = true) {
   const hasPrice = item.price !== null && item.price !== '' && item.price !== undefined;
-  const sum = hasPrice ? r9Row(item) : 0;
-  return `
-    <div class="r9-row r9-item${tools ? '' : ' r9-row--slim'}" data-id="${item.id}">
-      <span class="r9-item__name">
-        <img src="${r9Photo(item)}" alt="" width="22" height="22" loading="lazy" decoding="async">
-        <span title="${item.name} (${item.unit})">${item.name}</span>
-      </span>
-      <input class="r9-in" type="number" inputmode="decimal" step="0.1" min="0" placeholder="—" data-f="qty" value="${item.qty ?? ''}">
-      <input class="r9-in${hasPrice ? '' : ' is-nil'}" type="number" inputmode="decimal" step="1" min="0" placeholder="—" data-f="price" value="${hasPrice ? item.price : ''}">
-      <span class="r9-item__sum${sum ? '' : ' is-zero'}">${sum ? moneyFine(sum) : '—'}</span>
-      ${tools ? `<span class="r9-item__tools">${toolsHtml()}</span>` : ''}
-    </div>`;
+  return costItemHtml(item, hasPrice, hasPrice ? r9Row(item) : 0, tools);
 }
 
 // กลุ่มหมวด 1 หมวด: หัวหมวด + รายการในหมวด + ปุ่มเพิ่มรายการในหมวดนี้
@@ -54,7 +37,7 @@ function groupHtml(group, closed, tools = true) {
 // ตารางรายการส่งของทั้งใบ (opts.tools = false คือกรอกอย่างเดียว ไม่มีปุ่มแก้รายการ)
 export function tableHtml(items, cats, closed, opts = {}) {
   const tools = opts.tools !== false;
-  const cols = tools ? R9_SEND_COLS : R9_SEND_COLS.slice(0, 4);
+  const cols = tools ? R9_COST_COLS : R9_COST_COLS.slice(0, 6);
   const head = cols.map(c => `<span>${c}</span>`).join('');
   return `
     <div class="r9-card">
@@ -69,7 +52,8 @@ export function tableHtml(items, cats, closed, opts = {}) {
         <button class="r9-btn r9-btn--green" type="button" data-act="add">${glyph('plus', 15)}<span>${R9_UI.addItem}</span></button>
         <button class="r9-btn" type="button" data-act="addCat">${glyph('plus', 15)}<span>${R9_UI.addCat}</span></button>
       </div>` : ''}
-      <div class="r9-row r9-thead${tools ? '' : ' r9-row--slim'}">${head}</div>
+      <p class="r9-costhelp">${R9_COST_UI.help}</p>
+      <div class="r9-row r9-thead r9-row--cost${tools ? '' : ' r9-row--costslim'}">${head}</div>
       ${r9ByCat(items, cats).map(g => groupHtml(g, closed, tools)).join('')}
     </div>`;
 }
@@ -109,11 +93,24 @@ export function sumHtml(items, fee) {
 export function sendInput(event, { draft, items, root, save }) {
   const elm = event.target;
   if (elm.matches('[data-f]')) {
-    const id = elm.closest('.r9-item').dataset.id, f = elm.dataset.f;
-    draft[f][id] = elm.value === '' ? (f === 'price' ? null : '') : Number(elm.value);
+    const row = elm.closest('.r9-item'), id = row.dataset.id, f = elm.dataset.f;
+    draft.cost = draft.cost || {}; draft.mk = draft.mk || {};
+    draft[f][id] = elm.value === '' ? (f === 'qty' ? '' : null) : Number(elm.value);
+    if (f !== 'qty') {   // ต้นทุน/mk/ราคา: คิดช่องที่เหลือให้ แล้วเติมเฉพาะช่องอื่น (ช่องที่พิมพ์อยู่ไม่ถูกทับ)
+      const cur = r9DraftItems(items, draft).find(r => r.id === id);
+      const out = r9PriceSolve({ cost: cur.cost, mk: cur.mk, price: cur.price }, f);
+      [['cost', out.cost], ['mk', out.mk], ['price', out.price]].forEach(([k, v]) => {
+        if (k === f) return;
+        draft[k][id] = v;
+        const box = row.querySelector(`[data-f="${k}"]`);
+        if (box) { box.value = val(v); box.classList.remove('is-vendor'); }
+      });
+      const pb = row.querySelector('[data-f="price"]');
+      if (pb) pb.classList.toggle('is-nil', out.price === null);
+    }
     save();
     const rows = r9DraftItems(items, draft), it = rows.find(r => r.id === id);
-    const sum = it.price === null ? 0 : r9Row(it);
+    const sum = it.price === null || it.price === '' ? 0 : r9Row(it);
     const cell = elm.closest('.r9-item').querySelector('.r9-item__sum');
     cell.textContent = sum ? moneyFine(sum) : '—';
     cell.classList.toggle('is-zero', !sum);

@@ -46,17 +46,18 @@ export function salesCard(sales, ui, canSet = false) {
   const t = HOME_UI.sales;
   const period = t.periods.some(p => p.id === ui.salesPeriod) ? ui.salesPeriod : 'month';
   const dd = dropdownHtml({ name: 'salesPeriod', label: t.periodLabel, value: period, options: t.periods.map(p => ({ value: p.id, label: p.label })) });
-  const sub = period === 'month' ? fillText(t.subMonth, { d: dayLongTh(sales.through) }) : t.subToday;
+  const dThru = dayLongTh(sales.through), mName = sales.monthLabel || '';   // วันล่าสุดที่มีรายได้ + เดือนของวันนั้น
+  const sub = period === 'month' ? fillText(t.subMonth, { m: mName, d: dThru }) : fillText(t.subToday, { d: dThru });
   const tot = sales.total || {};
   const totVal = period === 'month' ? tot.month : tot.today;
   const aim = tot.daily === null || tot.daily === undefined ? null : period === 'month' ? tot.daily * tot.openSoFar : tot.daily;
   const ta = achievement(totVal, aim);
   const totPct = totVal === null || totVal === undefined ? HOME_UI.noData : ta.pct === null ? t.noTarget : `${Math.round(ta.pct)}%`;
   const aimText = aim === null ? t.noTarget : period === 'month'
-    ? fillText(t.monthTarget, { v: baht(aim), n: tot.openSoFar, m: baht(tot.daily * tot.openMonth) }) : fillText(t.dailyTarget, { v: baht(aim) });
+    ? fillText(t.monthTarget, { d: dThru, v: baht(aim), n: tot.openSoFar, t: baht(tot.daily * tot.openMonth) }) : fillText(t.dailyTarget, { v: baht(aim) });
   const total = `
     <div class="hsales__total">
-      <div class="hsales__totrow"><span>${period === 'month' ? t.totalMonth : t.totalToday}</span>${canSet ? `<button class="hsales__set" type="button" data-sales-target="1">${t.setBtn}</button>` : ''}</div>
+      <div class="hsales__totrow"><span>${period === 'month' ? fillText(t.totalMonth, { m: mName }) : fillText(t.totalToday, { d: dThru })}</span>${canSet ? `<button class="hsales__set" type="button" data-sales-target="1">${t.setBtn}</button>` : ''}</div>
       <b class="hsales__totval">${totVal === null || totVal === undefined ? HOME_UI.noData : baht(totVal)}</b>
       <small>${aimText}</small>
       <span class="hstore__bar" role="img" aria-label="${totPct}"><i style="width:${ta.width.toFixed(1)}%"></i></span>

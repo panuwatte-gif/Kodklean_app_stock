@@ -1,15 +1,18 @@
 // เครื่องมือทำโจทย์แต่ละระดับ — คำตอบได้จากการ "ทำ" บนจอ ไม่มีตัวเลือกให้เดา
 import { ASSETS } from '../../sprite_config.js';
 import { MONEY } from './gen.js';
+import { t, th, getLang } from '../../core/i18n.js';
 
 const pic = (item, size, extra) => `<img src="${ASSETS.food}${item}.webp" alt="" width="${size}" height="${size}"
   style="object-fit:contain;${extra || ''}">`;
 const tile = (inner, on) => `<span style="display:grid;place-items:center;width:60px;height:60px;border-radius:14px;
   background:${on ? '#E7F2E5' : '#fff'};box-shadow:${on ? '0 0 0 2px var(--lime)' : 'var(--shadow)'};position:relative">${inner}</span>`;
-const chip = (label, on) => `<span style="display:grid;place-items:center;min-width:56px;height:44px;padding:0 10px;
+const chip = (label, on) => `<span style="display:grid;place-items:center;text-align:center;min-width:56px;min-height:44px;padding:4px 10px;
   border-radius:12px;background:${on ? 'var(--gold)' : '#fff'};color:var(--ink);font-weight:600;
   box-shadow:var(--shadow)">${label}</span>`;
 const readout = n => `<p style="font-size:34px;font-weight:600;margin:10px 0 0;color:var(--green)">${n}</p>`;
+// ชื่อเมนูเครื่องดื่ม: ไทยเสมอ (บิลจริงเป็นภาษาไทย) + พม่ากำกับใต้เมื่อเลือกภาษาพม่า
+const drink = key => th(key) + (getLang() === 'my' ? `<small style="display:block;font-size:11px;font-weight:500;line-height:1.2">${t(key)}</small>` : '');
 const row = (kids, gap) => `<div style="display:flex;flex-wrap:wrap;gap:${gap || 8}px;justify-content:center">${kids}</div>`;
 
 // สถานะเริ่มต้นของเครื่องมือแต่ละระดับ
@@ -26,7 +29,7 @@ export function initState(task) {
 // วาดเครื่องมือ + คืนค่าคำตอบปัจจุบันที่ผู้เล่นทำได้
 export function render(task, st, hint) {
   const L = task.level;
-  if (L === 1) return `<p class="sub">แตะของทีละชิ้น</p>
+  if (L === 1) return `<p class="sub">${t('mt1')}</p>
     ${row(Array.from({ length: task.n }, (_, k) =>
       `<button data-tap="${k}" style="border:0;background:none;padding:0;cursor:pointer">
         ${tile(pic(task.item, 40) + (st.tapped.includes(k) ? '<span style="position:absolute;right:2px;bottom:2px;color:var(--green);font-weight:700">✓</span>' : ''),
@@ -36,7 +39,7 @@ export function render(task, st, hint) {
   if (L === 2) {
     const total = task.op === 'add' ? task.a + task.b : task.a;
     const left = Array.from({ length: total }, (_, k) => k).filter(k => !st.moved.includes(k));
-    return `<p class="sub">${task.op === 'add' ? 'ย้ายของทั้งสองกองมารวมในตะกร้า' : `เอาของออก ${task.b} ชิ้น แล้วนับที่เหลือ`}</p>
+    return `<p class="sub">${task.op === 'add' ? t('mh1_2add') : t('mt2sub', { b: task.b })}</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
         <div style="background:#fff;border-radius:16px;padding:10px;box-shadow:var(--shadow);min-height:96px">
           ${row(left.map(k => `<button data-move="${k}" style="border:0;background:none;padding:0;cursor:pointer">${tile(pic(task.item, 34), hint >= 1)}</button>`).join(''), 6)}
@@ -50,7 +53,7 @@ export function render(task, st, hint) {
 
   if (L === 3) {
     const pct = Math.min(100, st.pos / 200 * 100);
-    return `<p class="sub">เริ่มที่ ${task.start} — กดกระโดดให้ครบ</p>
+    return `<p class="sub">${t('mt3', { s: task.start })}</p>
       <div style="position:relative;height:52px;margin:14px 0">
         <div class="bar" style="height:10px;margin-top:20px"><i style="width:${pct}%"></i></div>
         <span style="position:absolute;top:0;left:calc(${pct}% - 14px);font-weight:700;color:var(--green)">▼</span>
@@ -65,18 +68,18 @@ export function render(task, st, hint) {
 
   if (L === 4) {
     const got = st.picked.reduce((a, b) => a + b, 0);
-    return `<p class="sub">ค่าอาหาร ${task.price} · ลูกค้าจ่าย ${task.paid}</p>
-      <p class="sub">หยิบเงินนับต่อจาก ${task.price} ไปให้ถึง ${task.paid}</p>
+    return `<p class="sub">${t('mt4a', { p: task.price, q: task.paid })}</p>
+      <p class="sub">${t('mt4b', { p: task.price, q: task.paid })}</p>
       ${row(MONEY.map(m => `<button data-money="${m}" style="border:0;background:none;padding:0;cursor:pointer">${chip(m, hint >= 1)}</button>`).join(''))}
       <div style="background:var(--cream);border-radius:16px;padding:10px;margin-top:12px;min-height:60px">
-        ${row(st.picked.map((m, k) => `<button data-undo="${k}" style="border:0;background:none;padding:0;cursor:pointer">${chip(m, true)}</button>`).join('') || '<span class="sub">ยังไม่หยิบ</span>')}
+        ${row(st.picked.map((m, k) => `<button data-undo="${k}" style="border:0;background:none;padding:0;cursor:pointer">${chip(m, true)}</button>`).join('') || `<span class="sub">${t('mt4none')}</span>`)}
       </div>
       ${readout(task.price + got + ' / ' + task.paid)}
-      <p class="sub">เงินทอน = ${got}</p>`;
+      <p class="sub">${t('mt4change', { n: got })}</p>`;
   }
 
   if (L === 5) {
-    return `<p class="sub">แตะทีละแถว</p>
+    return `<p class="sub">${t('mt5')}</p>
       <div style="display:grid;gap:8px;margin-top:10px">
         ${Array.from({ length: task.rows }, (_, r) => `<button data-row="${r}"
           style="border:0;background:${st.rows.includes(r) ? '#E7F2E5' : '#fff'};border-radius:14px;padding:8px;
@@ -88,7 +91,7 @@ export function render(task, st, hint) {
 
   if (L === 6) {
     const perCup = Array.from({ length: task.cups }, (_, c) => Math.floor(st.placed / task.cups) + (st.placed % task.cups > c ? 1 : 0));
-    return `<p class="sub">ของ ${task.n} ชิ้น แบ่งใส่ ${task.cups} ถ้วยเท่าๆ กัน</p>
+    return `<p class="sub">${t('mt6', { n: task.n, c: task.cups })}</p>
       ${row(Array.from({ length: task.n - st.placed }, () =>
         `<button data-place style="border:0;background:none;padding:0;cursor:pointer">${tile(pic(task.item, 32), hint >= 1)}</button>`).join(''), 6)}
       <div style="display:grid;grid-template-columns:repeat(${task.cups},1fr);gap:8px;margin-top:12px">
@@ -99,19 +102,19 @@ export function render(task, st, hint) {
   }
 
   const names = [...new Set(task.bills.flat())];
-  return `<p class="sub">ลากแก้วจาก 3 บิลลงโถปั่น — เมนูเดียวกันปั่นรอบเดียว</p>
+  return `<p class="sub">${t('mt7')}</p>
     <div style="display:grid;gap:8px;margin-top:10px">
       ${task.bills.map((b, k) => `<div style="background:#fff;border-radius:14px;padding:8px;box-shadow:var(--shadow)">
-        <p class="sub" style="margin:0 0 4px">บิล ${k + 1}</p>
-        ${row(b.map(n => `<button data-glass="${n}" style="border:0;background:none;padding:0;cursor:pointer">${chip(n, st.batches.includes(n))}</button>`).join('') || '<span class="sub">—</span>', 6)}
+        <p class="sub" style="margin:0 0 4px">${t('mt7bill', { n: k + 1 })}</p>
+        ${row(b.map(n => `<button data-glass="${n}" style="border:0;background:none;padding:0;cursor:pointer">${chip(drink(n), st.batches.includes(n))}</button>`).join('') || '<span class="sub">—</span>', 6)}
       </div>`).join('')}
     </div>
     <div style="background:var(--cream);border-radius:16px;padding:10px;margin-top:12px">
-      <p class="sub" style="margin:0">โถปั่น ${st.batches.length} รอบ</p>
-      ${row(st.batches.map(n => chip(n, true)).join('') || '<span class="sub">ยังไม่ใส่</span>', 6)}
+      <p class="sub" style="margin:0">${t('mt7jar', { n: st.batches.length })}</p>
+      ${row(st.batches.map(n => chip(drink(n), true)).join('') || `<span class="sub">${t('mt7none')}</span>`, 6)}
     </div>
     ${readout(st.batches.length)}
-    <p class="sub">ทำทีละบิลต้องปั่น ${task.bills.flat().length} รอบ · รวมเมนูซ้ำเหลือ ${names.length} รอบ</p>`;
+    <p class="sub">${t('mt7sum', { a: task.bills.flat().length, b: names.length })}</p>`;
 }
 
 // ผูกการแตะ/กด แล้วคืนค่าคำตอบที่ผู้เล่นทำได้ ผ่าน onChange

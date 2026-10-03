@@ -1,4 +1,4 @@
-// หน้างานของแม่พัน — คุม 2 แท็บ (รายได้ประจำวัน / บันทึกส่งพระราม 9) วันที่ทำงาน และปุ่มบันทึกของแต่ละแท็บ
+// หน้างานของแม่พัน — คุม 3 แท็บ (รายได้ประจำวัน / บันทึกส่งพระราม 9 / ต้นทุนสินค้า) วันที่ทำงาน และปุ่มบันทึกของแต่ละแท็บ
 import { todayIso, getStaff } from '../shared/data.js';
 import { MAEPAN_UI as T } from '../shared/config.js';
 import { workTopHtml, workFootHtml } from '../shared/work-ui.js';
@@ -8,6 +8,8 @@ import { heroHtml, tabsHtml } from './maepan-view.js';
 import { incomeBody } from './maepan-income-view.js';
 import { loadIncome, saveIncome, incomeHistory, incomeClick, incomeInput } from './maepan-income.js';
 import { r9Body, loadR9, sendR9, r9History, r9Click, r9Input, r9Change } from './maepan-r9.js';
+import { costBody } from './maepan-cost-view.js';
+import { loadCost, saveCost, costHistory, costClick, costInput } from './maepan-cost.js';
 
 const ROLE_TEXT = { owner: 'เจ้าของร้าน', lead: 'หัวหน้า', staff: 'พนักงาน' };
 
@@ -16,27 +18,31 @@ export function mountMaepanPage(root, onGo, startTab = 'income') {
   const state = { tab: startTab, date: todayIso(), closed: {}, from: '', to: '', built: false };
   const inc = { brands: [], channels: [], all: [], data: {}, dirty: {}, brand: null, ready: false, error: false };
   const r9 = { cats: [], items: [], rounds: [], draft: null, ready: false, error: false };
+  const cs = { items: [], draft: {}, r9: new Set(), staff: [], grp: 'all', q: '', closed: {}, ready: false, error: false };
   const el = sel => root.querySelector(sel);
+  const body = { income: () => incomeBody(inc), r9: () => r9Body(r9, state), cost: () => costBody(cs) };
 
   const draw = () => {
     const page = T.pages[state.tab];
     el('#mp-hero').innerHTML = heroHtml(state.tab);
+    el('#mp-date').hidden = state.tab === 'cost';   // ต้นทุนไม่ผูกกับวันที่
     el('#mp-date').innerHTML = dateBarHtml(state.date, 'mp-date-pick') + dateBandHtml(state.date);
     el('#mp-tabs').innerHTML = tabsHtml(state.tab);
-    el('#mp-body').innerHTML = state.tab === 'income' ? incomeBody(inc) : r9Body(r9, state);
+    el('#mp-body').innerHTML = body[state.tab]();
     el('#mp-foot').innerHTML = workFootHtml(page.save, page.hist);
   };
 
-  const ctx = { state, inc, r9, root, draw, reload: () => reload() };
+  const ctx = { state, inc, r9, cs, root, draw, reload: () => reload() };
 
   // โหลดข้อมูลของแท็บที่เปิดอยู่ (โหลดครั้งเดียว แล้วเก็บไว้)
   const load = async () => {
     if (state.tab === 'income' && !inc.ready) { await loadIncome(inc, state.date); draw(); }
     if (state.tab === 'r9' && !r9.ready) { await loadR9(r9, state); draw(); }
+    if (state.tab === 'cost' && !cs.ready) { await loadCost(cs); draw(); }
   };
 
   const reload = async () => {
-    if (state.tab === 'income') inc.ready = false; else r9.ready = false;
+    ({ income: inc, r9, cost: cs })[state.tab].ready = false;
     draw();
     await load();
   };
@@ -54,27 +60,37 @@ export function mountMaepanPage(root, onGo, startTab = 'income') {
 
   root.addEventListener('click', async event => {
     const tab = event.target.closest('[data-tab]');
-    if (tab) { state.tab = tab.dataset.tab; draw(); return load(); }
+    if (tab) {
+      state.tab = tab.dataset.tab;
+      // ต้นทุนพระราม 9 กับต้นทุนสินค้าเป็นชุดเดียวกัน → สลับมาแท็บไหนก็โหลดค่าล่าสุด (ยกเว้นมีต้นทุนที่แก้ค้างไว้)
+      if (state.tab === 'r9') r9.ready = false;
+      if (state.tab === 'cost' && !Object.keys(cs.draft).length) cs.ready = false;
+      draw(); return load();
+    }
     if (event.target.closest('[data-back]')) return onGo('mywork');
     if (event.target.closest('[data-save]')) {
-      const ok = state.tab === 'income' ? await saveIncome(inc, state.date) : await sendR9(r9, state);
-      if (ok) return reload();
+      const save = { income: () => saveIncome(inc, state.date), r9: () => sendR9(r9, state), cost: () => saveCost(cs) };
+      if (await save[state.tab]()) return reload();
       return;
     }
     if (event.target.closest('[data-hist]')) {
-      return state.tab === 'income' ? incomeHistory(inc, state.date) : r9History(r9);
+      return ({ income: () => incomeHistory(inc, state.date), r9: () => r9History(r9), cost: () => costHistory(cs) })[state.tab]();
     }
+    if (state.tab === 'cost') { costClick(event, ctx); return; }
     if (state.tab === 'income' ? await incomeClick(event, ctx) : r9Click(event, ctx)) return;
     if (await handleDateClick(event, state)) { inc.ready = false; draw(); load(); }
   });
 
   root.addEventListener('input', event => {
-    if (state.tab === 'income') incomeInput(event, ctx); else r9Input(event, ctx);
+    if (state.tab === 'income') incomeInput(event, ctx);
+    else if (state.tab === 'r9') r9Input(event, ctx);
+    else costInput(event, ctx);
   });
 
   root.addEventListener('change', async event => {
     const elm = event.target;
-    if (state.tab !== 'income' && r9.ready && await r9Change(event, ctx)) return;
+    if (state.tab === 'cost') return;
+    if (state.tab === 'r9' && r9.ready && await r9Change(event, ctx)) return;
     if (elm.matches('#mp-date-pick') && await handleDatePick(elm.value, state)) { inc.ready = false; draw(); load(); }
     else if (elm.matches('[data-from]')) { state.from = elm.value; state.built = false; draw(); }
     else if (elm.matches('[data-to]')) { state.to = elm.value; state.built = false; draw(); }

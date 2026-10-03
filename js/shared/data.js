@@ -6,7 +6,7 @@ import { parseCfg, withFcCtx, fcCtxOf, advanceFormulas, allowedFormulas, prevOpe
 import { shiftIso } from './format.js';
 import { buildHome } from './home-model.js';
 import { meatUseRows, buildPrepModel } from './calc.js';
-import { R9_VOID_STATUS, FC_SYNC_UI, FC_EXCLUDED_DAYS } from './config.js';
+import { R9_VOID_STATUS, FC_SYNC_UI, FC_EXCLUDED_DAYS, COST_SKIP_GROUP } from './config.js';
 import { showSyncNote } from './sync-note.js';
 import { buildForecast, dailyRowsOf, actualPatches, fcReadyFor, forecastPatches, fcShortWhy } from './forecast.js';
 
@@ -509,16 +509,11 @@ export const saveFcTrials = rows =>
 // ป้ายสถานการณ์ของวัตถุดิบตามช่วงเวลา
 export const addFcRegime = rows => dbPost('kk_forecast_regime', rows);
 
-// ราคาต่อกิโลของแต่ละรายการ (kk_count_item ผูกกับราคาวัตถุดิบ — ไม่มีราคาในฐาน = คืน null ห้ามเดา)
+// ต้นทุนต่อกิโลของแต่ละรายการ = ต้นทุนกลางชุดเดียวกับหน้าต้นทุนสินค้า (kk_view_item_cost: กรอกเองก่อน ไม่มีใช้ราคา App_money) · ไม่มีราคา/แปลงเป็นกก.ไม่ได้ = null ห้ามเดา
 export async function getFcPrices() {
-  const [items, ings] = await Promise.all([
-    dbGet('kk_count_item?select=id,name,grp,ingredient_id&order=id'),
-    dbGet('kk_ingredient?select=id,price_per_kg&order=id')
-  ]);
-  const byIng = {};
-  ings.forEach(i => { byIng[i.id] = i.price_per_kg === null ? null : Number(i.price_per_kg); });
+  const rows = await dbGet('kk_view_item_cost?select=count_item_id,name,grp,cost_per_kg&order=count_item_id');
   const out = {};
-  items.forEach(i => { out[i.id] = { name: i.name, grp: i.grp, price: i.ingredient_id ? byIng[i.ingredient_id] ?? null : null }; });
+  rows.forEach(r => { out[r.count_item_id] = { name: r.name, grp: r.grp, price: r.cost_per_kg === null || r.cost_per_kg === undefined ? null : Number(r.cost_per_kg) }; });
   return out;
 }
 
@@ -556,6 +551,20 @@ export const getR9Items = () =>
 // บันทึกต้นทุน / mark up % / ราคาส่งของรายการเดียวลง kk_rama9_item ทันที (ราคากลางของพระราม 9)
 export const saveR9Price = ({ id, cost, markup, price, by }) =>
   dbPost('rpc/kk_r9_price_save', { p_item: id, p_cost: cost, p_markup: markup, p_price: price, p_by: by });
+
+// ---------- ต้นทุนกลางของรายการในสต๊อก (หน้าแม่พัน แท็บต้นทุนสินค้า · ชุดเดียวกับช่องต้นทุนพระราม 9 และหน้าหลัก) ----------
+
+// ต้นทุนทุกรายการที่ยังใช้ เรียงตามหน้าสต๊อก · cost_manual = กรอกเอง · cost_app = ราคาจาก App_money · cost = ค่าที่ใช้จริง
+export async function getItemCosts() {
+  const rows = await dbGet(`kk_view_item_cost?active=is.true&grp=neq.${enc(COST_SKIP_GROUP)}&select=count_item_id,name,grp,unit,photo,cost_manual,cost_app,cost,cost_source,cost_updated_by,cost_updated_at&order=sort_order,count_item_id`);
+  return rows.map(r => ({ ...r, id: r.count_item_id, cost_manual: numOrNull(r.cost_manual), cost_app: numOrNull(r.cost_app), cost: numOrNull(r.cost) }));
+}
+
+// บันทึกต้นทุนหลายรายการทีเดียว rows = [{ id, cost }] (cost null = ล้าง กลับไปใช้ราคา App_money)
+export const saveItemCosts = (rows, by) => dbPost('rpc/kk_item_cost_save', { p_rows: rows, p_by: by });
+
+// รายการนับที่ผูกต้นทุนกับของส่งพระราม 9 อยู่ (ใช้ติดป้ายในหน้าต้นทุนสินค้า)
+export const getR9CostLinks = () => dbGet('kk_r9_item?active=is.true&cost_factor=not.is.null&select=count_item_id');
 
 // รอบส่งที่เป็นค่าล่าสุด (แถวที่ถูกแก้ไปแล้วไม่ส่งมา จึงไม่มียอดเบิ้ล)
 export const getR9Rounds = () =>

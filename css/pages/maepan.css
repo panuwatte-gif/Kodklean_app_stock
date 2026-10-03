@@ -63,26 +63,30 @@
   filter: drop-shadow(0 8px 14px rgba(150, 70, 100, .22));
 }
 
-/* ---------- แท็บสลับ 2 หน้างาน ---------- */
-.mp-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+/* ---------- แท็บสลับ 3 หน้างาน ---------- */
+.mp-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 
 .mp-tab {
   min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 0 10px;
+  gap: 5px;
+  padding: 4px 6px;
   border-radius: 14px;
   border: 1.5px solid var(--line);
   background: #fff;
   color: #96707D;
   font-family: Mitr, sans-serif;
   font-weight: 500;
-  font-size: 13.5px;
+  font-size: 12.5px;
+  line-height: 1.2;
+  text-align: center;
   cursor: pointer;
   transition: transform 140ms cubic-bezier(.2, .8, .3, 1);
 }
+
+.mp-tab svg { flex: none; }
 
 .mp-tab:active { transform: scale(.97); }
 .mp-tab.is-on { border-color: #E9538B; background: linear-gradient(170deg, #F2588F, var(--a)); color: #fff; box-shadow: 0 7px 16px rgba(190, 60, 110, .26); }
@@ -309,6 +313,59 @@
 .mp .wbtn--go { background: linear-gradient(170deg, #1F7A46, #14532B); border-color: rgba(255, 255, 255, .5); }
 .mp .r9-thead { background: var(--a); }
 .mp .r9-note { margin: 0; }
+
+/* ---------- แท็บต้นทุนสินค้า (หมวด/หัวหมวดยืมจากหน้าสต๊อก) ---------- */
+.mp-date[hidden] { display: none; }
+
+.mp-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--soft);
+}
+
+.mp-search input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; font-family: Anuphan, sans-serif; font-size: 13px; color: var(--ink); }
+.mp-search input:focus { outline: none; }
+.mp-search:focus-within { border-color: #A6BE40; box-shadow: 0 0 0 3px rgba(166, 190, 64, .22); }
+
+.mp-cats { display: flex; gap: 6px; margin: 0 -14px; padding: 0 14px 2px; overflow-x: auto; scrollbar-width: none; }
+.mp-cats::-webkit-scrollbar { display: none; }
+.mp-cats .stk-chip { flex: none; }
+.mp-costs { display: flex; flex-direction: column; gap: 10px; }
+
+.mp-cost { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-top: 1px solid #F3EEE4; }
+.mp-cost:first-child { border-top: 0; }
+.mp-cost__img { flex: none; width: 34px; height: 34px; object-fit: contain; border-radius: 9px; }
+.mp-cost__t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mp-cost__t b { font-family: Mitr, sans-serif; font-weight: 500; font-size: 12.5px; line-height: 1.25; color: #3B3127; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mp-cost__t em { font-style: normal; font-size: 10px; line-height: 1.3; color: #8C8172; }
+.mp-cost__t em b { display: inline-flex; align-items: center; gap: 2px; font-family: Anuphan, sans-serif; font-weight: 500; font-size: 10px; color: #2F63C9; }
+
+.mp-cost__f {
+  flex: none;
+  width: 124px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  border-radius: 11px;
+  border: 1.5px solid #E7DECF;
+  background: #fff;
+  overflow: hidden;
+}
+
+.mp-cost__f input { flex: 1; min-width: 0; width: 100%; height: 100%; padding: 0 6px; border: 0; background: none; font-family: Mitr, sans-serif; font-weight: 500; font-size: 14px; color: var(--ink); text-align: right; }
+.mp-cost__f input::-webkit-outer-spin-button, .mp-cost__f input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.mp-cost__f input:focus { outline: none; }
+.mp-cost__f i { flex: none; max-width: 58px; padding: 0 6px 0 2px; font-style: normal; font-size: 10px; line-height: 1.15; color: #8C8172; overflow-wrap: anywhere; }
+.mp-cost__f:focus-within { border-color: #A6BE40; box-shadow: 0 0 0 3px rgba(166, 190, 64, .22); }
+.mp-cost__f.is-app { background: #EEF6E4; border-color: #CFE3B5; }
+.mp-cost__f.is-nil { background: #FFF8EC; border-color: #F0DDBB; }
+.mp-cost__f.is-dirty { background: #FFF1F6; border-color: #EE6497; }
 
 /* ---------- ตอนสั่งพิมพ์รายงาน: เหลือเฉพาะรายงาน ---------- */
 @media print {

@@ -2,10 +2,10 @@
 import { STOCK_TABS, STOCK_GROUPS, STOCK_ITEM_ACTIONS, STOCK_COUNT_UI as T, CAT_ALL } from '../shared/config.js';
 import { countProgress } from '../shared/calc.js';
 import { fillText } from '../shared/format.js';
-import { glyph } from '../shared/ui.js';
+import { glyph, stockGroupOf } from '../shared/ui.js';
 
-// หาข้อมูลหมวดจากชื่อหมวดในฐาน (ไม่เจอ = ใช้ชิปกลางๆ)
-export const groupOf = id => STOCK_GROUPS.find(g => g.id === id) || { ...CAT_ALL, id, label: id };
+// หาข้อมูลหมวดจากชื่อหมวดในฐาน (ตัวจริงอยู่ที่ ui.js ใช้ร่วมกับหน้าต้นทุนสินค้า)
+export const groupOf = stockGroupOf;
 
 // แถบบอกว่าใครกำลังนับ และรับผิดชอบงานไหน (ทุกหน้าต้องบอกคนรับผิดชอบ)
 export function whoHtml(me, jobs) {

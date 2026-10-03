@@ -13,6 +13,9 @@ function mean(list) {
   return nums.length ? r1(nums.reduce((s, v) => s + v, 0) / nums.length) : null;
 }
 
+// ต้นทุนต่อกก. ของรายการนับ (ต้นทุนกลางจากหน้าต้นทุนสินค้า · ไม่มี = null ห้ามเดา)
+const priceKgOf = (prices, id) => (prices && prices[id] && prices[id].price !== null && prices[id].price !== undefined ? Number(prices[id].price) : null);
+
 // รูปประจำรายการวัตถุดิบ: รูปที่เก็บในฐาน > รูปที่จับคู่ไว้ > รูปประจำหมวด
 const photoOfItem = item =>
   item.photo || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
@@ -41,7 +44,9 @@ function usageOf(history, items, dates) {
 }
 
 // การ์ด "ยอดคงเหลือภาพรวม" — ของเหลือ/ของทิ้งรายเมนู (kk_cooked_leftover) ยังไม่มีบันทึก = ขีด ไม่ใช่ 0
-function leftOf(rows, menus, dates) {
+// ต้นทุนต่อกรัมของเมนู = ต้นทุนเนื้อหลักต่อกก. ÷ 1000 × อัตราส่วนเนื้อ (สูตรเดียวกับการ์ดลดของเหลือ)
+function leftOf(rows, menus, dates, prices) {
+  const perGram = m => { const p = m.protein_item_id ? priceKgOf(prices, m.protein_item_id) : null; return p === null ? null : p / 1000 * (Number(m.protein_ratio) || 1); };
   const prior = dates.map(d => shiftIso(d, -7));
   const pick = (date, type, menuId) => rows.filter(r =>
     r.left_date === date && r.entry_type === type && (!menuId || r.menu_id === menuId));
@@ -62,7 +67,7 @@ function leftOf(rows, menus, dates) {
     usable: days(dates, U, m.id), disposed: days(dates, W, m.id),
     priorUsable: days(prior, U, m.id), priorDisposed: days(prior, W, m.id),
     avg7: mean(days(dates, U, m.id)), avg30: mean30(m.id, U),
-    avgNew30: mean30(m.id, U), unitCost: null   // ต้นทุนต่อเสิร์ฟยังไม่มีในฐาน → ไม่ประมาณมูลค่า
+    avgNew30: mean30(m.id, U), unitCost: perGram(m)   // บาท/กรัม · ไม่มีต้นทุนเนื้อหลัก = null → ไม่ประมาณมูลค่า
   }));
   return {
     unit: 'กรัม', dates, hasData: rows.length > 0,   // hasData = มีบันทึกของเหลืออยู่บ้างแล้วหรือยัง
@@ -123,7 +128,7 @@ function riceOf(fcRows, items) {
 // การ์ดลดของเหลือ = ลดต้นทุน: ต้นทุนของทิ้งจริงสะสม (กก. × ราคาต่อกก.) เดือนนี้เทียบช่วงวันเดียวกันของเดือนก่อน
 // ของทิ้งดิบ = kk_prep_log "ทิ้ง" · อาหารปรุงสำเร็จทิ้ง = กรัม ÷ 1000 × อัตราส่วนเนื้อ × ราคาเนื้อหลักของเมนู · ไม่มีราคา = ไม่นับ (บอกจำนวนไว้)
 function savingsOf(waste, menus, prices, date) {
-  const priceOf = id => (prices && prices[id] && prices[id].price !== null && prices[id].price !== undefined ? Number(prices[id].price) : null);
+  const priceOf = id => priceKgOf(prices, id);
   const byDate = {}, noPrice = new Set();
   const add = (d, id, kg) => { const p = priceOf(id); if (p === null) { noPrice.add(id); return; } byDate[d] = (byDate[d] || 0) + kg * p; };
   (waste.raw || []).forEach(r => add(r.log_date, r.count_item_id, Number(r.qty) || 0));
@@ -220,7 +225,7 @@ export function buildHome(src) {
     },
     notices: (src.notices || []).map(n => ({ ...n, sort: n.sort_order, active: true })),
     usage: usageOf(src.history, src.items, dates),
-    left: leftOf(src.left, src.menus, dates),
+    left: leftOf(src.left, src.menus, dates, src.prices),
     prep: prepOf({ ...src, date: src.date }),
     sales: salesOf(src.brands, src.income, src.date, src.target, src.grab, src.channels),
     rice: riceOf(src.fcRows, src.items),

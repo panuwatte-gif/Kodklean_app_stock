@@ -1,0 +1,21 @@
+<!-- ปุ่มพิเศษ → KodKlean Snake: โหลดเกมที่ดูแลแยกจากแอปหลัก เพื่ออัปเดตเกมได้โดยไม่คัดลอกไฟล์ซ้ำ -->
+<section class="snake-page" data-screen-label="KodKlean Snake">
+  <header class="snake-page__bar">
+    <div class="snake-page__title">
+      <strong>KodKlean Snake</strong>
+      <span>เกมครัวกลาง · ဗဟိုမီးဖိုချောင်ဂိမ်း</span>
+    </div>
+    <div class="snake-page__actions">
+      <button class="snake-page__button" type="button" data-snake-reload>โหลดใหม่</button>
+      <a class="snake-page__button snake-page__button--primary" data-snake-open target="_blank" rel="noopener noreferrer">เต็มจอ ↗</a>
+    </div>
+  </header>
+  <div class="snake-page__stage">
+    <div class="snake-page__status" data-snake-status role="status">
+      <span class="snake-page__spinner" aria-hidden="true"></span>
+      <strong>กำลังเปิดเกม…</strong>
+      <small>ဂိမ်းကို ဖွင့်နေသည်…</small>
+    </div>
+    <iframe class="snake-page__frame" data-snake-frame title="KodKlean Snake" allow="autoplay; fullscreen" loading="eager"></iframe>
+  </div>
+</section>

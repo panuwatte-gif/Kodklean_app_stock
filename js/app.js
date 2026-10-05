@@ -5,6 +5,7 @@ import { mountPrepPage } from './pages/prep.js';
 import { mountRama9Page } from './pages/rama9.js';
 import { mountHomePage } from './pages/home.js';
 import { mountVillagePage } from './pages/village.js';
+import { mountSnakePage } from './pages/snake.js';
 import { mountLoginPage } from './pages/login.js';
 import { mountOtherPage } from './pages/other.js';
 import { mountSpecialPage } from './pages/special.js';
@@ -41,6 +42,7 @@ const PAGES = {
   prep: { file: 'pages/prep.html', mount: mountPrepPage },
   rama9: { file: 'pages/rama9.html', mount: mountRama9Page },
   village: { file: 'pages/village.html', mount: mountVillagePage },
+  snake: { file: 'pages/snake.html', mount: mountSnakePage },
   other: { file: 'pages/other.html', mount: mountOtherPage },
   special: { file: 'pages/special.html', mount: mountSpecialPage },
   accounts: { file: 'pages/accounts.html', mount: mountAccountsPage },

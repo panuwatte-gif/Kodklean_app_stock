@@ -93,12 +93,20 @@ export const SPECIAL_UI = {
   soon: '{name} · กำลังพัฒนา'
 };
 
+// ที่อยู่เกม Snake แยกไว้จุดเดียว เพื่อเปลี่ยนโดเมนภายหลังได้โดยไม่แตะหน้าเกม
+export const SNAKE_GAME_URL = 'https://kodklean-snake.pages.dev/';
+
 // การ์ดของหน้าปุ่มพิเศษ (goto = หน้าปลายทาง ถ้ามี)
 export const SPECIAL_CARDS = [
   {
     id: 'village', kind: 'hero', goto: 'village', title: 'หมู่บ้านอิ่มใจ', sub: 'เกมฝึกจำเมนูและส่วนผสมของทีม',
     kicker: 'เกมสะสมดาว', meta: 'เล่นได้ทุกวัน · มีอันดับรายสัปดาห์', icon: 'assets/icons/special-village.webp',
     accent: '#C98A2E', accent2: '#FBE2B4'
+  },
+  {
+    id: 'snake', kind: 'hero', goto: 'snake', title: 'KodKlean Snake', sub: 'พางูจิ๋วเก็บคำตอบ ฝึกเลข และจำสัญลักษณ์เมนู',
+    kicker: 'เกมครัวกลาง', meta: 'เล่นสั้น ๆ 2 นาทีครึ่ง · มีคะแนนออนไลน์', icon: 'https://kodklean-snake.pages.dev/assets/01_character_tokens/C01_AhHia_child.webp',
+    accent: '#117C78', accent2: '#BFEDEA'
   },
   {
     id: 'wheel', kind: 'half', title: 'กงล้อโบนัส', sub: 'หมุนสุ่มรางวัลประจำเดือน',

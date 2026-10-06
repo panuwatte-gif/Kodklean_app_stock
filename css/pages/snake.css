@@ -1,0 +1,76 @@
+/* KodKlean Snake ในแอปหลัก: แถบเครื่องมือคงที่ + เกมเต็มพื้นที่ที่เหลือ */
+.snake-page {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #071B22;
+  color: #fff;
+}
+
+.snake-page__bar {
+  flex: 0 0 auto;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #0B343A, #0E615E);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+.snake-page__title { min-width: 0; display: flex; flex: 1; flex-direction: column; }
+.snake-page__title strong { font-family: Mitr, sans-serif; font-size: 14px; font-weight: 600; line-height: 1.25; }
+.snake-page__title span { font-size: 10px; line-height: 1.35; color: rgba(255,255,255,.72); }
+
+.snake-page__actions { display: flex; gap: 6px; }
+.snake-page__button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 12px;
+  background: rgba(255,255,255,.08);
+  color: #fff;
+  font: 500 11px Mitr, sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+.snake-page__button--primary { background: #F2C761; border-color: #F2C761; color: #17363B; }
+
+.snake-page__stage { position: relative; flex: 1; min-height: 0; }
+.snake-page__frame { display: block; width: 100%; height: 100%; border: 0; background: #071B22; }
+.snake-page__status {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  padding: 24px;
+  background: radial-gradient(circle at 50% 35%, #124A4D, #071B22 68%);
+  text-align: center;
+}
+.snake-page__status[hidden] { display: none; }
+.snake-page__status strong { font: 500 16px Mitr, sans-serif; }
+.snake-page__status small { max-width: 310px; color: rgba(255,255,255,.68); line-height: 1.5; }
+.snake-page__status.is-error small { color: #F9D8C9; }
+.snake-page__spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255,255,255,.22);
+  border-top-color: #F2C761;
+  border-radius: 50%;
+  animation: snake-spin .8s linear infinite;
+}
+
+@keyframes snake-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 390px) {
+  .snake-page__bar { align-items: stretch; flex-direction: column; gap: 7px; }
+  .snake-page__actions { display: grid; grid-template-columns: 1fr 1fr; }
+}

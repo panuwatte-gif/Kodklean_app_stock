@@ -1,7 +1,7 @@
 // หน้าตาแท็บต้นทุนสินค้าของแม่พัน — สรุปจำนวน · ช่องค้นหา · ชิปหมวด · ตารางต้นทุนแยกหมวด (หมวด/ลำดับ/รูป ชุดเดียวกับหน้าสต๊อก)
-import { MAEPAN_UI, WORK_UI, STOCK_GROUPS, CAT_ALL } from '../shared/config.js';
+import { MAEPAN_UI, WORK_UI, CAT_ALL } from '../shared/config.js';
 import { workNoteHtml, workStatsHtml } from '../shared/work-ui.js';
-import { glyph, itemPhoto, stockGroupOf } from '../shared/ui.js';
+import { glyph, itemPhoto, stockGroupOf, stockGroups } from '../shared/ui.js';
 import { fillText, escHtml } from '../shared/format.js';
 
 const C = MAEPAN_UI.cost;
@@ -80,7 +80,7 @@ export function groupsHtml(cs) {
 
 // ชิปหมวด (เฉพาะหมวดที่มีรายการจริง)
 function catsHtml(cs) {
-  const used = STOCK_GROUPS.filter(g => cs.items.some(it => it.grp === g.id));
+  const used = stockGroups().filter(g => cs.items.some(it => it.grp === g.id));
   return [CAT_ALL].concat(used).map(c => `
     <button class="stk-chip stk-chip--sm${c.id === cs.grp ? ' is-on' : ''}" type="button" data-cgrp="${c.id}" style="--c:${c.color};--t:${c.tint}">
       <img src="${c.icon}" alt="" width="19" height="19" loading="lazy" decoding="async">${c.label}

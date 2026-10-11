@@ -20,7 +20,7 @@ export async function mountStockPage(root) {
   const date = todayIso();
   const box = id => root.querySelector(id);
   const draft = {};        // ตัวเลขที่กรอกใหม่รอบนี้ รอกดบันทึก
-  let rows = [], jobs = [], allJobs = [], assigns = [], resp = [];
+  let rows = [], jobs = [], assigns = [], resp = [];
 
   box('#stk-head').textContent = T.title;
   box('#stk-date').textContent = dayLongTh(date);
@@ -87,7 +87,6 @@ export async function mountStockPage(root) {
       });
       resp = res;
       assigns = asg;
-      allJobs = [...new Set(res.map(r => r.responsibility))];
       jobs = res.filter(r => r.staff_code === staffCode()).map(r => r.responsibility);
       if (!rows.some(mineOf)) view.mine = false;   // ไม่มีรายการของตัวเองเลย = เปิดดูทั้งหมดแทน
       draw();
@@ -112,7 +111,7 @@ export async function mountStockPage(root) {
   };
 
   // เพิ่ม/แก้/ลบ/สลับตำแหน่งรายการ (โค้ดอยู่ที่ stock-form.js)
-  const manage = itemActions({ rows: () => rows, jobs: () => allJobs, reload: load });
+  const manage = itemActions({ rows: () => rows, grp: () => (view.grp !== 'all' ? view.grp : null), reload: load });
 
   // บันทึกผลนับที่กรอกใหม่ทั้งหมด (แก้ตัวเลขเดิม = เพิ่มแถวใหม่ ของเก่าจะถูกปิดให้เอง)
   const saveAll = async () => {

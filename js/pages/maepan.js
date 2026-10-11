@@ -7,7 +7,7 @@ import { workStaff } from '../shared/auth.js';
 import { heroHtml, tabsHtml } from './maepan-view.js';
 import { incomeBody } from './maepan-income-view.js';
 import { loadIncome, saveIncome, incomeHistory, incomeClick, incomeInput } from './maepan-income.js';
-import { r9Body, loadR9, sendR9, r9History, r9Click, r9Input, r9Change } from './maepan-r9.js';
+import { r9Body, loadR9, sendR9, r9History, r9Click, r9Input } from './maepan-r9.js';
 import { costBody } from './maepan-cost-view.js';
 import { loadCost, saveCost, costHistory, costClick, costInput } from './maepan-cost.js';
 
@@ -90,7 +90,6 @@ export function mountMaepanPage(root, onGo, startTab = 'income') {
   root.addEventListener('change', async event => {
     const elm = event.target;
     if (state.tab === 'cost') return;
-    if (state.tab === 'r9' && r9.ready && await r9Change(event, ctx)) return;
     if (elm.matches('#mp-date-pick') && await handleDatePick(elm.value, state)) { inc.ready = false; draw(); load(); }
     else if (elm.matches('[data-from]')) { state.from = elm.value; state.built = false; draw(); }
     else if (elm.matches('[data-to]')) { state.to = elm.value; state.built = false; draw(); }

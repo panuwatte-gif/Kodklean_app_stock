@@ -487,15 +487,38 @@ export function incomeBrandTotal(amounts) {
 }
 
 // รายการที่เปิดใช้ + ค่าที่กำลังกรอกในร่างรอบส่ง (ราคาว่าง = ยังไม่ตั้งราคา ต้องเป็น null ห้ามเป็น 0)
+// ต้นทุนตั้งต้น = ทุนตามจริงจากราคากลาง (การ์ดต้นทุนอาหาร) · แก้ในวันนั้น = เก็บเฉพาะวันนั้น · มี ต้นทุน + mk = คิดราคาให้ ไม่มีใช้ราคาครั้งก่อน
 export function r9DraftItems(items, draft) {
-  return items.filter(i => i.active).map(i => ({
-    ...i,
-    qty: i.id in draft.qty ? draft.qty[i.id] : '',
-    price: i.id in draft.price ? draft.price[i.id] : i.price,
-    cost: i.id in (draft.cost || {}) ? draft.cost[i.id] : i.cost ?? i.vendorCost ?? null,
-    costFromVendor: !(i.id in (draft.cost || {})) && (i.cost === null || i.cost === undefined) && i.vendorCost !== null && i.vendorCost !== undefined,
-    mk: i.id in (draft.mk || {}) ? draft.mk[i.id] : i.markup ?? r9MarkupOf(i.cost ?? i.vendorCost, i.price)
-  }));
+  const has = v => v !== null && v !== undefined && v !== '';
+  return items.filter(i => i.active).map(i => {
+    const base = i.costActual ?? null;
+    const cost = i.id in (draft.cost || {}) ? draft.cost[i.id] : base;
+    const mk = i.id in (draft.mk || {}) ? draft.mk[i.id] : i.markup ?? r9MarkupOf(base, i.price);
+    const auto = has(cost) && has(mk) ? r2(Number(cost) * (1 + Number(mk) / 100)) : i.price;
+    return {
+      ...i, cost, mk,
+      qty: i.id in draft.qty ? draft.qty[i.id] : '',
+      price: i.id in draft.price ? draft.price[i.id] : auto,
+      costFromVendor: !(i.id in (draft.cost || {})) && i.actualSource === 'app_money'
+    };
+  });
+}
+
+// ต้นทุน 1 จานแบบคร่าวๆ = Σ ปริมาณ × ราคา fix (ยังไม่ตั้ง fix ใช้ทุนจริงแทน) + Σ ค่าอื่นต่อจาน
+// parts = [{ item_id, qty } หรือ { label, baht }] · คืน { fix, actual, noFix: ชื่อที่ยังไม่ตั้ง fix, noPrice: ชื่อที่ไม่มีราคาเลย }
+export function menuCost(parts, items) {
+  const out = { fix: 0, actual: 0, noFix: [], noPrice: [] };
+  (parts || []).forEach(p => {
+    if (!p.item_id) { const b = Number(p.baht) || 0; out.fix += b; out.actual += b; return; }
+    const it = items.find(i => i.id === p.item_id);
+    if (!it) return;
+    const q = Number(p.qty) || 0, fix = it.costFix ?? it.costActual, act = it.costActual ?? it.costFix;
+    if (fix === null || fix === undefined) { out.noPrice.push(it.name); return; }
+    if (it.costFix === null || it.costFix === undefined) out.noFix.push(it.name);
+    out.fix += q * fix; out.actual += q * act;
+  });
+  out.fix = r2(out.fix); out.actual = r2(out.actual);
+  return out;
 }
 
 // mark up % จากต้นทุนกับราคา (ต้นทุนว่าง/0 หรือราคาว่าง = null)

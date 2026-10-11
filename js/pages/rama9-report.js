@@ -1,17 +1,17 @@
 // แท็บ Report — วาดตัวกรองรอบ ตารางสรุปยอด ส่วนวิเคราะห์ และปุ่มพิมพ์รายงาน
 import { R9_UI, R9_PLACE, R9_RANGES, R9_EXPORTS } from '../shared/config.js';
 import { glyph, barChart, lineChart, donut } from '../shared/ui.js';
-import { money, moneyFine, weight, dayLongTh } from '../shared/format.js';
+import { money, moneyFine, weight, dayLongTh, dayShort } from '../shared/format.js';
 import { r9Matrix, r9ReportKpi, r9TopItems, r9RoundTotals, r9ItemSummary } from '../shared/calc.js';
 
-// การ์ดตัวกรอง: ช่วงวันที่ + ชิปช่วงเวลา + เลือกรอบ
+// การ์ดตัวกรอง: ช่วงวันที่ + ชิปช่วงเวลา + เลือกวันที่ส่ง (เฉพาะที่อยู่ในช่วง)
 export function pickHtml(view, rounds) {
   const chips = R9_RANGES.map(r => `
     <button class="r9-chip${view.range === r.id ? ' is-on' : ''}" type="button" data-range="${r.id}">${r.label}</button>`).join('');
-  const checks = rounds.map(rd => `
+  const checks = rounds.filter(rd => rd.date >= view.from && rd.date <= view.to).map(rd => `
     <button class="r9-check${view.picked[rd.id] ? ' is-on' : ''}" type="button" data-pickround="${rd.id}">
       <span class="r9-check__box">${view.picked[rd.id] ? glyph('check', 12) : ''}</span>
-      <span>รอบ #${rd.no}</span>
+      <span>${dayShort(rd.date)}</span>
     </button>`).join('');
   return `
     <div class="r9-card r9-noprint">
@@ -39,9 +39,9 @@ function pagerHtml(total, page, per) {
   const a = page * per + 1, b = Math.min(total, (page + 1) * per);
   return `
     <div class="r9-rtpage r9-noprint">
-      <button type="button" data-rpage="${page - 1}"${page === 0 ? ' disabled' : ''} aria-label="รอบก่อนหน้า">${glyph('chevron', 14)}</button>
-      <span>รอบที่ ${a}–${b} จาก ${total}</span>
-      <button type="button" data-rpage="${page + 1}"${page >= pages - 1 ? ' disabled' : ''} aria-label="รอบถัดไป">${glyph('chevron', 14)}</button>
+      <button type="button" data-rpage="${page - 1}"${page === 0 ? ' disabled' : ''} aria-label="ก่อนหน้า">${glyph('chevron', 14)}</button>
+      <span>ครั้งที่ ${a}–${b} จาก ${total}</span>
+      <button type="button" data-rpage="${page + 1}"${page >= pages - 1 ? ' disabled' : ''} aria-label="ถัดไป">${glyph('chevron', 14)}</button>
     </div>`;
 }
 
@@ -53,7 +53,7 @@ function sumTable(picked, items, cats, closed, page) {
   // คอลัมน์นอกหน้าที่เปิดอยู่ ซ่อนบนจอ แต่ยังอยู่ในตารางเพื่อให้พิมพ์ออกครบ
   const off = i => (i < from || i >= to) ? ' class="is-off"' : '';
   const m = r9Matrix(picked, items, cats);
-  const head = picked.map((rd, i) => `<th${off(i)}>รอบที่ ${i + 1}<br>(#${rd.no})</th>`).join('');
+  const head = picked.map((rd, i) => `<th${off(i)}>${dayShort(rd.date)}</th>`).join('');
   const cell = v => v ? weight(v) : '<span class="is-nil">-</span>';
   const body = m.groups.map(g => {
     const shut = !!closed[g.cat.id];
@@ -105,7 +105,7 @@ function itemSumHtml(picked, items) {
       </div>
       <div class="r9-rtwrap">
         <table class="r9-rt">
-          <thead><tr><th>รายการสินค้า</th><th>ปริมาณรวม</th><th>กี่รอบ</th><th>มูลค่า (บาท)</th></tr></thead>
+          <thead><tr><th>รายการสินค้า</th><th>ปริมาณรวม</th><th>กี่ครั้ง</th><th>มูลค่า (บาท)</th></tr></thead>
           <tbody>${rows || `<tr><td colspan="4">${R9_UI.emptyReport}</td></tr>`}</tbody>
         </table>
       </div>
@@ -131,8 +131,8 @@ function analyzeHtml(picked, items, cats) {
       </div>
       <div class="r9-card__sub" style="padding:0 12px">ยอดรวมตามหมวดหมู่ (ปริมาณ)</div>
       ${barChart(bars, { h: 92 })}
-      <div class="r9-card__sub" style="padding:10px 12px 0">แนวโน้มมูลค่ารายรอบ (บาท)</div>
-      ${lineChart(nets, picked.map(rd => '#' + rd.no), { w: 380, h: 110 })}
+      <div class="r9-card__sub" style="padding:10px 12px 0">มูลค่าแต่ละครั้งที่ส่ง (บาท)</div>
+      ${lineChart(nets, picked.map(rd => dayShort(rd.date)), { w: 380, h: 110 })}
       <div class="r9-card__sub" style="padding:10px 12px 0">สัดส่วนตามหมวดหมู่</div>
       <div class="r9-donutwrap">${donut(parts)}<div class="r9-legend">${legend}</div></div>
       <div class="r9-card__sub" style="padding:0 12px 4px">รายการสินค้ายอดนิยม (ตามปริมาณ)</div>
@@ -149,13 +149,13 @@ export function reportHtml(picked, items, cats, view, closed) {
   return `
     <div class="r9-print-only" style="padding:4px 12px 10px">
       <div class="r9-print-only__t">รายงานการส่งของ — สาขา${R9_PLACE.title}</div>
-      <div class="r9-print-only__s">${dayLongTh(view.from)} – ${dayLongTh(view.to)} · ${k.rounds} รอบ · ${k.items} รายการ · ${money(k.net)} บาท</div>
+      <div class="r9-print-only__s">${dayLongTh(view.from)} – ${dayLongTh(view.to)} · ส่ง ${k.rounds} ครั้ง · ${k.items} รายการ · ${money(k.net)} บาท</div>
     </div>
     <div class="r9-card">
       <div class="r9-card__head">
         <img class="r9-card__ic" src="assets/r9/boxes.webp" alt="" width="26" height="26" loading="lazy" decoding="async">
         <div class="r9-card__t"><div class="r9-card__title">${R9_UI.reportSum}</div><div class="r9-card__sub">${R9_UI.reportSumSub}</div></div>
-        <span class="r9-round__tag">${picked.length} รอบ</span>
+        <span class="r9-round__tag">${picked.length} ครั้ง</span>
       </div>
       ${sumTable(picked, items, cats, closed || {}, view.rPage || 0)}
     </div>

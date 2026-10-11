@@ -80,7 +80,29 @@ export function todayIso() {
 
 // รายการที่ต้องนับ เฉพาะที่ยังเปิดใช้ (ปิดแล้วไม่ส่งมา) เรียงตามลำดับในฐาน
 export const getCountItems = () =>
-  dbGet('kk_count_item?active=eq.true&select=id,name,grp,unit,location,responsibility,ingredient_id,photo,sort_order&order=sort_order,id');
+  withGroups(dbGet('kk_count_item?active=eq.true&select=id,name,grp,unit,location,responsibility,ingredient_id,photo,sort_order&order=sort_order,id'));
+
+// หมวดของรายการนับ (ตาราง kk_count_group ชุดเดียวทุกหน้า) — โหลดครั้งแรกแล้วเก็บไว้ หน้าจออ่านผ่าน countGroupsNow()
+let countGroups = null;
+export async function loadCountGroups(force = false) {
+  if (countGroups && !force) return countGroups;
+  countGroups = await dbGet('kk_count_group?active=is.true&select=id,label,icon,color,tint,sort_order&order=sort_order,id');
+  return countGroups;
+}
+
+// หมวดที่โหลดไว้แล้ว (ยังไม่โหลด = null)
+export const countGroupsNow = () => countGroups;
+
+// โหลดหมวดมาพร้อมกับรายการ (หมวดโหลดไม่ได้ = ใช้ชุดตั้งต้นไปก่อน รายการยังขึ้นได้)
+function withGroups(request) {
+  return Promise.all([request, loadCountGroups().catch(() => null)]).then(r => r[0]);
+}
+
+// เพิ่มหมวดใหม่ แล้วโหลดชุดหมวดใหม่ทันที (ทุกหน้าเห็นหมวดนี้)
+export async function addCountGroup(row) {
+  await dbPost('kk_count_group', [{ active: true, ...row }]);
+  return loadCountGroups(true);
+}
 
 // ตัวเลขที่นับไว้ของวันนี้ + ธงยังไม่ได้นับ (ดึงจากวิวทีเดียวได้ครบ)
 export const getStockToday = () =>
@@ -532,7 +554,8 @@ const numOrNull = v => (v === null || v === undefined || v === '' ? null : Numbe
 const toR9Item = r => ({
   id: r.id, name: r.name, cat: r.cat_id, unit: r.unit, price: numOrNull(r.price), photo: r.photo,
   kind: r.kind, sortOrder: r.sort_order, active: r.active, used: Number(r.used_rounds) || 0, qty: 0,
-  cost: numOrNull(r.cost), markup: numOrNull(r.markup_pct), vendorCost: numOrNull(r.vendor_cost)
+  cost: numOrNull(r.cost), markup: numOrNull(r.markup_pct), vendorCost: numOrNull(r.vendor_cost),
+  costActual: numOrNull(r.cost_actual), actualSource: r.actual_source || null, costFix: numOrNull(r.cost_fix)
 });
 const toR9Round = r => ({
   id: r.id, no: r.no, date: r.date, time: r.time, status: r.status, fee: Number(r.fee) || 0, note: r.note || '',
@@ -546,17 +569,32 @@ export const getR9Cats = () =>
 
 // รายการสินค้า + จำนวนรอบที่เคยถูกส่ง (ฐานนับมาให้จากวิว หน้าจอไม่ต้องนับเอง)
 export const getR9Items = () =>
-  dbGet('kk_r9_item?select=id,name,cat_id,unit,price,photo,kind,note,sort_order,active,used_rounds,cost,markup_pct,vendor_cost&order=sort_order,id');
+  dbGet('kk_r9_item?select=id,name,cat_id,unit,price,photo,kind,note,sort_order,active,used_rounds,cost,markup_pct,vendor_cost,cost_actual,actual_source,cost_fix&order=sort_order,id');
 
-// บันทึกต้นทุน / mark up % / ราคาส่งของรายการเดียวลง kk_rama9_item ทันที (ราคากลางของพระราม 9)
-export const saveR9Price = ({ id, cost, markup, price, by }) =>
-  dbPost('rpc/kk_r9_price_save', { p_item: id, p_cost: cost, p_markup: markup, p_price: price, p_by: by });
+// ---------- ราคากลาง + ต้นทุนเมนู (การ์ดต้นทุนอาหาร · รายการชุดเดียวกับของส่งพระราม 9) ----------
+// บันทึกราคากลาง 1 ช่อง: field = actual (ทุนตามจริง · ว่าง = กลับไปใช้ราคาซื้อล่าสุด App_money) / fix (ราคา fix)
+export const savePriceCenter = (id, field, value, by) =>
+  dbPost('rpc/kk_price_center_save', { p_item: id, p_field: field, p_value: value, p_by: by });
+
+// ส่วนประกอบต่อจานของทุกเมนู (kk_menu_cost_part)
+export const getMenuCostParts = () =>
+  dbGet('kk_menu_cost_part?select=id,menu_id,item_id,qty,label,baht,sort_order&order=menu_id,sort_order,id');
+export const addMenuCostPart = row => dbPost('kk_menu_cost_part', [row]);
+export const saveMenuCostPart = (id, changes) =>
+  dbPatch(`kk_menu_cost_part?id=eq.${Number(id)}`, { ...changes, updated_at: new Date().toISOString() });
+export const removeMenuCostPart = id => dbDelete(`kk_menu_cost_part?id=eq.${Number(id)}`);
+
+// โหลดทั้งหน้าต้นทุนอาหารในครั้งเดียว: หมวด + ราคากลาง + เมนู + ส่วนประกอบ
+export async function getFoodCostBundle() {
+  const [cats, items, menus, parts] = await Promise.all([getR9Cats(), getR9Items(), getMenus(), getMenuCostParts()]);
+  return { cats, items: items.map(toR9Item), menus, parts: parts.map(p => ({ ...p, qty: numOrNull(p.qty), baht: numOrNull(p.baht) })) };
+}
 
 // ---------- ต้นทุนกลางของรายการในสต๊อก (หน้าแม่พัน แท็บต้นทุนสินค้า · ชุดเดียวกับช่องต้นทุนพระราม 9 และหน้าหลัก) ----------
 
 // ต้นทุนทุกรายการที่ยังใช้ เรียงตามหน้าสต๊อก · cost_manual = กรอกเอง · cost_app = ราคาจาก App_money · cost = ค่าที่ใช้จริง
 export async function getItemCosts() {
-  const rows = await dbGet(`kk_view_item_cost?active=is.true&grp=neq.${enc(COST_SKIP_GROUP)}&select=count_item_id,name,grp,unit,photo,cost_manual,cost_app,cost,cost_source,cost_updated_by,cost_updated_at&order=sort_order,count_item_id`);
+  const rows = await withGroups(dbGet(`kk_view_item_cost?active=is.true&grp=neq.${enc(COST_SKIP_GROUP)}&select=count_item_id,name,grp,unit,photo,cost_manual,cost_app,cost,cost_source,cost_updated_by,cost_updated_at&order=sort_order,count_item_id`));
   return rows.map(r => ({ ...r, id: r.count_item_id, cost_manual: numOrNull(r.cost_manual), cost_app: numOrNull(r.cost_app), cost: numOrNull(r.cost) }));
 }
 
@@ -569,10 +607,6 @@ export const getR9CostLinks = () => dbGet('kk_r9_item?active=is.true&cost_factor
 // รอบส่งที่เป็นค่าล่าสุด (แถวที่ถูกแก้ไปแล้วไม่ส่งมา จึงไม่มียอดเบิ้ล)
 export const getR9Rounds = () =>
   dbGet('kk_r9_round?is_current=is.true&select=id,no,root_id,date,time,status,fee,note,sent_by,edited_by,rev_no,created_at,lines&order=date,created_at,id');
-
-// ทุกครั้งที่แก้ของรอบนั้น ใหม่→เก่า (ดูได้ว่าเดิมเท่าไหร่ ใครแก้ เมื่อไหร่)
-export const getR9Revisions = rootId =>
-  dbGet(`kk_r9_round?root_id=eq.${rootId}&select=id,no,date,fee,note,sent_by,edited_by,rev_no,is_current,created_at,lines&order=rev_no.desc`);
 
 // โหลดข้อมูลทั้งหน้าพระราม 9 ในครั้งเดียว
 export async function getR9Bundle() {
@@ -863,7 +897,7 @@ export const saveAppWordMy = (th, my, cat, by) =>
 
 // รายการนับทั้งหมดของหมวดหนึ่ง (หน้านับผัก/ซอส/เครื่องปรุง/เนื้อสัตว์ — ชุดเดียวกับหน้านับสต๊อก)
 export const getCountItemsByGroup = grp =>
-  dbGet(`kk_count_item?active=eq.true&grp=eq.${enc(grp)}&select=id,name,grp,unit,location,responsibility,photo,sort_order&order=sort_order,id`);
+  withGroups(dbGet(`kk_count_item?active=eq.true&grp=eq.${enc(grp)}&select=id,name,grp,unit,location,responsibility,photo,sort_order&order=sort_order,id`));
 
 // ผลนับย้อนหลังของรายการที่ระบุ (ใช้ในแผงดูประวัติ)
 export const getCountHistory = (ids, from, to) =>

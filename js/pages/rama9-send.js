@@ -2,7 +2,7 @@
 import { R9_UI, R9_COST_COLS, R9_COST_UI } from '../shared/config.js';
 import { costItemHtml, val } from './rama9-cost.js';
 import { glyph, dateBarHtml, dateBandHtml } from '../shared/ui.js';
-import { money, moneyFine, fillText } from '../shared/format.js';
+import { money, moneyFine, fillText, dayLongTh } from '../shared/format.js';
 import { r9Row, r9Totals, r9ByCat, r9DraftItems, r9PriceSolve } from '../shared/calc.js';
 
 // แถบวันที่ของรอบส่ง + แถบเตือนเมื่อไม่ใช่วันนี้ (บันทึกด้วยวันที่นี้ ไม่ใช่วันที่ของเครื่อง)
@@ -127,11 +127,11 @@ export function sendInput(event, { draft, items, root, save }) {
   return false;
 }
 
-// ช่องหมายเหตุ + ปุ่มล้างทั้งหมด / บันทึกและส่ง (กำลังบันทึก = กดไม่ได้ + วงหมุน)
-export function footHtml({ note, saving, editing }) {
+// ช่องหมายเหตุ + ปุ่มล้างทั้งหมด / บันทึกและส่ง (กำลังบันทึก = กดไม่ได้ + วงหมุน · date = วันที่ของการส่งที่กำลังแก้)
+export function footHtml({ note, saving, editing, date }) {
   const label = saving ? R9_UI.saving : editing ? R9_UI.editSave : R9_UI.send;
   return `
-    ${editing ? `<div class="r9-editbar">${glyph('pencil', 14)}<b>${fillText(R9_UI.editing, { no: editing.no })}</b><button type="button" data-act="editCancel">${R9_UI.editCancel}</button></div>` : ''}
+    ${editing ? `<div class="r9-editbar">${glyph('pencil', 14)}<b>${fillText(R9_UI.editing, { d: dayLongTh(editing.date || date) })}</b><button type="button" data-act="editCancel">${R9_UI.editCancel}</button></div>` : ''}
     <textarea class="r9-note" id="r9-note" placeholder="${R9_UI.notePlaceholder}">${note || ''}</textarea>
     <div class="r9-go">
       <button class="r9-btn r9-btn--danger" type="button" data-act="clear"${saving ? ' disabled' : ''}>${glyph('trash', 16)}<span>${R9_UI.clear}</span></button>

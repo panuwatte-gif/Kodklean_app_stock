@@ -5,7 +5,7 @@ import { fillText } from '../shared/format.js';
 import * as data from '../shared/data.js';
 import { currentUser } from '../shared/auth.js';
 import { itemsOf, byGroup, codesOf, peopleOf, progressOf } from './assign-model.js';
-import { addItem, editItem, deleteItem, moveItem, photoItem } from './assign-items.js';
+import { addItem, addGroup, editItem, deleteItem, moveItem, photoItem } from './assign-items.js';
 
 const T = ASSIGN_UI;
 
@@ -53,7 +53,7 @@ function groupHtml(store, task, group, tools) {
           <span>${T.groupAll}</span>${facePile(people, '')}
         </button>
       </header>
-      ${group.items.map(i => rowHtml(store, task, i, tools)).join('')}
+      ${group.items.length ? group.items.map(i => rowHtml(store, task, i, tools)).join('') : `<p class="asg__grpEmpty">${T.grpEmpty}</p>`}
       ${tools && task.canEditItems ? `<button class="asg__add" type="button" data-act="add" data-id="${group.meta.id}">${glyph('plus', 16)}<span>เพิ่มรายการในหมวดนี้</span></button>` : ''}
     </section>`;
 }
@@ -61,8 +61,11 @@ function groupHtml(store, task, group, tools) {
 // กลุ่มรายการตามหมวด (ส่วนที่วาดใหม่เวลาค้นหา ไม่แตะแถบค้นหา จะไม่เสียจุดที่พิมพ์)
 export function groupsHtml(store, task) {
   const rows = filtered(store, task);
-  if (!rows.length) return `<p class="asg__empty">${T.empty}</p>`;
-  return byGroup(rows).map(g => groupHtml(store, task, g, store.manage)).join('');
+  const all = task.source === 'count' && !(store.q || '').trim() && !store.onlyFree;   // ไม่ได้ค้นหา = ขึ้นทุกหมวด รวมหมวดที่ยังว่าง
+  const groups = byGroup(rows, all);
+  const add = task.canEditItems ? `<button class="asg__add asg__add--grp" type="button" data-act="addGroup">${glyph('plus', 16)}<span>${T.grpAdd}</span></button>` : '';
+  if (!groups.length) return `<p class="asg__empty">${T.empty}</p>` + add;
+  return groups.map(g => groupHtml(store, task, g, store.manage)).join('') + add;
 }
 
 // หน้ารายละเอียดของงานหนึ่งงาน
@@ -119,6 +122,11 @@ export async function onDetailClick(event, store, task, reload, redraw) {
   if (act === 'free') { store.onlyFree = !store.onlyFree; return redraw(); }
   if (act === 'tools') { store.manage = !store.manage; return redraw(); }
   if (act === 'add') return addItem(hit.dataset.id, store.countItems, reload);
+  if (act === 'addGroup') {   // เพิ่มหมวดแล้วให้เลือกคนนับหมวดนี้ต่อทันที
+    const id = await addGroup(reload);
+    if (id) await pickPeople(store, task, 'group', id, id, reload);
+    return;
+  }
   if (!item) return;
   if (act === 'edit') return editItem(item, reload);
   if (act === 'photo') return photoItem(item, reload);

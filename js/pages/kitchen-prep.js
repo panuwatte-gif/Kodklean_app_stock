@@ -1,8 +1,8 @@
 // แท็บเตรียมอาหาร (เอมมี่ + อัด ใช้ร่วมกัน) — ใช้ข้อมูลชุดเดียวกับหน้าเตรียม-เหลือ (kk_prep_log)
-import { getPrepRecs, savePrep } from '../shared/data.js';
+import { getPrepRecs, savePrep, saveCountItem } from '../shared/data.js';
 import { prepGroupRuns } from '../shared/calc.js';
 import { KITCHEN_UI as T, PREP_ENTRY, PREP_GROUP_NONE, PREP_CARD_UI } from '../shared/config.js';
-import { itemPhoto, fcHtml, prepGroupHeadHtml, dateBarHtml, dateBandHtml, glyph } from '../shared/ui.js';
+import { itemPhoto, fcHtml, prepGroupHeadHtml, dateBarHtml, dateBandHtml, glyph, formSheet, toast } from '../shared/ui.js';
 import { weightBig, fillText } from '../shared/format.js';
 import { splitIssues, dayBarHtml, itemTagHtml } from './prep-fc-issues.js';
 
@@ -107,4 +107,24 @@ export async function savePrepCell(input, date, by) {
     ? { type: PREP_ENTRY.rice.r, seq: Number(f[1]) + 1 }
     : { type: PREP_ENTRY.meat[f], seq: 1 };
   await savePrep({ item: id, date, type: entry.type, seq: entry.seq, qty, by });
+}
+
+// แก้ชื่อ/เปลี่ยนรูปของรายการในตารางเตรียมอาหาร (บันทึกลง kk_count_item — ทุกหน้าที่ใช้รายการนี้เปลี่ยนตาม) · คืนข้อมูลวันนั้นชุดใหม่ (ยกเลิก/ไม่สำเร็จ = null)
+export async function editPrepItem(model, id, date) {
+  const item = [...(model ? model.meatRows : []), ...(model ? model.riceRows : [])].find(r => r.id === id);
+  if (!item) return null;
+  const form = await formSheet({
+    title: P.editTitle,
+    fields: [
+      { key: 'name', label: P.fName, kind: 'text', value: item.name },
+      { key: 'photo', label: P.fPhoto, kind: 'select', value: item.photo || '', options: P.photos }
+    ]
+  });
+  if (!form || !form.name) return null;
+  try {
+    await saveCountItem(id, { name: form.name, photo: form.photo || null });
+    const fresh = await loadPrepDay(date);
+    toast(fillText(P.edited, { name: form.name }));
+    return fresh;
+  } catch { toast(T.saveError); return null; }
 }

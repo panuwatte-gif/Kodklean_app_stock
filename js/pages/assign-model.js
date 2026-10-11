@@ -1,7 +1,8 @@
 // แปลงข้อมูลดิบของหน้าแบ่งงาน → รายการที่จะแสดง และคนที่รับผิดชอบแต่ละรายการ
 // กติกา "ใครรับผิดชอบอะไร" อยู่ที่ js/shared/assign.js ไฟล์เดียว (หน้าอื่นใช้ชุดเดียวกัน)
-import { STOCK_GROUPS, ASSIGN_PREP_GROUPS, ASSIGN_PREP_META, ASSIGN_MENU_GROUP, MENU_PHOTOS } from '../shared/config.js';
+import { ASSIGN_PREP_GROUPS, ASSIGN_PREP_META, ASSIGN_MENU_GROUP, MENU_PHOTOS } from '../shared/config.js';
 import { codesOf as codesIn, ownersOf } from '../shared/assign.js';
+import { stockGroups } from '../shared/ui.js';
 
 // รายการของงานนั้น (count = ทุกรายการนับสต๊อก · prep = เนื้อสัตว์+ข้าว · cooked = เมนูอาหาร)
 export function itemsOf(task, store) {
@@ -15,13 +16,14 @@ export function itemsOf(task, store) {
 
 // ข้อมูลหมวดของรายการ (ไอคอน/สี) — เมนูอาหารใช้หมวดเดียว
 export function groupMeta(id) {
-  return STOCK_GROUPS.find(g => g.id === id) || ASSIGN_PREP_META[id] || (id === ASSIGN_MENU_GROUP.id ? ASSIGN_MENU_GROUP : { id, label: id, icon: 'assets/cats/veg.webp', color: '#7C8A9B', tint: '#EEF3F8' });
+  return stockGroups().find(g => g.id === id) || ASSIGN_PREP_META[id] || (id === ASSIGN_MENU_GROUP.id ? ASSIGN_MENU_GROUP : { id, label: id, icon: 'assets/cats/veg.webp', color: '#7C8A9B', tint: '#EEF3F8' });
 }
 
-// จัดรายการเข้าหมวด เรียงตามลำดับหมวดที่ตั้งไว้
-export function byGroup(items) {
-  const order = [...STOCK_GROUPS.map(g => g.id), ...Object.keys(ASSIGN_PREP_META), ASSIGN_MENU_GROUP.id];
+// จัดรายการเข้าหมวด เรียงตามลำดับหมวดในฐาน (withEmpty = ขึ้นหมวดที่ยังไม่มีรายการด้วย เช่นหมวดที่เพิ่งเพิ่ม)
+export function byGroup(items, withEmpty = false) {
+  const order = [...stockGroups().map(g => g.id), ...Object.keys(ASSIGN_PREP_META), ASSIGN_MENU_GROUP.id];
   const map = new Map();
+  if (withEmpty) stockGroups().forEach(g => map.set(g.id, []));
   items.forEach(i => { if (!map.has(i.grp)) map.set(i.grp, []); map.get(i.grp).push(i); });
   return [...map.keys()]
     .sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99))

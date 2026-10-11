@@ -4,10 +4,9 @@ import { MAEPAN_UI as T, R9_UI } from '../shared/config.js';
 import { workNoteHtml, workHistorySheet } from '../shared/work-ui.js';
 import { toast, printArea, downloadText } from '../shared/ui.js';
 import { r9DraftItems, r9RoundTotals } from '../shared/calc.js';
-import { r9SendProblem, r9SendRound, r9EmptyDraft } from '../shared/r9-send.js';
+import { r9SendProblem, r9SendRound, r9EmptyDraft, r9SameDay, r9SaveErrorText } from '../shared/r9-send.js';
 import { tableHtml, sumHtml, sendInput } from './rama9-send.js';
 import { reportCardHtml, reportHtml, reportFile } from './maepan-report.js';
-import { priceChange } from './rama9-cost.js';
 import { money, dayLongTh } from '../shared/format.js';
 
 // เนื้อหาทั้งแท็บ: ตารางกรอกรายการ → ยอดรอบนี้ → หมายเหตุ → การ์ดสร้างรายงาน → รายงานที่สร้างไว้
@@ -42,19 +41,20 @@ export async function sendR9(r9, state) {
   const items = r9DraftItems(r9.items, r9.draft);
   const problem = r9SendProblem(items);
   if (problem) { toast(problem); return false; }
+  if (!await r9SameDay(r9.rounds, state.date, r9.draft)) return false;
   try {
     await r9SendRound({ date: state.date, items, draft: r9.draft });
     r9.draft = saveR9Draft(r9EmptyDraft(state.date));
     toast(R9_UI.sent);
     return true;
-  } catch { toast(R9_UI.saveError); return false; }
+  } catch (err) { toast(r9SaveErrorText(err)); return false; }
 }
 
 // แผงประวัติการส่ง 10 รอบล่าสุด
 export function r9History(r9) {
   const rows = [...r9.rounds].reverse().slice(0, 10).map(rd => {
     const t = r9RoundTotals(rd);
-    return { label: dayLongTh(rd.date), sub: `รอบ #${rd.no} · ${t.items} รายการ`, value: money(t.net) + ' บาท' };
+    return { label: dayLongTh(rd.date), sub: `${t.items} รายการ`, value: money(t.net) + ' บาท' };
   });
   workHistorySheet({ title: T.histSend, rows });
 }
@@ -73,8 +73,6 @@ export function r9Click(event, ctx) {
   return true;
 }
 
-// ออกจากช่องต้นทุน/mk/ราคา → บันทึกราคากลางลงฐาน (ชุดเดียวกับหน้าพระราม 9) · คืน true = จัดการแล้ว
-export const r9Change = (event, ctx) => priceChange(event, ctx.r9.items, ctx.r9.draft);
 
 // กรอกปริมาณ/ราคา/ค่าส่ง/หมายเหตุลงร่าง (ยังไม่ขึ้นฐานจนกดยืนยัน)
 export function r9Input(event, ctx) {

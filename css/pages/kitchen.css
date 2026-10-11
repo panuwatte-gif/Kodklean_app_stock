@@ -148,10 +148,12 @@
 }
 
 /* ---------- แท็บ ---------- */
-.ktabs { display: flex; gap: 7px; margin-top: 11px; }
+/* แท็บมากกว่า 5 อัน = เลื่อนซ้าย-ขวาได้ (แท็บตามหมวดที่หน้าแบ่งงานมอบให้) */
+.ktabs { display: flex; gap: 7px; margin: 11px -2px 0; padding: 0 2px 4px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.ktabs::-webkit-scrollbar { display: none; }
 
 .ktab {
-  flex: 1;
+  flex: 1 0 68px;
   min-width: 0;
   display: flex;
   flex-direction: column;

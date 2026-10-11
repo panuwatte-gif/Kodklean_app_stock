@@ -1,8 +1,8 @@
 // การวาดชิ้นส่วนบนของหน้านับสต๊อกเท่านั้น (เจ้าของงาน แถบสลับ การ์ดสรุป ความคืบหน้า ตัวกรอง หมวด)
-import { STOCK_TABS, STOCK_GROUPS, STOCK_ITEM_ACTIONS, STOCK_COUNT_UI as T, CAT_ALL } from '../shared/config.js';
+import { STOCK_TABS, STOCK_ITEM_ACTIONS, STOCK_COUNT_UI as T, CAT_ALL } from '../shared/config.js';
 import { countProgress } from '../shared/calc.js';
 import { fillText } from '../shared/format.js';
-import { glyph, stockGroupOf } from '../shared/ui.js';
+import { glyph, stockGroupOf, stockGroups } from '../shared/ui.js';
 
 // หาข้อมูลหมวดจากชื่อหมวดในฐาน (ตัวจริงอยู่ที่ ui.js ใช้ร่วมกับหน้าต้นทุนสินค้า)
 export const groupOf = stockGroupOf;
@@ -83,7 +83,7 @@ export function itemActionsHtml(view) {
 
 // แถวชิปหมวด (เฉพาะหมวดที่มีรายการอยู่จริง)
 export function catsHtml(view, rows) {
-  const used = STOCK_GROUPS.filter(g => rows.some(r => r.grp === g.id));
+  const used = stockGroups().filter(g => rows.some(r => r.grp === g.id));
   return [CAT_ALL].concat(used).map(c => `
     <button class="stk-chip${c.id === view.grp ? ' is-on' : ''}" type="button" data-grp="${c.id}" style="--c:${c.color};--t:${c.tint}">
       <img src="${c.icon}" alt="" width="23" height="23" loading="lazy" decoding="async">${c.label}

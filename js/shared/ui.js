@@ -1,13 +1,16 @@
 // ชิ้นส่วนหน้าจอที่ใช้ซ้ำทั้งแอป — เมนูล่าง 7 ปุ่ม + การ์ดกระจก + แผงถาม + ชุดไอคอนเส้น
 import { APP_NAV, PASTEL_DOTS, STOCK_PHOTOS, STOCK_PHOTO_BY_GROUP, STOCK_GROUPS, CAT_ALL, DATE_UI, CHART_UI, MENU_PHOTOS, PREP_UI, PREP_GROUP_ICONS } from './config.js';
 import { fillText, dayLongTh, shiftIso, dayShort } from './format.js';
-import { todayIso } from './data.js';
+import { todayIso, countGroupsNow } from './data.js';
 
 // รูปประจำรายการวัตถุดิบ (ชุดเดียวกันทุกหน้า)
-export const itemPhoto = item => (item && item.photo) || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || 'assets/cats/beef.webp';
+export const itemPhoto = item => (item && item.photo) || STOCK_PHOTOS[item.id] || STOCK_PHOTO_BY_GROUP[item.grp] || (stockGroups().find(g => g.id === item.grp) || {}).icon || 'assets/cats/beef.webp';
+
+// หมวดของรายการนับทั้งหมด เรียงตามลำดับในฐาน (ตาราง kk_count_group · ยังโหลดไม่เสร็จ = ใช้ชุดตั้งต้นใน config)
+export const stockGroups = () => countGroupsNow() || STOCK_GROUPS;
 
 // หาไอคอน/สีของหมวดรายการนับจากชื่อหมวดในฐาน (ไม่เจอ = ใช้ชิปกลางๆ) — หน้าสต๊อกกับหน้าต้นทุนสินค้าใช้ชุดเดียวกัน
-export const stockGroupOf = id => STOCK_GROUPS.find(g => g.id === id) || { ...CAT_ALL, id, label: id };
+export const stockGroupOf = id => stockGroups().find(g => g.id === id) || { ...CAT_ALL, id, label: id };
 
 // ป้ายพยากรณ์เหนือช่องกรอก (ใช้ทุกหน้าเตรียม): แนะนำเตรียมในช่วง ต่ำ–สูง กก. · แนะนำ Y กก. · ไม่มีกรอบ = แสดงแค่ Y · วันอาทิตย์ = ร้านปิด · ไม่มีค่า = ป้ายสั้นตามเหตุ (why)
 export function fcHtml(day, closed, why) {

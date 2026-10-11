@@ -26,6 +26,9 @@ export const OTHER_UI = {
 };
 
 // การ์ดเมนูของหน้าอื่นๆ (kind = รูปแบบการ์ด: hero ใบใหญ่ / half ครึ่งจอ / stack ซ้อนรายการ / capsule แคปซูล / data การ์ดวิเคราะห์)
+// รหัสล็อกอินที่เห็น/แก้ต้นทุนอาหารได้ (อาเฮีย · แม่พัน)
+export const COST_OWNERS = ['1001', '1004'];
+
 export const OTHER_CARDS = [
   {
     id: 'assignwork', kind: 'hero', goto: 'assign', title: 'แบ่งงาน', sub: 'มอบหมายว่าใครนับอะไร ใครกรอกงานไหน',
@@ -65,6 +68,10 @@ export const OTHER_CARDS = [
   {
     id: 'equation', kind: 'capsule', goto: 'equation', title: 'ตรวจสอบสมการ Forecast', sub: 'คลังสูตรพยากรณ์ เกณฑ์วัดผล คัดเข้า-คัดออก',
     meta: 'สูตรล็อกไว้ 11 รายการ', glyph: 'check', accent: '#6E9B1F', accent2: '#DCEBAE'
+  },
+  {
+    id: 'foodcost', kind: 'capsule', goto: 'food-cost', title: 'ต้นทุนอาหาร', sub: 'ราคาทุนจริง · ราคา fix · ต้นทุนต่อจาน',
+    meta: 'เห็นเฉพาะอาเฮีย · แม่พัน', glyph: 'chart', accent: '#B4741B', accent2: '#FBE2B4', only: COST_OWNERS
   },
   {
     id: 'accounts', kind: 'capsule', goto: 'accounts', title: 'บัญชีและรหัสผ่าน', sub: 'แก้ PIN เพิ่ม/ลบบัญชีพนักงาน',
@@ -231,11 +238,12 @@ export const STOCK_UNITS = ['กก.', 'กรัม', 'ใบ', 'ขวด', '�
 // หมวดที่ไม่ใช่สต๊อก จึงไม่ขึ้นในหน้าต้นทุนสินค้า (ข้าวที่หุงแล้ว)
 export const COST_SKIP_GROUP = 'ข้าวหุง';
 
-// หมวดของรายการนับ (ต้องตรงกับช่อง grp ในฐาน) — ไอคอนและสีประจำหมวด
+// หมวดของรายการนับ — ตัวจริงอยู่ที่ตาราง kk_count_group (เพิ่มหมวดได้จากหน้าแบ่งงาน) · ชุดนี้ใช้แค่ตอนยังโหลดจากฐานไม่เสร็จ
 export const STOCK_GROUPS = [
   { id: 'เนื้อสัตว์', label: 'เนื้อสัตว์', icon: 'assets/cats/beef.webp', color: '#C1443C', tint: '#FDECEA' },
   { id: 'ผัก', label: 'ผัก', icon: 'assets/cats/veg.webp', color: '#4E9A3E', tint: '#EEF7E9' },
-  { id: 'ซอส/เครื่องปรุง', label: 'ซอส/เครื่องปรุง', icon: 'assets/cats/sauce.webp', color: '#C98A2E', tint: '#FDF3E2' },
+  { id: 'เครื่องปรุง', label: 'เครื่องปรุง', icon: 'assets/cats/season.webp', color: '#C98A2E', tint: '#FDF3E2' },
+  { id: 'ซอส', label: 'ซอส', icon: 'assets/cats/sauce.webp', color: '#B0452F', tint: '#FCE9E4' },
   { id: 'ข้าว', label: 'ข้าว', icon: 'assets/prep/rice-homali.webp', color: '#B37A45', tint: '#FBF1E5' },
   { id: 'ไข่', label: 'ไข่', icon: 'assets/stock/eggs.webp', color: '#E08A2E', tint: '#FDF1DF' },
   { id: 'เครื่องดื่ม', label: 'เครื่องดื่ม', icon: 'assets/icons/ic07.webp', color: '#3B7FD4', tint: '#EAF2FD' },
@@ -248,7 +256,8 @@ export const STOCK_GROUPS = [
 export const STOCK_PHOTO_BY_GROUP = {
   'เนื้อสัตว์': 'assets/cats/beef.webp',
   'ผัก': 'assets/stock/veg-mix.webp',
-  'ซอส/เครื่องปรุง': 'assets/stock/house-sauce.webp',
+  'เครื่องปรุง': 'assets/stock/seasoning.webp',
+  'ซอส': 'assets/stock/house-sauce.webp',
   'ข้าว': 'assets/prep/rice-homali.webp',
   'ข้าวหุง': 'assets/kitchen/rice-homali.webp',
   'ไข่': 'assets/stock/eggs.webp',
@@ -367,7 +376,6 @@ export const STOCK_COUNT_UI = {
   fGrp: 'หมวด',
   fUnit: 'หน่วยนับ',
   fLoc: 'เก็บไว้ที่',
-  fJob: 'อยู่ในงานไหน',
   needName: 'ยังไม่ได้ใส่ชื่อรายการ',
   added: 'เพิ่ม "{name}" แล้ว',
   edited2: 'แก้ไข "{name}" แล้ว',
@@ -1245,19 +1253,19 @@ export const R9_TABS = [
 // การ์ดตัวเลขบนหัวหน้า แยกตามแท็บ (ค่าจริงเติมโดย rama9.js)
 export const R9_KPI = {
   send: [
-    { key: 'lastItems', label: 'รอบล่าสุด', unit: 'รายการ', foot: 'lastDate', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
+    { key: 'lastItems', label: 'ส่งล่าสุด', unit: 'รายการ', foot: 'lastDate', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
     { key: 'monthItems', label: 'เดือนนี้', unit: 'รายการ', foot: 'monthFoot', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3' },
     { key: 'ytdItems', label: 'YTD', unit: 'รายการ', foot: 'ytdFoot', color: '#8E3E96', tint: '#F5E7F6', border: '#E5CDE7' },
     { key: 'netAll', label: 'มูลค่ารวม', unit: 'บาท', foot: 'netFoot', color: '#B4741B', tint: '#FDF3E2', border: '#F3E0BD' }
   ],
   history: [
-    { key: 'rounds', label: 'จำนวนรอบ', unit: 'รอบ', foot: 'roundFoot', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
-    { key: 'netAll', label: 'มูลค่ารวม', unit: 'บาท', foot: 'netFoot', color: '#B4741B', tint: '#FDF3E2', border: '#F3E0BD' },
-    { key: 'feeAll', label: 'ค่าส่งรวม', unit: 'บาท', foot: 'feeFoot', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3' },
-    { key: 'ytdItems', label: 'YTD', unit: 'รายการ', foot: 'ytdFoot', color: '#8E3E96', tint: '#F5E7F6', border: '#E5CDE7' }
+    { key: 'rounds', label: 'ส่งไปกี่ครั้ง', unit: 'ครั้ง', foot: 'roundFoot', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
+    { key: 'goodsAll', label: 'ค่าสินค้ารวม', unit: 'บาท', foot: 'roundFoot', color: '#8E3E96', tint: '#F5E7F6', border: '#E5CDE7' },
+    { key: 'feeAll', label: 'ค่าส่งรวม', unit: 'บาท', foot: 'roundFoot', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3' },
+    { key: 'netAll', label: 'ยอดที่ต้องเก็บ', unit: 'บาท', foot: 'roundFoot', color: '#B4741B', tint: '#FDF3E2', border: '#F3E0BD' }
   ],
   report: [
-    { key: 'rounds', label: 'จำนวนรอบ', unit: 'รอบ', foot: 'pickFoot', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
+    { key: 'rounds', label: 'ส่งไปกี่ครั้ง', unit: 'ครั้ง', foot: 'pickFoot', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
     { key: 'items', label: 'ยอดรวมสินค้า', unit: 'รายการ', foot: 'pickFoot', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3' },
     { key: 'fee', label: 'ค่าส่งรวม', unit: 'บาท', foot: 'pickFoot', color: '#B9436F', tint: '#FCE1EA', border: '#F3C4D3' },
     { key: 'goods', label: 'มูลค่าสุทธิ', unit: 'บาท', foot: 'pickFoot', color: '#B4741B', tint: '#FDF3E2', border: '#F3E0BD' }
@@ -1270,8 +1278,8 @@ export const R9_SEND_COLS = ['รายการส่งของ', 'ปริ�
 // หัวตารางส่งของแบบมีต้นทุน (หน้าพระราม 9 + หน้าแม่พัน) แถวละบรรทัดเดียว
 export const R9_COST_COLS = ['รายการ', 'ต้นทุน', 'mk %', 'ปริมาณ', 'ราคา', 'รวม', ''];
 export const R9_COST_UI = {
-  vendorHint: 'ต้นทุนจากราคากลาง (ราคาซื้อสูงสุดจากทุกร้าน)',
-  help: 'ใส่ ต้นทุน + mark up % ระบบคิดราคาให้ · หรือใส่ราคาก่อน ระบบคิด mark up ย้อนให้ · ออกจากช่องแล้วบันทึกลงฐานทันที'
+  vendorHint: 'ราคาซื้อล่าสุดจาก App_money',
+  help: 'ต้นทุนตั้งต้น = ทุนจริงจากการ์ดต้นทุนอาหาร (สีเขียว = ราคาซื้อล่าสุด App_money) · ใส่ ต้นทุน + mark up % ระบบคิดราคาให้ หรือใส่ราคา ระบบคิด mark up ย้อนให้ · ตัวเลขที่แก้เก็บเฉพาะวันนี้ ไม่ย้อนไปแก้วันอื่น'
 };
 
 // แตะรูป = เปลี่ยนรูป · ปุ่ม ⋯ ท้ายแถว = รวมคำสั่งจัดการรายการ
@@ -1300,7 +1308,7 @@ export const R9_RANGES = [
   { id: 'month', label: 'เดือนนี้' },
   { id: 'ytd', label: 'YTD' },
   { id: 'year', label: 'รายปี' },
-  { id: 'last', label: 'รอบล่าสุด' }
+  { id: 'last', label: 'ครั้งล่าสุด' }
 ];
 
 // สถานะของรอบส่ง
@@ -1406,22 +1414,20 @@ export const R9_UI = {
   dateBand: 'กำลังบันทึกรอบส่งของวันที่ {d} ({s})',
   saving: 'กำลังบันทึก...',
   saveError: 'บันทึกไม่สำเร็จ ยังไม่มีรอบใหม่เกิดขึ้น กดบันทึกอีกครั้งได้',
+  dupAsk: { title: 'วันนี้ส่งของไปแล้ว', text: '{d} มีการส่งของบันทึกไว้แล้ว · บันทึกทับด้วยตัวเลขชุดนี้?', ok: 'บันทึกทับของเดิม' },
+  dupDate: 'วันนี้มีการส่งของบันทึกไว้แล้ว (อาจบันทึกจากเครื่องอื่น) · โหลดใหม่แล้วกด "แก้ไข" ที่วันนั้นแทน',
   noLines: 'ยังไม่ได้กรอกปริมาณรายการใด',
   noPrice: 'ยังไม่ได้ใส่ราคา: {names} — ใส่ราคาก่อนจึงบันทึกได้',
-  priceSaveError: 'บันทึกต้นทุน/ราคาไม่สำเร็จ ลองใหม่อีกครั้ง',
-  saved: 'บันทึกและส่งเรียบร้อย (รอบ #{no})',
-  savedEdit: 'แก้รอบ #{no} แล้ว รอบเก่าเก็บไว้เป็นประวัติแล้ว',
-  edit: 'แก้ไขรอบนี้',
-  editing: 'กำลังแก้รอบส่งของ #{no} — กดบันทึกแล้วจะเกิดรอบใหม่ ของเก่ายังเก็บไว้ครบทุกตัว',
+  saved: 'บันทึกการส่งวันที่ {d} แล้ว',
+  savedEdit: 'แก้การส่งวันที่ {d} แล้ว (บันทึกทับของเดิม)',
+  repeated: 'ดึงตัวเลขของวันที่ {d} มาแล้ว',
+  edit: 'แก้ไข',
+  editing: 'กำลังแก้การส่งวันที่ {d} — กดบันทึกแล้วจะเขียนทับของเดิม',
   editCancel: 'เลิกแก้',
   editSave: 'บันทึกการแก้',
-  revised: 'แก้ไขแล้ว ครั้งที่ {n}',
-  revHistory: 'ดูของเดิม',
-  revRow: 'ครั้งที่ {n} · {items} รายการ · {net} บาท · {by} · {at}',
-  revNow: '← ใช้อยู่',
-  del: 'ลบรอบนี้',
-  delAsk: { title: 'ลบรอบส่งนี้?', text: 'รอบนี้จะไม่ถูกนับในรายงานอีก แต่ข้อมูลเก่ายังอยู่ในฐาน', ok: 'ลบรอบนี้' },
-  deleted: 'ลบรอบ #{no} ออกจากรายงานแล้ว',
+  del: 'ลบ',
+  delAsk: { title: 'ลบการส่งวันนี้?', text: 'จะไม่ถูกนับในรายงานอีก แต่ข้อมูลเก่ายังอยู่ในฐาน', ok: 'ลบ' },
+  deleted: 'ลบการส่งวันที่ {d} ออกจากรายงานแล้ว',
   itemSum: 'สรุปรายสินค้า',
   itemSumSub: 'ส่งสินค้าตัวไหนไปกี่หน่วย กี่บาท (มาก→น้อย)',
   exportOff: 'รอบนี้เปิดใช้เพียงพิมพ์รายงาน · PDF/Excel/แชร์ ยังไม่เปิดใช้งาน',
@@ -1511,7 +1517,16 @@ export const ASSIGN_UI = {
   pickHint: 'แตะชื่อเพื่อเลือก/เอาออก เลือกหลายคนก็ได้',
   pickDone: 'เสร็จ',
   groupAll: 'มอบทั้งหมวด',
-  groupNote: 'เลือกทั้งหมวด = ทุกรายการในหมวดนี้เป็นงานของคนนั้นทั้งหมด',
+  groupNote: 'เลือกทั้งหมวด = ทุกรายการในหมวดนี้เป็นงานของคนนั้นทั้งหมด · หมวดที่มอบให้ใคร จะขึ้นเป็นแท็บในหน้างานของคนนั้นเอง',
+  grpAdd: 'เพิ่มหมวดใหม่',
+  grpAddTitle: 'เพิ่มหมวดใหม่',
+  grpName: 'ชื่อหมวด',
+  grpNameHint: 'เช่น ผลไม้',
+  grpIcon: 'รูปประจำหมวด',
+  grpNeedName: 'ยังไม่ได้ใส่ชื่อหมวด',
+  grpDup: 'มีหมวดชื่อนี้อยู่แล้ว',
+  grpAdded: 'เพิ่มหมวด “{name}” แล้ว · เลือกคนนับหมวดนี้ได้เลย',
+  grpEmpty: 'ยังไม่มีรายการในหมวดนี้',
   frozenTag: 'พักงาน',
   saved: 'บันทึกคนรับผิดชอบของ “{name}” แล้ว',
   saveErr: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',
@@ -1806,7 +1821,7 @@ export const KITCHEN_UI = {
       search: 'ค้นหาชื่อผัก...', col: 'รายการผัก', addRow: 'เพิ่มรายการผัก'
     },
     season: {
-      id: 'season', kind: 'count', grp: 'ซอส/เครื่องปรุง', pick: 'season_', tab: 'นับเครื่องปรุง',
+      id: 'season', kind: 'count', grp: 'เครื่องปรุง', tab: 'นับเครื่องปรุง',
       icon: 'assets/kitchen/season-msg.webp', accent: '#A8761A', tint: 'rgba(247, 195, 70, .40)',
       title: 'นับเครื่องปรุง', sub: 'เช็กเครื่องปรุง ให้ครบ ถูกต้อง พร้อมใช้งานในทุกเมนู',
       bubble: 'เครื่องปรุงครบครัว\nอร่อยทุกเมนู', hero: 'assets/kitchen/hero-emmy-season.webp',
@@ -1815,13 +1830,31 @@ export const KITCHEN_UI = {
       search: 'ค้นหาชื่อตัวปรุง...', col: 'รายการเครื่องปรุง', addRow: 'เพิ่มรายการเครื่องปรุง'
     },
     sauce: {
-      id: 'sauce', kind: 'count', grp: 'ซอส/เครื่องปรุง', pick: 'sauce_', tab: 'นับซอส',
+      id: 'sauce', kind: 'count', grp: 'ซอส', tab: 'นับซอส',
       icon: 'assets/kitchen/sauce-kaprao.webp', accent: '#B0452F', tint: 'rgba(254, 155, 150, .38)',
       title: 'นับซอส', sub: 'นับอย่างใส่ใจ เพื่อครัวที่ดีที่สุดและรสชาติที่อร่อยเสมอ',
       bubble: 'เช็กซอสให้ครบ\nอร่อยทุกเมนูแน่นอน', hero: 'assets/kitchen/hero-emmy-sauce.webp',
       chibi: 'assets/kitchen/chibi-emmy-sauce.webp',
       quote: 'ซอสครบ รสชาติดี\nครัวเรามีเสน่ห์แน่นอน', script: 'เล็กน้อย\nแต่มีความอร่อย\nที่ยิ่งใหญ่',
       search: 'ค้นหาชื่อซอส...', col: 'รายการซอส', addRow: 'เพิ่มรายการซอส'
+    },
+    rice: {
+      id: 'rice', kind: 'count', grp: 'ข้าว', tab: 'นับข้าวสาร',
+      icon: 'assets/prep/rice-homali.webp', accent: '#9A6A3A', tint: 'rgba(230, 196, 150, .45)',
+      title: 'นับข้าวสาร', sub: 'นับข้าวสารทุกยี่ห้อ ให้ครัวไม่ขาดข้าว',
+      bubble: 'นับข้าวสาร\nกันเลยค่ะ', hero: 'assets/chars/emmy-full.webp',
+      chibi: 'assets/kitchen/chibi-emmy-jar.webp',
+      quote: 'ข้าวพร้อม\nครัวก็พร้อมทุกวัน', script: 'ข้าวดี\nอาหารอร่อย',
+      search: 'ค้นหาชื่อข้าว...', col: 'รายการข้าวสาร', addRow: 'เพิ่มรายการข้าวสาร'
+    },
+    egg: {
+      id: 'egg', kind: 'count', grp: 'ไข่', tab: 'นับไข่',
+      icon: 'assets/stock/eggs.webp', accent: '#C9761F', tint: 'rgba(250, 205, 120, .45)',
+      title: 'นับไข่', sub: 'ไข่ไก่ ไข่เป็ด ไข่ต้ม ไข่ดอง นับให้ครบทุกแบบ',
+      bubble: 'นับไข่\nกันเลยค่ะ', hero: 'assets/chars/emmy-full.webp',
+      chibi: 'assets/kitchen/chibi-emmy-jar.webp',
+      quote: 'ไข่ครบ\nทุกเมนูก็พร้อม', script: 'นับให้ครบ\nทุกฟอง',
+      search: 'ค้นหาชื่อไข่...', col: 'รายการไข่', addRow: 'เพิ่มรายการไข่'
     },
     meat: {
       id: 'meat', kind: 'count', grp: 'เนื้อสัตว์', tab: 'นับเนื้อสัตว์',
@@ -1851,10 +1884,16 @@ export const KITCHEN_UI = {
       search: '', col: 'รายการ', addRow: ''
     }
   },
-  // หน้าจอของแต่ละคน: ใครเป็นเจ้าของ · มีแท็บอะไรบ้าง (แท็บเตรียมอาหารใช้ร่วมกัน)
+  // หน้าจอของแต่ละคน: แท็บนับ = หมวดที่หน้าแบ่งงานมอบให้คนนั้น (tabs = ชุดสำรองตอนยังไม่เคยแบ่งงาน) · fixed = แท็บที่มีเสมอ · hero/chibi = รูปของแท็บหมวดใหม่
   pages: {
-    'emmy-count': { owner: 'emmy', name: 'เอมมี่', avatar: 'assets/kitchen/av-emmy.webp', tabs: ['veg', 'season', 'sauce', 'prep', 'eval'] },
-    'ad-count': { owner: 'ad', name: 'อัด', avatar: 'assets/kitchen/av-ad.webp', tabs: ['meat', 'prep', 'eval'] }
+    'emmy-count': { owner: 'emmy', name: 'เอมมี่', avatar: 'assets/kitchen/av-emmy.webp', tabs: ['veg', 'season', 'sauce', 'rice', 'egg'], fixed: ['prep', 'eval'], hero: 'assets/chars/emmy-full.webp', chibi: 'assets/kitchen/chibi-emmy-jar.webp' },
+    'ad-count': { owner: 'ad', name: 'อัด', avatar: 'assets/kitchen/av-ad.webp', tabs: ['meat'], fixed: ['prep', 'eval'], hero: 'assets/kitchen/hero-ad-meat.webp', chibi: 'assets/kitchen/chibi-ad-tray.webp' }
+  },
+  // หน้าตาแท็บของหมวดที่เพิ่มใหม่ ({name} = ชื่อหมวด · ไอคอน/สีมาจากหมวด)
+  tabBase: {
+    kind: 'count', tab: 'นับ{name}', title: 'นับ{name}', sub: 'นับให้ครบ ถูกต้อง พร้อมใช้งานทุกวัน',
+    bubble: 'นับ{name}\nกันเลย', quote: 'นับครบ ถูกต้อง\nครัวก็พร้อมทุกวัน', script: 'ของดี\nต้องนับให้ครบ',
+    search: 'ค้นหา{name}...', col: 'รายการ{name}', addRow: 'เพิ่มรายการ{name}'
   },
   pairName: 'เอมมี่ + อัด',
   pairAvatar: 'assets/kitchen/av-pair.webp'
@@ -2242,12 +2281,12 @@ export const MAEPAN_UI = {
     fee: 'ค่าส่ง',
     feeAll: 'ค่าส่งรวมทุกครั้ง',
     grand: 'ยอดรวมทั้งหมด',
-    rounds: '{n} รอบ',
+    rounds: 'ส่ง {n} ครั้ง',
     fileDay: 'รายงานส่งพระราม9-{d}.csv',
     fileRange: 'รายงานส่งพระราม9-{from}-ถึง-{to}.csv'
   },
   noHistory: 'ยังไม่มีรายการย้อนหลัง',
-  histSend: 'ประวัติการส่งของ 10 รอบล่าสุด'
+  histSend: 'ประวัติการส่งของ 10 ครั้งล่าสุด'
 };
 
 // แผงจัดการรายการ (วัตถุดิบ/เมนู) ที่ใช้ร่วมกันหลายหน้า ({name} = ชื่อรายการ)
@@ -2509,4 +2548,32 @@ export const GRAB_UI = {
     quality: { title: 'คุณภาพออเดอร์', sub: 'ลูกค้าแจ้งของขาดหรือของผิด', orders: 'ออเดอร์มีปัญหา', missing: 'ของขาด', wrong: 'ของผิด', rating: 'เรตติ้งเฉลี่ย', items: 'เมนูที่โดนแจ้งบ่อย', hours: 'ชั่วโมงที่พลาดบ่อย', none: 'ไม่มีการแจ้งของขาด/ผิดในช่วงนี้' },
     note: 'ทุกตัวเลขที่ใช้ยอดขาย ใช้ยอดขายสุทธิ = ยอดตามเมนู − ส่วนลดที่ร้านออก − ส่วนลดค่าส่งที่ร้านออก ± เงินคืน/หักจากเคลม (ไฟล์ Transaction · วันที่ไม่มีใช้ยอดสุทธิจากไฟล์ Sales) · เรตติ้งจากไฟล์ Sales · เงินเข้า ค่าคอม ส่วนลด มาจากไฟล์ Transaction · ค่าโฆษณาใช้ยอดที่ถูกเรียกเก็บจริง (Billable) · Grab ต่อยอดทั้งร้าน เทียบกับยอดขายรายวันที่ฟ้ากรอก เฉพาะวันที่มีทั้งสองอย่าง'
   }
+};
+
+// หน้าต้นทุนอาหาร (อื่นๆ → ต้นทุนอาหาร) — ราคากลาง (รายการชุดเดียวกับของส่งพระราม 9) + ต้นทุนเมนูต่อจาน + คิดเมนูพิเศษ
+export const FOOD_COST_UI = {
+  title: 'ต้นทุนอาหาร',
+  sub: 'ราคากลางของวัตถุดิบ และต้นทุนต่อจานแบบคร่าวๆ',
+  deny: 'หน้านี้เห็นเฉพาะอาเฮียกับแม่พัน',
+  loading: 'กำลังโหลดข้อมูลจากฐาน...',
+  error: 'ต่อฐานข้อมูลไม่ได้ ลองใหม่อีกครั้ง',
+  saveErr: 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง',
+  bad: 'ราคาและปริมาณต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป',
+  tabs: [{ id: 'items', label: 'ต้นทุนวัตถุดิบ' }, { id: 'menu', label: 'ต้นทุนเมนู' }, { id: 'calc', label: 'คิดเมนูพิเศษ' }],
+  itemsHelp: 'ทุนจริง = ราคาที่ซื้อมาจริง (สีเขียว = ราคาซื้อล่าสุดจาก App_money ยังไม่ได้แก้ · ล้างช่องให้ว่าง = กลับไปใช้ราคา App_money) ใช้เป็นต้นทุนตั้งต้นของหน้าส่งพระราม 9 และการ์ดหน้าหลัก · ราคา fix = ราคาที่ตั้งเผื่อไว้ ใช้คิดต้นทุนเมนู',
+  colItem: 'รายการ', colActual: 'ทุนจริง', colFix: 'ราคา fix', perUnit: 'บาท/{u}', nItems: '{n} รายการ',
+  saved: 'บันทึก{f}ของ {name} แล้ว', fActual: 'ทุนจริง', fFix: 'ราคา fix',
+  menuHelp: 'ต้นทุน 1 จาน = ปริมาณ × ราคา fix (ยังไม่ตั้ง fix ใช้ทุนจริงแทน) + ค่าอื่นๆ ต่อจาน · แตะเมนูเพื่อใส่ส่วนประกอบ บันทึกทันทีที่ออกจากช่อง',
+  baht: 'บาท', gram: 'กรัม', perPlate: 'บาท/จาน', actualVs: 'ทุนจริง {v}', parts: '{n} ส่วนประกอบ', noParts: 'ยังไม่ได้ใส่ส่วนประกอบ',
+  addItem: 'วัตถุดิบ', addFlat: 'ค่าอื่นๆ (ข้าว กล่อง ฯลฯ)', pickItem: 'เลือกวัตถุดิบจากราคากลาง',
+  flatTitle: 'ค่าอื่นๆ ต่อจาน', flatLabel: 'ชื่อ', flatHint: 'เช่น ข้าว + กล่อง', flatBaht: 'บาทต่อจาน', flatOk: 'เพิ่ม', needLabel: 'ยังไม่ได้ใส่ชื่อ',
+  noFix: 'ยังไม่ตั้งราคา fix (ใช้ทุนจริงแทน): {names}', noPrice: 'ยังไม่มีราคา (ไม่นับรวม): {names}',
+  later: {
+    title: 'ยังไม่ได้คิดแยกในหน้านี้',
+    rows: ['น้ำหนักที่หาย/เพิ่มจากการตัดแต่ง หมักเกลือ เบกกิ้ง (yield)', 'ค่าส่ง และค่าลังโฟม', 'น้ำหนักหลังปรุงเสร็จ'],
+    note: 'ตอนนี้ให้รวมไว้ในราคา fix ก่อน · ต่อไปคิดละเอียดใน App สูตร แล้วส่งตัวเลขกลับมาที่ตารางนี้'
+  },
+  calcHelp: 'ลูกค้าสั่งเมนูที่ไม่มีขาย หรือซื้อหน้าร้าน: ใส่วัตถุดิบกับปริมาณ แล้วดูว่าขายราคาไหนได้กำไร (ไม่บันทึกลงฐาน)',
+  calcEmpty: 'ยังไม่มีวัตถุดิบ กด + วัตถุดิบ เพื่อเริ่ม',
+  costTotal: 'ต้นทุน (ราคา fix)', costActual: 'ถ้าคิดทุนจริง', sell: 'ขายราคา', profit: 'กำไร', loss: 'ขาดทุน', margin: '{p}% ของราคาขาย', clear: 'ล้างทั้งหมด'
 };

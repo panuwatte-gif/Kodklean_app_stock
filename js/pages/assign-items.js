@@ -1,6 +1,7 @@
 // จัดการรายการที่ต้องนับของหน้าแบ่งงาน — เพิ่ม แก้ ลบ สลับตำแหน่ง และใส่/ลบรูป (บันทึกลง Supabase ทันที)
-import { STOCK_COUNT_UI, STOCK_GROUPS, STOCK_COUNT_UNITS, STOCK_LOCATIONS, ASSIGN_UI } from '../shared/config.js';
-import { toast, confirmSheet, formSheet, openSheet, pickPhotoWebp, glyph } from '../shared/ui.js';
+import { STOCK_COUNT_UI, STOCK_COUNT_UNITS, STOCK_LOCATIONS, ASSIGN_UI, CAT_ICON_CHOICES, CAT_COLOR_PRESETS } from '../shared/config.js';
+import { toast, confirmSheet, formSheet, openSheet, pickPhotoWebp, glyph, stockGroups } from '../shared/ui.js';
+import { staffCode } from '../shared/auth.js';
 import { fillText } from '../shared/format.js';
 import * as data from '../shared/data.js';
 
@@ -10,7 +11,7 @@ const T = ASSIGN_UI;
 // ช่องกรอกของฟอร์มเพิ่ม/แก้รายการ
 const fields = (item, grp) => [
   { key: 'name', label: S.fName, value: item ? item.name : '', placeholder: S.fNameHint },
-  { key: 'grp', label: S.fGrp, kind: 'select', value: item ? item.grp : grp, options: STOCK_GROUPS.map(g => ({ value: g.id, label: g.label })) },
+  { key: 'grp', label: S.fGrp, kind: 'select', value: item ? item.grp : grp, options: stockGroups().map(g => ({ value: g.id, label: g.label })) },
   { key: 'unit', label: S.fUnit, kind: 'select', value: item ? item.unit : 'กก.', options: STOCK_COUNT_UNITS.map(u => ({ value: u, label: u })) },
   { key: 'location', label: S.fLoc, kind: 'select', value: item ? item.location : STOCK_LOCATIONS[0], options: STOCK_LOCATIONS.map(l => ({ value: l, label: l })) }
 ];
@@ -26,10 +27,31 @@ export async function addItem(grp, items, reload) {
   const last = items.filter(i => i.grp === out.grp).pop();
   const order = (last ? last.sort_order : items.length * 10) + 5;
   try {
-    await data.addCountItem({ id: newId(), name: out.name.trim(), grp: out.grp, unit: out.unit, location: out.location, sort_order: order });
+    await data.addCountItem({ id: newId(), name: out.name.trim(), grp: out.grp, unit: out.unit, location: out.location, sort_order: order, responsibility: last ? last.responsibility || null : null });
   } catch (err) { return toast(T.saveErr); }
   await reload();
   toast(fillText(S.added, { name: out.name.trim() }));
+}
+
+// เพิ่มหมวดใหม่ลง kk_count_group (ทุกหน้าเห็นหมวดนี้) · คืนชื่อหมวด (ยกเลิก/ไม่สำเร็จ = null)
+export async function addGroup(reload) {
+  const out = await formSheet({ title: T.grpAddTitle, okLabel: T.grpAdd, fields: [
+    { key: 'label', label: T.grpName, placeholder: T.grpNameHint },
+    { key: 'icon', label: T.grpIcon, kind: 'select', value: CAT_ICON_CHOICES[0].value, options: CAT_ICON_CHOICES }
+  ] });
+  if (!out) return null;
+  const label = String(out.label || '').trim();
+  if (!label) { toast(T.grpNeedName); return null; }
+  const groups = stockGroups();
+  if (groups.some(g => g.id === label || g.label === label)) { toast(T.grpDup); return null; }
+  const shade = CAT_COLOR_PRESETS[groups.length % CAT_COLOR_PRESETS.length];
+  const last = Math.max(0, ...groups.map(g => Number(g.sort_order) || 0));
+  try {
+    await data.addCountGroup({ id: label, label, icon: out.icon, color: shade.color, tint: shade.tint, sort_order: last + 10, created_by: staffCode() });
+  } catch (err) { toast(T.saveErr); return null; }
+  await reload();
+  toast(fillText(T.grpAdded, { name: label }));
+  return label;
 }
 
 // แก้ชื่อ/หมวด/หน่วย/ที่เก็บของรายการ

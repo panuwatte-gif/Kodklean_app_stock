@@ -1,0 +1,74 @@
+/* หน้าต้นทุนอาหาร — ราคากลาง · ต้นทุนเมนู · คิดเมนูพิเศษ (พื้นครีมเหมือนหน้าอื่นของแอป) */
+.fco { padding: 12px 12px 28px; background: var(--kk-paper-100, #FDF8F0); min-height: 100%; }
+.fco__top { margin-bottom: 10px; }
+.fco__h1 { margin: 0; font-size: 24px; font-weight: 500; color: #1F2A24; }
+.fco__h2 { margin: 2px 0 0; font-size: 12.5px; color: #7A6F60; text-wrap: pretty; }
+.fco__tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.fco-tab { flex: 1; min-width: 0; min-height: 44px; padding: 0 6px; font: inherit; font-size: 12.5px; color: #4A6B57; background: #fff; border: 1.5px solid #E4DBCB; border-radius: 13px; cursor: pointer; }
+.fco-tab.is-on { color: #fff; background: #B4741B; border-color: #B4741B; }
+.fco-help { margin: 0 2px 10px; font-size: 11.5px; line-height: 1.5; color: #7A6F60; text-wrap: pretty; }
+.fco-empty { margin: 14px 4px; font-size: 13px; color: #7A6F60; text-wrap: pretty; }
+
+/* ตารางราคากลาง */
+.fco-cols, .fco-row { display: grid; grid-template-columns: minmax(0, 1fr) 76px 76px; gap: 6px; align-items: center; }
+.fco-cols { padding: 0 10px 6px; font-size: 11px; color: #8C8172; }
+.fco-cols span:not(:first-child) { text-align: center; }
+.fco-grp { margin-bottom: 8px; padding: 4px 8px 6px; background: #fff; border: 1px solid #EDE2D0; border-radius: 16px; }
+.fco-grp__head { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 40px; padding: 0 2px; font: inherit; background: none; border: 0; cursor: pointer; text-align: left; }
+.fco-grp__head b { font-size: 14px; font-weight: 500; color: var(--c); }
+.fco-grp__head em { flex: 1; font-size: 11px; font-style: normal; color: #8C8172; }
+.fco-ch { color: #B3A899; transition: transform 140ms; }
+.fco-ch.is-shut { transform: rotate(-90deg); }
+.fco-row { padding: 6px 2px; border-top: 1px solid #F3ECE0; }
+.fco-name { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.fco-name img { flex: none; object-fit: contain; }
+.fco-name span { min-width: 0; }
+.fco-name b { display: block; font-size: 13px; font-weight: 500; color: #1F2A24; overflow: hidden; text-overflow: ellipsis; }
+.fco-name i { display: block; font-size: 10.5px; font-style: normal; color: #8C8172; }
+.fco-in { width: 100%; min-width: 0; height: 40px; padding: 0 6px; font: inherit; font-size: 13.5px; text-align: center; color: #1F2A24; background: #FBF8F2; border: 1.5px solid #E4DBCB; border-radius: 11px; }
+.fco-in:focus { outline: none; border-color: #B4741B; background: #fff; }
+.fco-in.is-app { color: #1E7A3C; background: #EAF6EC; border-color: #BFE3C7; }
+.fco-in--label { text-align: left; }
+
+/* การ์ดเมนู */
+.fco-menu { margin-bottom: 8px; background: #fff; border: 1px solid #EDE2D0; border-radius: 16px; overflow: hidden; }
+.fco-menu.is-open { border-color: #F3D9A8; }
+.fco-mhead { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 11px; font: inherit; text-align: left; background: none; border: 0; cursor: pointer; }
+.fco-mhead img { flex: none; border-radius: 12px; object-fit: cover; background: #FBF1E5; }
+.fco-mhead__t { flex: 1; min-width: 0; }
+.fco-mhead__t b { display: block; font-size: 14px; font-weight: 500; color: #1F2A24; }
+.fco-mhead__t em { display: block; font-size: 11px; font-style: normal; color: #8C8172; }
+.fco-mhead__c { flex: none; text-align: right; }
+.fco-mhead__c b { display: block; font-size: 17px; font-weight: 600; color: #B4741B; }
+.fco-mhead__c i { display: block; font-size: 10.5px; font-style: normal; color: #8C8172; }
+.fco-mbody { padding: 2px 10px 10px; border-top: 1px solid #F3ECE0; }
+.fco-part { display: grid; grid-template-columns: minmax(0, 1fr) 62px 34px 58px 32px; gap: 5px; align-items: center; padding: 6px 0; border-bottom: 1px dashed #F0E7D8; }
+.fco-part__name { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12.5px; color: #1F2A24; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fco-part__name img { flex: none; object-fit: contain; }
+.fco-part__u { font-size: 11px; color: #8C8172; }
+.fco-part__sum { font-size: 12.5px; font-weight: 500; text-align: right; color: #1F2A24; }
+.fco-del { width: 32px; height: 32px; display: grid; place-items: center; color: #D4322A; background: #FDEBEA; border: 0; border-radius: 9px; cursor: pointer; }
+.fco-warn { margin: 6px 0 0; font-size: 11px; color: #B4741B; text-wrap: pretty; }
+.fco-warn.is-bad { color: #D4322A; }
+.fco-adds { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.fco-add { flex: 1 1 120px; display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; font: inherit; font-size: 12.5px; color: #B4741B; background: #FDF3E2; border: 1px dashed #EBC98E; border-radius: 12px; cursor: pointer; }
+
+/* การ์ดเตือนสิ่งที่ยังไม่ได้คิดแยก */
+.fco-later { margin-top: 12px; padding: 11px 13px; font-size: 12px; color: #6B5F4E; background: #FBF4E8; border: 1px dashed #E4CFA8; border-radius: 14px; }
+.fco-later b { font-weight: 500; color: #8A5A12; }
+.fco-later ul { margin: 6px 0; padding-left: 18px; }
+.fco-later p { margin: 0; text-wrap: pretty; }
+
+/* ยอดของเครื่องคิดเมนูพิเศษ */
+.fco-total { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #fff; border: 1px solid #EDE2D0; border-radius: 16px; }
+.fco-total > div { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: #6B5F4E; }
+.fco-total > div b { font-size: 17px; font-weight: 600; color: #1F2A24; }
+.fco-sell { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; color: #6B5F4E; }
+.fco-sell i { font-style: normal; }
+.fco-gain { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 10px 12px; border-radius: 12px; }
+.fco-gain span { font-size: 13px; }
+.fco-gain b { font-size: 19px; font-weight: 600; }
+.fco-gain i { font-size: 11.5px; font-style: normal; }
+.fco-gain.is-ok { color: #1E7A3C; background: #EAF6EC; }
+.fco-gain.is-bad { color: #D4322A; background: #FDEBEA; }
+.fco-clear { width: 100%; min-height: 44px; margin-top: 10px; font: inherit; font-size: 12.5px; color: #7A6F60; background: none; border: 1px solid #E4DBCB; border-radius: 12px; cursor: pointer; }

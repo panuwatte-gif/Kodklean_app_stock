@@ -87,7 +87,7 @@ export function mountSomDrinkPage(root, onGo) {
   };
 
   // เพิ่ม/แก้/ลบ/สลับลำดับรายการ (ชุดเดียวกับหน้านับสต๊อก)
-  const acts = itemActions({ rows: () => rows, jobs: () => [T.job], reload: load });
+  const acts = itemActions({ rows: () => rows, grp: () => tabOf().grp, fixed: { responsibility: T.job }, reload: load });
 
   // เมนูจัดการของรายการเดียว (ปุ่ม ⋮ ท้ายแถว)
   const more = async id => {

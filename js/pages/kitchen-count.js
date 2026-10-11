@@ -1,10 +1,11 @@
-// หน้านับของครัวของเอมมี่และอัด — แท็บนับ (ผัก/เครื่องปรุง/ซอส/เนื้อสัตว์) + แท็บเตรียมอาหารที่ใช้ร่วมกัน
+// หน้านับของครัวของเอมมี่และอัด — แท็บนับตามหมวดที่หน้าแบ่งงานมอบให้ (kitchen-tabs.js) + แท็บเตรียมอาหารที่ใช้ร่วมกัน
 // ใช้รายการและผลนับชุดเดียวกับหน้านับสต๊อก (kk_count_item / kk_stock_count) และหน้าเตรียม-เหลือ (kk_prep_log)
-import { todayIso, getCountItemsByGroup, getCountHistory, saveStockCounts, getStaff, saveCountItem } from '../shared/data.js';
+import { todayIso, getCountItems, getCountItemsByGroup, getCountHistory, saveStockCounts, getStaff, getAssigns } from '../shared/data.js';
 import { KITCHEN_UI as T } from '../shared/config.js';
 import { ktTopHtml, ktHeroHtml, ktTabsHtml, ktToolsHtml, ktTableHtml, ktQuoteHtml, ktFootHtml } from './kitchen-rows.js';
-import { loadPrepDay, prepBodyHtml, savePrepCell } from './kitchen-prep.js';
-import { toast, pickerSheet, handleDatePick, handleDateClick, formSheet } from '../shared/ui.js';
+import { loadPrepDay, prepBodyHtml, savePrepCell, editPrepItem } from './kitchen-prep.js';
+import { kitchenTabs } from './kitchen-tabs.js';
+import { toast, pickerSheet, handleDatePick, handleDateClick } from '../shared/ui.js';
 import { evalBodyHtml, mountEval } from '../shared/prep-eval.js';
 import { openPrepChart } from '../shared/prep-chart.js';
 import { itemActions } from './stock-form.js';
@@ -14,7 +15,7 @@ import { fillText } from '../shared/format.js';
 // วาดหน้านับของครัว 1 คน (pageId = emmy-count / ad-count)
 export function mountKitchenPage(root, onGo, pageId) {
   const page = T.pages[pageId];
-  const tabs = page.tabs.map(id => T.tabs[id]);
+  let tabs = page.tabs.map(id => T.tabs[id]).concat(page.fixed.map(id => T.tabs[id]));   // ชุดสำรอง จนกว่าจะรู้ว่าหน้าแบ่งงานมอบหมวดไหนให้
   const state = { tab: tabs[0].id, date: todayIso(), q: '' };
   const el = id => root.querySelector(id);
   const tabOf = () => tabs.find(t => t.id === state.tab);
@@ -68,7 +69,7 @@ export function mountKitchenPage(root, onGo, pageId) {
       if (tab.kind === 'prep' || tab.kind === 'eval') { model = await loadPrepDay(state.date); }
       else {
         const all = await getCountItemsByGroup(tab.grp);
-        const items = tab.pick ? all.filter(i => i.id.startsWith(tab.pick)) : all;
+        const items = tab.only ? all.filter(i => tab.only.includes(i.id)) : all;
         const counts = items.length ? await getCountHistory(items.map(i => i.id), state.date, state.date) : [];
         rows = items.map(i => {
           const found = counts.find(c => c.count_item_id === i.id) || {};
@@ -108,11 +109,7 @@ export function mountKitchenPage(root, onGo, pageId) {
   };
 
   // เพิ่ม/แก้/ลบ/สลับลำดับรายการ (ชุดเดียวกับหน้านับสต๊อก)
-  const acts = itemActions({
-    rows: () => rows,
-    jobs: () => [...new Set(rows.map(r => r.responsibility).filter(Boolean))],
-    reload: load
-  });
+  const acts = itemActions({ rows: () => rows, grp: () => tabOf().grp, reload: load });
 
   const more = async id => {
     const pick = await pickerSheet({ title: T.moreTitle, options: T.moreActions });
@@ -122,34 +119,25 @@ export function mountKitchenPage(root, onGo, pageId) {
     if (pick === 'down') return acts.move(id, 1);
   };
 
-  // แก้ชื่อ/เปลี่ยนรูปของรายการในตารางเตรียมอาหาร (บันทึกลง kk_count_item — ทุกหน้าที่ใช้รายการนี้เปลี่ยนตาม)
-  const editPrepItem = async id => {
-    const item = [...(model ? model.meatRows : []), ...(model ? model.riceRows : [])].find(r => r.id === id);
-    if (!item) return;
-    const form = await formSheet({
-      title: T.prep.editTitle,
-      fields: [
-        { key: 'name', label: T.prep.fName, kind: 'text', value: item.name },
-        { key: 'photo', label: T.prep.fPhoto, kind: 'select', value: item.photo || '', options: T.prep.photos }
-      ]
-    });
-    if (!form || !form.name) return;
-    try {
-      await saveCountItem(id, { name: form.name, photo: form.photo || null });
-      model = await loadPrepDay(state.date);
-      drawBody();
-      toast(fillText(T.prep.edited, { name: form.name }));
-    } catch { toast(T.saveError); }
-  };
-
   // ชื่อจริงของคนที่รับผิดชอบ (จากตาราง kk_staff)
   getStaff().then(staff => {
     const me = staff.find(s => s.code === page.owner);
     if (me) { person = { ...person, name: me.name }; el('#k-top').innerHTML = ktTopHtml(whoOf()); }
   }).catch(() => {});
 
+  // ถามหน้าแบ่งงานว่าคนนี้นับหมวดไหนบ้าง แล้วตั้งแท็บตามนั้น (โหลดไม่ได้ = ใช้แท็บสำรอง)
+  const boot = async () => {
+    try {
+      const [items, assigns] = await Promise.all([getCountItems(), getAssigns()]);
+      tabs = kitchenTabs(page, items, assigns);
+      if (!tabs.some(t => t.id === state.tab)) state.tab = tabs[0].id;
+    } catch { /* ใช้แท็บสำรอง */ }
+    draw();
+    load();
+  };
+
   draw();
-  load();
+  boot();
 
   root.addEventListener('click', async event => {
     const tab = event.target.closest('[data-tab]');
@@ -158,7 +146,7 @@ export function mountKitchenPage(root, onGo, pageId) {
     const edit = event.target.closest('[data-edit]');
     const graph = event.target.closest('[data-graph]');
     if (graph) return openPrepChart(model && model.meatRows.find(r => r.id === graph.dataset.graph), state.date);
-    if (edit) return editPrepItem(edit.dataset.edit);
+    if (edit) { const fresh = await editPrepItem(model, edit.dataset.edit, state.date); if (fresh) { model = fresh; drawBody(); } return; }
     if (tab) { state.tab = tab.dataset.tab; state.q = ''; rows = []; model = null; dirty = {}; loaded = false; draw(); return load(); }
     if (act && act.dataset.act === 'add') return acts.add();
     if (act && act.dataset.act === 'manage') {

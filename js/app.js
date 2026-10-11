@@ -29,6 +29,7 @@ import { mountGrabPage } from './pages/grab.js';
 import { mountGrabImportPage } from './pages/grab-import.js';
 import { mountGrabOrdersPage } from './pages/grab-orders.js';
 import { mountGrabReportPage } from './pages/grab-report.js';
+import { mountFoodCostPage } from './pages/food-cost.js';
 import { mountNav, fillGlyphs, confirmSheet, toast, enableDragScroll } from './shared/ui.js';
 import { startMy, myToggleHtml, bindMyToggle } from './shared/i18n.js';
 import { currentUser, signOut, loadAccounts } from './shared/auth.js';
@@ -65,7 +66,8 @@ const PAGES = {
   grab: { file: 'pages/grab.html', mount: mountGrabPage },
   'grab-import': { file: 'pages/grab.html', mount: mountGrabImportPage },
   'grab-orders': { file: 'pages/grab.html', mount: mountGrabOrdersPage },
-  'grab-report': { file: 'pages/grab.html', mount: mountGrabReportPage }
+  'grab-report': { file: 'pages/grab.html', mount: mountGrabReportPage },
+  'food-cost': { file: 'pages/food-cost.html', mount: mountFoodCostPage }
 };
 
 const app = document.querySelector('.app');

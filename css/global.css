@@ -231,6 +231,9 @@ a:hover { color: #0C3F1D; }
 .ask__title { font-family: Mitr, sans-serif; font-size: 15px; color: #125B2A; padding: 0 4px 4px; }
 .ask__text { font-size: 13px; color: #6B6153; padding: 0 4px 8px; }
 .ask__rows { max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; padding: 4px 2px; }
+.ask__row[hidden] { display: none; }
+.ask__search { width: 100%; height: 40px; margin: 0 0 6px; padding: 0 12px; border-radius: 12px; border: 1.5px solid #DDE7D9; background: #fff; font-family: Sarabun, sans-serif; font-size: 13px; color: #33404F; outline: none; }
+.ask__search:focus { border-color: #A6BE40; }
 
 .ask__row {
   display: flex;

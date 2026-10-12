@@ -866,3 +866,47 @@ export function prepEvalDaily(rows, itemId, from, to) {
     .sort((a, b) => (a.use_date < b.use_date ? -1 : 1))
     .map(r => ({ date: r.use_date, taken: r.taken_kg, used: r.used_kg, excluded: !!r.excluded, diff: r.excluded || r.taken_kg === null || r.used_kg === null ? null : Math.round((r.taken_kg - r.used_kg) * 100) / 100 }));
 }
+
+// ---------- ซื้อของเข้าร้าน (หน้าพระราม 9 แท็บซื้อของเข้าร้าน) ----------
+
+// ยอดของรายการซื้อ 1 แถว = ราคา × ปริมาณ (ยังไม่กรอก = 0)
+export const buyRow = (price, qty) => r2((Number(price) || 0) * (Number(qty) || 0));
+
+// แถวของร้าน 1 ร้านในวันที่เลือก: รายการประจำ (ราคาตั้งต้น = ราคาใน kk_vendor_item) + รายการที่บันทึกไว้แต่เอาออกจากร้านไปแล้ว
+export function buyRows(items, edit) {
+  const lines = (edit && edit.lines) || {};
+  const rows = items.map(it => {
+    const l = lines[it.vi];
+    return { ...it, price: l && l.price !== undefined ? l.price : it.price, qty: l && l.qty !== null && l.qty !== undefined ? l.qty : '' };
+  });
+  Object.entries(lines).forEach(([vi, l]) => {
+    if (!rows.some(r => r.vi === vi) && Number(l.qty) > 0) rows.push({ id: null, vi, name: l.name, unit: l.unit, price: l.price, qty: l.qty });
+  });
+  return rows;
+}
+
+// ยอดของร้าน 1 วัน: ใส่ยอดรวมเอง = ใช้ยอดนั้นแทนผลรวมรายการ
+export function buyShopTotal(rows, manual) {
+  const sum = r2(rows.reduce((s, r) => s + buyRow(r.price, r.qty), 0));
+  const hasManual = manual !== null && manual !== undefined && manual !== '';
+  return { sum, total: hasManual ? r2(Number(manual)) : sum, manual: hasManual };
+}
+
+// ยอดซื้อรวมของทุกร้านในช่วงวันที่ (ใช้บนการ์ดตัวเลขหัวหน้า)
+export const buySum = (logs, from, to) => r2((logs || []).filter(l => l.date >= from && l.date <= to).reduce((s, l) => s + (Number(l.total) || 0), 0));
+
+// Report ค่าใช้จ่าย: ยอดซื้อร้านที่เลือก (+ ยอดส่งพระราม 9 สุทธิ ถ้าเลือก) ในช่วงวันที่ → แยกร้าน + แยกรายวัน + รวม
+export function buyReport(logs, rounds, { from, to, shops, withR9 }) {
+  const days = new Map();
+  const add = (date, key, amt) => {
+    const d = days.get(date) || { date, total: 0, parts: {} };
+    d.parts[key] = r2((d.parts[key] || 0) + amt); d.total = r2(d.total + amt);
+    days.set(date, d);
+  };
+  (logs || []).filter(l => l.date >= from && l.date <= to && shops.includes(l.shop)).forEach(l => add(l.date, l.shop, Number(l.total) || 0));
+  if (withR9) (rounds || []).filter(rd => rd.date >= from && rd.date <= to).forEach(rd => add(rd.date, 'r9', r9RoundTotals(rd).net));
+  const list = [...days.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+  const keys = [...shops, ...(withR9 ? ['r9'] : [])];
+  const byShop = keys.map(k => ({ id: k, total: r2(list.reduce((s, d) => s + (d.parts[k] || 0), 0)), days: list.filter(d => d.parts[k] !== undefined).length }));
+  return { days: list, byShop, total: r2(list.reduce((s, d) => s + d.total, 0)) };
+}

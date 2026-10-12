@@ -1234,6 +1234,7 @@ export const R9_PLACE = {
   sub: 'ส่งของไปสาขาพระราม 9',
   subHistory: 'ประวัติการส่งของไปสาขาพระราม 9',
   subReport: 'รายงานการส่งของไปสาขาพระราม 9',
+  subBuy: 'ซื้อของเข้าร้าน',
   quoteSend: '"ส่งของดี ส่งความอร่อย ไปพระราม 9 กันเลย!"',
   quoteHistory: '"ทุกการส่ง คือความใส่ใจ เพื่อพระราม 9 ที่ดีกว่าเดิม"',
   quoteReport: '"ข้อมูลชัดเจน ช่วยให้บริหารง่ายขึ้น ธุรกิจเติบโตค่ะ!"',
@@ -1247,6 +1248,7 @@ export const R9_TABS = [
   { id: 'send', label: 'ส่งของ', glyph: 'truck' },
   { id: 'history', label: 'ประวัติ', glyph: 'clock' },
   { id: 'report', label: 'Report', glyph: 'chart' },
+  { id: 'buy', label: 'ซื้อของเข้าร้าน', glyph: 'cart' },
   { id: 'setup', label: 'ตั้งค่ารายการ', glyph: 'gear' }
 ];
 
@@ -1269,14 +1271,67 @@ export const R9_KPI = {
     { key: 'items', label: 'ยอดรวมสินค้า', unit: 'รายการ', foot: 'pickFoot', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3' },
     { key: 'fee', label: 'ค่าส่งรวม', unit: 'บาท', foot: 'pickFoot', color: '#B9436F', tint: '#FCE1EA', border: '#F3C4D3' },
     { key: 'goods', label: 'มูลค่าสุทธิ', unit: 'บาท', foot: 'pickFoot', color: '#B4741B', tint: '#FDF3E2', border: '#F3E0BD' }
+  ],
+  buy: [
+    { key: 'buyDay', label: 'ซื้อวันที่เลือก', unit: 'บาท', foot: 'buyDayFoot', color: '#2F63C9', tint: '#EAF1FD', border: '#CFDDF5' },
+    { key: 'buyMonth', label: 'เดือนนี้', unit: 'บาท', foot: 'monthFoot', color: '#1E7A3C', tint: '#EAF6EC', border: '#CFE8D3' },
+    { key: 'buyYtd', label: 'YTD', unit: 'บาท', foot: 'ytdFoot', color: '#8E3E96', tint: '#F5E7F6', border: '#E5CDE7' },
+    { key: 'buyAll', label: 'ซื้อรวม', unit: 'บาท', foot: 'allFoot', color: '#B4741B', tint: '#FDF3E2', border: '#F3E0BD' }
   ]
+};
+
+// ข้อความแท็บซื้อของเข้าร้าน (หน้าพระราม 9)
+export const R9_BUY_UI = {
+  cols: ['รายการ', 'ราคา', 'ปริมาณ', 'รวม', ''],
+  title: 'ซื้อของเข้าร้าน',
+  tableSub: 'กรอกราคา + ปริมาณ หรือใส่ยอดรวมของร้านเลยก็ได้',
+  addItem: 'เพิ่มรายการ',
+  pickTitle: 'เลือกวัตถุดิบ',
+  pickSearch: 'ค้นหาชื่อวัตถุดิบ หรือชื่อร้าน',
+  pickNone: 'ไม่มีรายการให้เลือกแล้ว',
+  remove: 'เอาออก',
+  manual: 'ยอดรวม (กรอกเอง)',
+  manualHint: 'ใช้ยอดรวมที่กรอกเองแทนผลรวมรายการ',
+  shopTotal: 'รวม',
+  empty: 'ยังไม่มีรายการ กดเพิ่มรายการ หรือใส่ยอดรวมด้านล่าง',
+  dayTotal: 'รวมทุกร้าน',
+  save: 'บันทึกการซื้อ',
+  saving: 'กำลังบันทึก...',
+  saved: 'บันทึกการซื้อวันที่ {d} แล้ว',
+  saveError: 'บันทึกไม่สำเร็จ ตัวเลขที่กรอกยังอยู่ กดบันทึกอีกครั้งได้',
+  conflict: 'มีคนแก้ยอดซื้อ {s} ของวันนี้ไปก่อนแล้ว โหลดของล่าสุดมาให้ ลองกรอกอีกครั้ง',
+  nothing: 'ยังไม่มีอะไรเปลี่ยน',
+  loadError: 'โหลดข้อมูลการซื้อไม่ได้',
+  removeAsk: { title: 'เอารายการนี้ออก?', text: 'เอาออกจากรายการประจำของร้าน (ยอดที่บันทึกไว้วันก่อนยังอยู่)', ok: 'เอาออก' },
+  removed: 'เอา {n} ออกแล้ว',
+  added: 'เพิ่ม {n} แล้ว',
+  leaveAsk: { title: 'ยังไม่ได้บันทึก', text: 'เปลี่ยนวันแล้วตัวเลขที่กรอกค้างไว้จะหาย', ok: 'เปลี่ยนวัน' },
+  dateBand: 'กำลังลงยอดซื้อของวันที่ {d} ({s})',
+  foot: { month: 'ในเดือนนี้', ytd: 'ตั้งแต่ต้นปี', all: 'ทุกวันรวมกัน' },
+  rep: {
+    title: 'สร้าง Report ค่าใช้จ่าย',
+    sub: 'เลือกร้าน + ช่วงวันที่ หรือวันเดียว',
+    range: 'ช่วงวันที่',
+    oneDay: 'วันเดียว',
+    shops: 'ร้าน',
+    r9: 'ส่งของพระราม 9',
+    r9Note: 'ยอดสุทธิ สินค้า + ค่าส่ง',
+    build: 'สร้าง Report',
+    print: 'พิมพ์รายงาน',
+    total: 'รวมค่าใช้จ่าย',
+    byShop: 'แยกตามร้าน',
+    byDay: 'แยกรายวัน',
+    days: '{n} วัน',
+    none: 'ไม่มียอดในช่วงที่เลือก',
+    pickShop: 'เลือกอย่างน้อย 1 ร้าน'
+  }
 };
 
 // หัวตารางรายการส่งของ
 export const R9_SEND_COLS = ['รายการส่งของ', 'ปริมาณ', 'ราคา', 'รวม', ''];
 
 // หัวตารางส่งของแบบมีต้นทุน (หน้าพระราม 9 + หน้าแม่พัน) แถวละบรรทัดเดียว
-export const R9_COST_COLS = ['รายการ', 'ต้นทุน', 'mk %', 'ปริมาณ', 'ราคา', 'รวม', ''];
+export const R9_COST_COLS = ['รายการ', 'ต้นทุน', 'mk %', 'ราคา', 'ปริมาณ', 'รวม', ''];
 export const R9_COST_UI = {
   vendorHint: 'ราคาซื้อล่าสุดจาก App_money',
   help: 'ต้นทุนตั้งต้น = ทุนจริงจากการ์ดต้นทุนอาหาร (สีเขียว = ราคาซื้อล่าสุด App_money) · ใส่ ต้นทุน + mark up % ระบบคิดราคาให้ หรือใส่ราคา ระบบคิด mark up ย้อนให้ · ตัวเลขที่แก้เก็บเฉพาะวันนี้ ไม่ย้อนไปแก้วันอื่น'
@@ -2052,6 +2107,7 @@ export const MY_APP_TABS = [
   ] },
   { id: 'rama9', label: 'พระราม9', groups: [
     { id: 'main', label: 'แท็บ · สรุป · สถานะ', from: ['R9_PLACE', 'R9_TABS', 'R9_KPI', 'R9_STATUS', 'R9_RANGES'] },
+    { id: 'buy', label: 'ซื้อของเข้าร้าน', from: ['R9_BUY_UI'] },
     { id: 'send', label: 'ตารางส่งของ', from: ['R9_SEND_COLS', 'R9_COST_COLS', 'R9_COST_UI', 'R9_ROW_MENU', 'R9_ROW_TOOLS', 'R9_UNITS', 'R9_UI', 'R9_EXPORTS'] },
     { id: 'items', label: 'รายการของ · หมวด', from: ['R9_PHOTOS', 'R9_CAT_ICONS', 'R9_SETUP_UI'] }
   ] },
@@ -2335,9 +2391,12 @@ export const FC_SYNC_UI = {
   retry: 'ลองใหม่',
   close: 'ปิด',
   skipOld: 'ไม่ทับข้อมูลเดิม (cleaned_v2) ของ {d}: {names}',
-  anomaly: 'ตัดออกเพราะสงสัยพิมพ์ผิด (เกิน 5 เท่าของค่ากลาง) {d}: {names}',
-  negative: 'ใช้จริงติดลบ ไม่บันทึกเข้าประวัติ {d}: {names}'
+  anomaly: 'ใช้จริงสูงกว่าปกติมาก ลองตรวจตัวเลขเตรียม/เหลือ (ไม่ได้ตัดอะไรออก) {d}: {names}',
+  negative: 'ใช้จริงติดลบ ลองตรวจตัวเลขเตรียม/เหลือ {d}: {names}'
 };
+
+// เกณฑ์เตือนใช้จริงสูงผิดปกติหลังบันทึกเตรียม: เกิน times เท่าของค่ากลาง และมากกว่าค่ากลางอย่างน้อย minKg กก. (กันของที่ใช้น้อยๆ เตือนพร่ำเพรื่อ)
+export const FC_ANOMALY = { times: 5, minKg: 1 };
 
 // ---------- หน้าสูตรอาหาร (การ์ด "สูตรอาหาร" ในหน้าอื่นๆ) ----------
 

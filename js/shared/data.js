@@ -6,7 +6,7 @@ import { parseCfg, withFcCtx, fcCtxOf, advanceFormulas, allowedFormulas, prevOpe
 import { shiftIso } from './format.js';
 import { buildHome } from './home-model.js';
 import { meatUseRows, buildPrepModel } from './calc.js';
-import { R9_VOID_STATUS, FC_SYNC_UI, FC_EXCLUDED_DAYS, COST_SKIP_GROUP } from './config.js';
+import { R9_VOID_STATUS, FC_SYNC_UI, FC_ANOMALY, FC_EXCLUDED_DAYS, COST_SKIP_GROUP } from './config.js';
 import { showSyncNote } from './sync-note.js';
 import { buildForecast, dailyRowsOf, actualPatches, fcReadyFor, forecastPatches, fcShortWhy } from './forecast.js';
 
@@ -430,7 +430,7 @@ export async function syncHistoryFromPrep(date) {
       const ref = past.filter(p => p.item_id === row.id && Number(p.dow_num) !== 0 && !SYNC_BAD.includes(p.flag)).slice(0, 28).map(p => Number(p.used_kg));
       if (ref.length >= 10) {
         const md = medianOf(ref);
-        if (md > 0 && used > 5 * md) { used = null; flag = 'actual_missing'; res.anomaly.push(row.name); }
+        if (md > 0 && used > FC_ANOMALY.times * md && used - md >= FC_ANOMALY.minKg) { used = null; flag = 'actual_missing'; res.anomaly.push(row.name); }
       }
     }
     out.push({ use_date: date, item_id: row.id, used_kg: used, theo_kg: null, dow_num: dowIso(date), flag, source: 'app_live' });
@@ -617,25 +617,13 @@ export async function getR9Bundle() {
 // กุญแจกันกดเบิ้ล — สร้างครั้งเดียวตอนกดปุ่ม ส่งซ้ำกุญแจเดิม = ไม่เกิดรอบใหม่
 export const newR9Key = date => `r9:${date}:${crypto.randomUUID()}`;
 
-// บันทึกรอบส่ง 1 รอบ (หัวรอบ + รายการ ในคำสั่งเดียวฝั่งฐาน) · ส่ง replaces = แก้รอบเก่าแบบไม่ทับของเดิม
-// วันที่ของรอบส่ง (ใช้อัปเดตประวัติพยากรณ์ของวันนั้นหลังแก้/ยกเลิก)
-const r9DateOf = id => dbGet(`kk_r9_round?id=eq.${id}&select=date`).then(r => (r[0] || {}).date || null).catch(() => null);
-
-export async function saveR9Round({ date, fee, note, by, lines, key, replaces = null }) {
-  const oldDate = replaces ? await r9DateOf(replaces) : null;
-  const r = await dbPost('rpc/kk_r9_save', { p_date: date, p_fee: fee, p_note: note, p_by: by, p_lines: lines, p_key: key, p_replaces: replaces });
-  queueSync(date);
-  if (oldDate && oldDate !== date) queueSync(oldDate);
-  return r;
-}
+// บันทึกรอบส่ง 1 รอบ (หัวรอบ + รายการ ในคำสั่งเดียวฝั่งฐาน) · ส่ง replaces = แก้รอบเดิมของวันนั้น
+// ส่งพระราม 9 ไม่กระทบยอดใช้จริง จึงไม่ตรวจประวัติพยากรณ์หลังบันทึก/ลบ
+export const saveR9Round = ({ date, fee, note, by, lines, key, replaces = null }) =>
+  dbPost('rpc/kk_r9_save', { p_date: date, p_fee: fee, p_note: note, p_by: by, p_lines: lines, p_key: key, p_replaces: replaces });
 
 // ลบรอบส่ง = ปิดไม่ให้นับ (ของเก่ายังอยู่ในฐาน)
-export async function voidR9Round(id, by) {
-  const date = await r9DateOf(id);
-  const r = await dbPost('rpc/kk_r9_void', { p_id: id, p_by: by });
-  queueSync(date);
-  return r;
-}
+export const voidR9Round = (id, by) => dbPost('rpc/kk_r9_void', { p_id: id, p_by: by });
 
 // หน้าตั้งค่ารายการ: เพิ่ม / แก้ / ลบ / เปิด-ปิด / ย้ายหมวด (ราคาตั้งต้นเป็นค่าตั้ง แก้ทับได้)
 export const addR9Item = row => dbPost('kk_rama9_item', [{ active: true, ...row }]);
@@ -1117,3 +1105,42 @@ export const getTaxSettings = () => dbGet('kk_tax_setting?select=*&order=shop');
 // บันทึกตั้งค่าภาษีของร้าน (ทับของเดิม)
 export const saveTaxSetting = (shop, changes, by) =>
   dbUpsert('kk_tax_setting?on_conflict=shop', [{ shop, ...changes, updated_by: by || null, updated_at: new Date().toISOString() }]);
+
+// ---------- ข้อมูลจริงจากฐาน: ซื้อของเข้าร้าน (หน้าพระราม 9) ----------
+
+// แถวรายการประจำของร้าน → รูปที่หน้าใช้ (ชื่อ/หน่วย/ราคาตั้งต้นจาก kk_vendor_item)
+function toBuyItem(r, vmap) {
+  const v = vmap.get(r.vendor_item_id) || {};
+  return { id: r.id, shop: r.shop_id, vi: r.vendor_item_id, sort: r.sort_order, name: v.name || '', unit: v.unit || '', price: v.price === null || v.price === undefined ? null : Number(v.price) };
+}
+
+// โหลดแท็บซื้อของเข้าร้านในครั้งเดียว: ร้าน + รายการประจำ + ยอดซื้อทุกวัน
+export async function getBuyBundle() {
+  const [shops, items, logs] = await Promise.all([
+    dbGet('kk_buy_shop?active=is.true&select=id,label,vendor_id,color,tint,sort_order&order=sort_order'),
+    dbGet('kk_buy_item?active=is.true&select=id,shop_id,vendor_item_id,sort_order&order=sort_order,id'),
+    dbGet('kk_buy_log?select=id,buy_date,shop_id,lines,total_manual,total,updated_at&order=buy_date')
+  ]);
+  const ids = [...new Set(items.map(i => i.vendor_item_id))];
+  const vrows = ids.length ? await dbGet(`kk_view_buy_vendor_item?id=in.(${ids.join(',')})&select=id,name,unit,price`) : [];
+  const vmap = new Map(vrows.map(v => [v.id, v]));
+  return {
+    shops, items: items.map(r => toBuyItem(r, vmap)),
+    logs: logs.map(l => ({ id: l.id, date: l.buy_date, shop: l.shop_id, lines: l.lines || [], manual: l.total_manual === null ? null : Number(l.total_manual), total: Number(l.total) || 0, at: l.updated_at }))
+  };
+}
+
+// วัตถุดิบทั้งหมดในตารางร้าน (kk_vendor_item) ให้เลือกเพิ่มเข้าร้าน
+export const getVendorItems = () =>
+  dbGet('kk_view_buy_vendor_item?select=id,name,unit,price,vendor_id,vendor_name&order=sort,name');
+
+// เพิ่มรายการประจำให้ร้าน (เคยเอาออกแล้ว = เปิดกลับ)
+export const addBuyItem = (shop, vi, sort) =>
+  dbUpsert('kk_buy_item?on_conflict=shop_id,vendor_item_id', [{ shop_id: shop, vendor_item_id: vi, sort_order: sort, active: true }]);
+
+// เอารายการออกจากร้าน (ยอดที่บันทึกไว้วันก่อนยังอยู่)
+export const removeBuyItem = id => dbPatch(`kk_buy_item?id=eq.${Number(id)}`, { active: false });
+
+// บันทึกยอดซื้อ 1 ร้าน 1 วัน ผ่าน kk_buy_save (กันชน: loaded = เวลาแก้ล่าสุดตอนโหลดมา · มีคนแก้ก่อน = BUY_CONFLICT)
+export const saveBuyDay = ({ date, shop, lines, manual, by, loaded }) =>
+  dbPost('rpc/kk_buy_save', { p_date: date, p_shop: shop, p_lines: lines, p_total_manual: manual, p_by: by, p_loaded: loaded });

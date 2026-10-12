@@ -121,6 +121,7 @@ const GLYPHS = {
   snow: '<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9"/>',
   users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6.1M17.5 20a5.6 5.6 0 0 0-2-4.3"/>',
   x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  cart: '<path d="M3 4h2.5l2.2 10.5h10.6L20.5 7H6.6"/><circle cx="9.5" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',
   lang: '<path d="M4 5h9M8.5 3v2M6 5c.6 3 2.6 5.6 5.5 7.2M11 5c-.6 3.4-3 6.4-6.6 8"/><path d="M13 21l4-9 4 9M14.4 18h5.2"/>'
 };
 
@@ -259,13 +260,15 @@ export async function confirmSheet({ title, text = '', okLabel = 'ตกลง',
 }
 
 // แผงให้เลือก 1 อย่างจากรายการ (options = [{ value, label, image }])
-export function pickerSheet({ title, options }) {
+// search = ข้อความในช่องค้นหา (ว่าง = ไม่มีช่องค้นหา)
+export function pickerSheet({ title, options, search = '' }) {
   const rows = options.map(o => `
     <button class="ask__row" type="button" data-pick="${o.value}">
       ${o.image ? `<img src="${o.image}" alt="" width="36" height="36" loading="lazy" decoding="async">` : ''}<span>${o.label}</span>
     </button>`).join('');
   return openSheet(`
     <div class="ask__title">${title}</div>
+    ${search ? `<input class="ask__search" type="search" placeholder="${search}" data-sheet-search="1">` : ''}
     <div class="ask__rows">${rows}</div>
     <div class="ask__go"><button class="ask__btn ask__btn--off" type="button" data-pick="">ปิด</button></div>`);
 }
@@ -648,6 +651,24 @@ export function dateBarHtml(iso, pickId = 'prep-date-pick') {
       <button class="pdate__arrow pdate__arrow--next" type="button" data-date-nav="1" aria-label="เดินหน้า 1 วัน">${glyph('back', 16)}</button>
       <span class="pdate__pill pdate__pill--${s.cls}">${s.text}</span>
     </div>`;
+}
+
+// ช่องค้นหาในแผงเลือก: ซ่อนแถวที่ไม่มีคำที่พิมพ์
+if (typeof document !== 'undefined') {
+  document.addEventListener('input', e => {
+    const box = e.target.closest && e.target.closest('[data-sheet-search]');
+    if (!box) return;
+    const q = box.value.trim().toLowerCase();
+    box.closest('.ask__box').querySelectorAll('.ask__row').forEach(r => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); });
+  });
+}
+
+// คอมพิวเตอร์: คลิกตรงไหนของช่องวันที่ก็เปิดปฏิทินทันที (มือถือเปิดเองอยู่แล้ว ไม่ต้องทำ)
+if (typeof document !== 'undefined' && window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  document.addEventListener('click', e => {
+    const pick = e.target.closest && e.target.closest('input[type="date"]');
+    if (pick && pick.showPicker) { try { pick.showPicker(); } catch { /* เบราว์เซอร์เก่า: ใช้แบบเดิม */ } }
+  });
 }
 
 // แถบสีพาดเต็มความกว้างเมื่อวันที่เลือกไม่ใช่วันนี้ — กันพนักงานกรอกผิดวันแบบไม่รู้ตัว (text = ข้อความของหน้านั้น)

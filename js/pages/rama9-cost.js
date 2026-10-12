@@ -1,4 +1,4 @@
-// แถวของตารางส่งของพระราม 9 (บรรทัดเดียว: รูป+ชื่อ · ต้นทุน · mk % · ปริมาณ · ราคา · รวม · ปุ่ม ⋯) — ตัวเลขที่แก้อยู่ในร่างของวันนั้น ไม่เขียนกลับราคากลาง
+// แถวของตารางส่งของพระราม 9 (บรรทัดเดียว: รูป+ชื่อ · ต้นทุน · mk % · ราคา · ปริมาณ · รวม · ปุ่ม ⋯) — ตัวเลขที่แก้อยู่ในร่างของวันนั้น ไม่เขียนกลับราคากลาง
 // ใช้ร่วมหน้าพระราม 9 และหน้าแม่พัน (หน้าแม่พัน tools = false: แตะรูปไม่ได้ ไม่มีปุ่ม ⋯)
 import { R9_COST_UI, R9_ROW_MENU } from '../shared/config.js';
 import { glyph, r9Photo, pickerSheet } from '../shared/ui.js';
@@ -20,8 +20,8 @@ export function costItemHtml(item, hasPrice, sum, tools = true) {
       </span>
       <input class="r9-in r9-in--cost${item.costFromVendor ? ' is-vendor' : ''}" type="number" inputmode="decimal" step="any" min="0" placeholder="—" data-f="cost" value="${val(item.cost)}"${vend}>
       <input class="r9-in r9-in--mk" type="number" inputmode="decimal" step="any" placeholder="—" data-f="mk" value="${val(item.mk)}">
-      <input class="r9-in" type="number" inputmode="decimal" step="0.1" min="0" placeholder="—" data-f="qty" value="${item.qty ?? ''}">
       <input class="r9-in${hasPrice ? '' : ' is-nil'}" type="number" inputmode="decimal" step="any" min="0" placeholder="—" data-f="price" value="${hasPrice ? item.price : ''}">
+      <input class="r9-in" type="number" inputmode="decimal" step="0.1" min="0" placeholder="—" data-f="qty" value="${item.qty ?? ''}">
       <span class="r9-item__sum${sum ? '' : ' is-zero'}">${sum ? moneyFine(sum) : '—'}</span>
       ${tools ? `<button class="r9-more" type="button" data-tool="menu" aria-label="${R9_ROW_MENU.label}">${glyph('more', 16)}</button>` : ''}
     </div>`;

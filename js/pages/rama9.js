@@ -12,6 +12,7 @@ import { filterHtml, roundsHtml, briefHtml } from './rama9-history.js';
 import { pickHtml, reportHtml } from './rama9-report.js';
 import { setupHtml, handleSetupClick, addR9ItemTo } from './rama9-setup.js';
 import { rowTool } from './rama9-cost.js';
+import { ensureBuy, buyBody, buyKpis, buyClick, buyInput, buyChange, buyDate } from './rama9-buy.js';
 
 // สิ่งที่ผู้ใช้เลือกอยู่บนหน้านี้ (ไม่แชร์ข้ามหน้า)
 const view = {
@@ -80,10 +81,10 @@ export function mountRama9Page(root) {
     const listed = pickRounds(view.rounds);
     const picked = view.rounds.filter(rd => view.picked[rd.id] && inRange(rd));
     el('#r9-hero').innerHTML = heroHtml(view.tab === 'setup' ? 'send' : view.tab);
-    el('#r9-kpis').innerHTML = kpisHtml(view.tab, kpiVals(view.tab, view.tab === 'history' ? listed : view.rounds, view.date, picked));
+    el('#r9-kpis').innerHTML = kpisHtml(view.tab, view.tab === 'buy' ? buyKpis(todayIso()) : kpiVals(view.tab, view.tab === 'history' ? listed : view.rounds, view.date, picked));
     el('#r9-tabs').innerHTML = tabsHtml(view.tab);
-    el('#r9-sub').textContent = view.tab === 'history' ? R9_PLACE.subHistory : view.tab === 'report' ? R9_PLACE.subReport : R9_PLACE.sub;
-    el('#r9-date').textContent = view.tab === 'report' || view.tab === 'history' ? `${dayLongTh(view.from)} - ${dayLongTh(view.to)}` : dayLongTh(view.date);
+    el('#r9-sub').textContent = view.tab === 'history' ? R9_PLACE.subHistory : view.tab === 'report' ? R9_PLACE.subReport : view.tab === 'buy' ? R9_PLACE.subBuy : R9_PLACE.sub;
+    el('#r9-date').textContent = view.tab === 'report' || view.tab === 'history' ? `${dayLongTh(view.from)} - ${dayLongTh(view.to)}` : dayLongTh(view.tab === 'buy' ? buyDate() : view.date);
     if (view.error) { body.innerHTML = `<div class="r9-card"><p class="r9-empty">${R9_UI.loadError} <button class="r9-btn r9-btn--soft" type="button" data-act="retry">${R9_UI.retry}</button></p></div>`; return; }
     if (view.loading) { body.innerHTML = `<div class="r9-card"><p class="r9-empty">${R9_UI.loading}</p></div>`; return; }
     if (view.tab === 'send') {
@@ -93,6 +94,7 @@ export function mountRama9Page(root) {
     }
     else if (view.tab === 'history') body.innerHTML = filterHtml(view) + roundsHtml(listed, view.items, view.cats, view.rounds.length ? view.rounds[view.rounds.length - 1].id : null) + briefHtml(view.rounds);
     else if (view.tab === 'setup') body.innerHTML = setupHtml(view.items, view.cats, view.sel, view.pick);
+    else if (view.tab === 'buy') { ensureBuy(draw); body.innerHTML = buyBody(view.rounds); }
     else {
       const maxPage = Math.max(0, Math.ceil(picked.length / 3) - 1);
       if (view.rPage > maxPage) view.rPage = maxPage;
@@ -180,6 +182,7 @@ export function mountRama9Page(root) {
     const range = hit('[data-range]'), pick = hit('[data-pickround]'), ex = hit('[data-export]');
     const rep = hit('[data-repeat]'), det = hit('[data-detail]'), addin = hit('[data-addin]'), rgrp = hit('[data-rgroup]');
     const rpg = hit('[data-rpage]'), ed = hit('[data-edit]'), vd = hit('[data-void]');
+    if (view.tab === 'buy' && !tab && await buyClick(event, draw)) return;
 
     if (view.tab === 'setup' && (hit('[data-setsw]') || hit('[data-setedit]') || hit('[data-setdel]') || hit('[data-setcat]') || hit('[data-setpick]') || hit('[data-setphoto]') || act)) {
       const res = await handleSetupClick(event, { items: view.items, cats: view.cats, sel: view.sel, pick: view.pick, setPick: v => { view.pick = v; } });
@@ -216,6 +219,7 @@ export function mountRama9Page(root) {
 
   // กรอกปริมาณ/ราคา/ค่าส่ง/หมายเหตุ → เก็บเป็นร่างของรอบนี้ (ยังไม่ขึ้นฐานจนกดบันทึก)
   root.addEventListener('input', event => {
+    if (view.tab === 'buy') { buyInput(event, root); return; }
     if (sendInput(event, { draft: view.draft, items: view.items, root, save: keepDraft })) return;
     const elm = event.target;
     if (elm.matches('#r9-note')) { view.draft.note = elm.value; keepDraft(); }
@@ -223,6 +227,7 @@ export function mountRama9Page(root) {
   });
 
   root.addEventListener('change', async event => {
+    if (view.tab === 'buy') { if (await buyChange(event)) draw(); return; }
     const elm = event.target;
     if (elm.matches('[data-from]') && elm.value) { view.from = elm.value; view.range = 'custom'; draw(); }   // เลือกวันเอง = ไม่ติดชิปไหน
     else if (elm.matches('[data-to]') && elm.value) { view.to = elm.value; view.range = 'custom'; draw(); }
